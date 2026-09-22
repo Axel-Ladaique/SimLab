@@ -1,0 +1,33 @@
+{
+  "name": "FPV Wing 1.1 m",
+  "description": "Swept foam flying wing with elevons and a pusher prop. Hand launch, belly landing.",
+  "mass": 1.1,
+  "inertia": { "roll": 0.05, "yaw": 0.08, "pitch": 0.03 },
+  "surfaces": [
+    { "name": "wing", "role": "wing", "root": [0.133, 0.0, 0], "span": 0.55, "rootChord": 0.30, "tipChord": 0.15,
+      "sweepDeg": 25, "incidenceDeg": 2.0, "twistDeg": -2.0, "airfoil": "reflex-mh45", "segments": 8, "mirror": true },
+    { "name": "winglets", "role": "verticalTail", "root": [-0.13, 0.0, 0.55], "span": 0.12, "rootChord": 0.12, "tipChord": 0.08,
+      "sweepDeg": 30, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 2, "mirror": true }
+  ],
+  "controls": [
+    { "name": "elevonRight", "surface": "wing", "side": "right", "chordFraction": 0.22, "spanStart": 0.15, "spanEnd": 0.95,
+      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": -1, "elevator": -1 } },
+    { "name": "elevonLeft", "surface": "wing", "side": "left", "chordFraction": 0.22, "spanStart": 0.15, "spanEnd": 0.95,
+      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": 1, "elevator": -1 } }
+  ],
+  "bodies": [ { "name": "pod", "position": [0.05, 0.0, 0], "cdA": [0.004, 0.02, 0.012] } ],
+  "power": "power.json",
+  "gear": [],
+  "hull": [
+    { "name": "nose", "position": [0.32, 0.0, 0], "tag": "nose" },
+    { "name": "belly", "position": [0.08, -0.04, 0], "tag": "belly" },
+    { "name": "bellyAft", "position": [-0.12, -0.03, 0], "tag": "belly" },
+    { "name": "wingtipLeft", "position": [-0.17, 0.0, -0.55], "tag": "wingtip" },
+    { "name": "wingtipRight", "position": [-0.17, 0.0, 0.55], "tag": "wingtip" },
+    { "name": "finTopLeft", "position": [-0.16, 0.12, -0.55], "tag": "wingtip" },
+    { "name": "finTopRight", "position": [-0.16, 0.12, 0.55], "tag": "wingtip" },
+    { "name": "top", "position": [0.05, 0.06, 0], "tag": "canopy" }
+  ],
+  "crash": { "maxGearSinkRate": 2.0, "maxHullImpactSpeed": 1.5, "maxBellyImpactSpeed": 3.0 },
+  "provenance": { "*": "estimated" }
+}

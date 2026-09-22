@@ -1,0 +1,42 @@
+{
+  "name": "Trainer 1.5 m",
+  "description": "High-wing trainer with generous dihedral and tricycle gear. Very forgiving.",
+  "mass": 2.6,
+  "inertia": { "roll": 0.14, "yaw": 0.33, "pitch": 0.22 },
+  "surfaces": [
+    { "name": "wing", "role": "wing", "root": [0.0175, 0.12, 0], "span": 0.75, "rootChord": 0.35, "tipChord": 0.35,
+      "dihedralDeg": 3, "incidenceDeg": 1.0, "airfoil": "clarky", "segments": 6, "mirror": true },
+    { "name": "stab", "role": "horizontalTail", "root": [-0.85, 0.02, 0], "span": 0.26, "rootChord": 0.22, "tipChord": 0.18,
+      "incidenceDeg": 0.0, "airfoil": "naca0012", "segments": 3, "mirror": true },
+    { "name": "fin", "role": "verticalTail", "root": [-0.88, 0.03, 0], "span": 0.22, "rootChord": 0.25, "tipChord": 0.14,
+      "sweepDeg": 25, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 3, "mirror": false }
+  ],
+  "controls": [
+    { "name": "aileronRight", "surface": "wing", "side": "right", "chordFraction": 0.25, "spanStart": 0.4, "spanEnd": 0.95,
+      "maxPositiveDeg": 12, "maxNegativeDeg": 15, "servoSecondsPer60Deg": 0.12, "mix": { "aileron": -1 } },
+    { "name": "aileronLeft", "surface": "wing", "side": "left", "chordFraction": 0.25, "spanStart": 0.4, "spanEnd": 0.95,
+      "maxPositiveDeg": 12, "maxNegativeDeg": 15, "servoSecondsPer60Deg": 0.12, "mix": { "aileron": 1 } },
+    { "name": "elevator", "surface": "stab", "side": "both", "chordFraction": 0.35,
+      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.12, "mix": { "elevator": -1 } },
+    { "name": "rudder", "surface": "fin", "side": "both", "chordFraction": 0.4,
+      "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.12, "mix": { "rudder": -1 } }
+  ],
+  "bodies": [ { "name": "fuselage", "position": [-0.15, 0, 0], "cdA": [0.006, 0.04, 0.035] } ],
+  "power": "power.json",
+  "gear": [
+    { "name": "nose", "position": [0.40, -0.21, 0], "stiffness": 1500, "damping": 40, "maxSteerDeg": 20, "steerMix": { "rudder": 1 } },
+    { "name": "mainLeft", "position": [-0.06, -0.22, -0.20], "stiffness": 2500, "damping": 60 },
+    { "name": "mainRight", "position": [-0.06, -0.22, 0.20], "stiffness": 2500, "damping": 60 }
+  ],
+  "hull": [
+    { "name": "nose", "position": [0.50, 0.0, 0], "tag": "nose" },
+    { "name": "wingtipLeft", "position": [0.0175, 0.159, -0.75], "tag": "wingtip" },
+    { "name": "wingtipRight", "position": [0.0175, 0.159, 0.75], "tag": "wingtip" },
+    { "name": "tail", "position": [-0.95, 0.0, 0], "tag": "tail" },
+    { "name": "finTop", "position": [-0.98, 0.25, 0], "tag": "tail" },
+    { "name": "belly", "position": [0.0, -0.08, 0], "tag": "belly" },
+    { "name": "canopy", "position": [0.20, 0.18, 0], "tag": "canopy" }
+  ],
+  "crash": { "maxGearSinkRate": 2.5, "maxHullImpactSpeed": 1.5, "maxBellyImpactSpeed": 1.5 },
+  "provenance": { "*": "estimated" }
+}

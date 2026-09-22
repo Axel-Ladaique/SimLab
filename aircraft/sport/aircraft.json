@@ -1,0 +1,43 @@
+{
+  "name": "Sport 1.2 m",
+  "description": "Low-wing aerobatic taildragger with a symmetrical airfoil. Crisp roll rate and a clean stall break.",
+  "mass": 2.2,
+  "inertia": { "roll": 0.08, "yaw": 0.23, "pitch": 0.16 },
+  "surfaces": [
+    { "name": "wing", "role": "wing", "root": [0.014, -0.04, 0], "span": 0.6, "rootChord": 0.32, "tipChord": 0.24,
+      "dihedralDeg": 1, "incidenceDeg": 0.5, "airfoil": "naca0012", "segments": 6, "mirror": true },
+    { "name": "stab", "role": "horizontalTail", "root": [-0.72, 0.03, 0], "span": 0.22, "rootChord": 0.19, "tipChord": 0.15,
+      "incidenceDeg": -1.0, "airfoil": "naca0012", "segments": 3, "mirror": true },
+    { "name": "fin", "role": "verticalTail", "root": [-0.74, 0.04, 0], "span": 0.20, "rootChord": 0.22, "tipChord": 0.12,
+      "sweepDeg": 20, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 3, "mirror": false }
+  ],
+  "controls": [
+    { "name": "aileronRight", "surface": "wing", "side": "right", "chordFraction": 0.28, "spanStart": 0.15, "spanEnd": 0.95,
+      "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.08, "mix": { "aileron": -1 } },
+    { "name": "aileronLeft", "surface": "wing", "side": "left", "chordFraction": 0.28, "spanStart": 0.15, "spanEnd": 0.95,
+      "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.08, "mix": { "aileron": 1 } },
+    { "name": "elevator", "surface": "stab", "side": "both", "chordFraction": 0.45,
+      "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.08, "mix": { "elevator": -1 } },
+    { "name": "rudder", "surface": "fin", "side": "both", "chordFraction": 0.5,
+      "maxPositiveDeg": 30, "maxNegativeDeg": 30, "servoSecondsPer60Deg": 0.08, "mix": { "rudder": -1 } }
+  ],
+  "bodies": [ { "name": "fuselage", "position": [-0.10, 0, 0], "cdA": [0.005, 0.035, 0.03] } ],
+  "power": "power.json",
+  "gear": [
+    { "name": "mainLeft", "position": [0.10, -0.20, -0.17], "stiffness": 2500, "damping": 55 },
+    { "name": "mainRight", "position": [0.10, -0.20, 0.17], "stiffness": 2500, "damping": 55 },
+    { "name": "tailwheel", "position": [-0.75, -0.07, 0], "stiffness": 800, "damping": 12,
+      "rollingFriction": 0.05, "lateralFriction": 0.6, "maxSteerDeg": 25, "steerMix": { "rudder": 1 } }
+  ],
+  "hull": [
+    { "name": "nose", "position": [0.50, 0.0, 0], "tag": "nose" },
+    { "name": "wingtipLeft", "position": [0.014, -0.03, -0.60], "tag": "wingtip" },
+    { "name": "wingtipRight", "position": [0.014, -0.03, 0.60], "tag": "wingtip" },
+    { "name": "tail", "position": [-0.80, 0.02, 0], "tag": "tail" },
+    { "name": "finTop", "position": [-0.82, 0.22, 0], "tag": "tail" },
+    { "name": "canopy", "position": [0.10, 0.12, 0], "tag": "canopy" },
+    { "name": "belly", "position": [0.0, -0.08, 0], "tag": "belly" }
+  ],
+  "crash": { "maxGearSinkRate": 2.5, "maxHullImpactSpeed": 1.5, "maxBellyImpactSpeed": 1.5 },
+  "provenance": { "*": "estimated" }
+}

@@ -1,0 +1,9 @@
+{
+  "position": [0.45, 0.0, 0.0],
+  "thrustAxis": [0.9994, 0.0, 0.0349],
+  "spinDirection": 1,
+  "pFactor": 0.1,
+  "motor": { "kv": 750, "resistanceOhm": 0.035, "noLoadCurrentA": 1.3, "maxCurrentA": 65, "rotorInertia": 2.5e-4 },
+  "battery": { "cells": 4, "capacityAh": 2.6, "internalResistanceOhm": 0.03 },
+  "propeller": { "genericDiameterIn": 12, "genericPitchIn": 6 }
+}
