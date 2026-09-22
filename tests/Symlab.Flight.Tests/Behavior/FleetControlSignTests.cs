@@ -1,0 +1,70 @@
+using Symlab.Flight.Aero;
+using Symlab.Flight.Airframe;
+using Symlab.Flight.Controls;
+using Symlab.Flight.Dynamics;
+using Symlab.Flight.Geometry;
+using Symlab.Flight.Terrain;
+
+namespace Symlab.Flight.Tests.Behavior;
+
+/// <summary>Static sign checks of the fleet's control mixing: each stick channel must produce a moment of the right sign.</summary>
+public class FleetControlSignTests
+{
+    static Vec3 AeroMoment(string id, ControlInputs input)
+    {
+        var def = Fleet.Load(id);
+        var aero = new Aircraft(def).Aero;
+        var deflections = def.Controls
+            .Select(c => ControlMapping.CommandToDeflection(ControlInputs.Mix(c.Mix, input), c.MaxPositiveDeg, c.MaxNegativeDeg))
+            .ToArray();
+        var ctx = new AeroContext(new Vec3(Fleet.Cruise(id).Airspeed, 0, 0), Vec3.Zero, 1.225, 100, Vec3.UnitY, deflections, default);
+        return aero.Evaluate(ctx).Moment;
+    }
+
+    static Vec3 MomentDueTo(string id, ControlInputs input) => AeroMoment(id, input) - AeroMoment(id, ControlInputs.Neutral);
+
+    [Theory]
+    [InlineData("trainer")]
+    [InlineData("sport")]
+    [InlineData("wing")]
+    public void Right_aileron_gives_a_right_roll_moment(string id) =>
+        Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Aileron = 0.5 }).X > 0);
+
+    [Theory]
+    [InlineData("trainer")]
+    [InlineData("sport")]
+    [InlineData("wing")]
+    public void Up_elevator_gives_a_nose_up_moment(string id) =>
+        Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Elevator = 0.5 }).Z > 0);
+
+    [Theory]
+    [InlineData("trainer")]
+    [InlineData("sport")]
+    public void Right_rudder_gives_a_nose_right_yaw_moment(string id)
+    {
+        var m = MomentDueTo(id, ControlInputs.Neutral with { Rudder = 0.5 });
+        Assert.True(m.Y < 0, $"{id}: yaw moment {m.Y:F4} N·m (+y is yaw left)");
+    }
+
+    [Theory]
+    [InlineData("trainer")]
+    [InlineData("sport")]
+    public void Right_rudder_steers_the_rolling_aircraft_to_the_right(string id)
+    {
+        var def = Fleet.Load(id);
+        var ground = new Aircraft(def).Ground;
+        var steer = def.Wheels
+            .Select(w => ControlInputs.Mix(w.SteerMix, ControlInputs.Neutral with { Rudder = 1 }) * Angle.Rad(w.MaxSteerDeg))
+            .ToArray();
+        // Pitch the airframe so the steered wheel and the fixed wheels touch together (taildraggers sit tail-down).
+        var steered = def.Wheels.First(w => w.SteerMix.Count > 0).Position;
+        var fixedWheel = def.Wheels.First(w => w.SteerMix.Count == 0).Position;
+        double pitch = Math.Atan((fixedWheel.Y - steered.Y) / (steered.X - fixedWheel.X));
+        var q = Quat.FromAxisAngle(Vec3.UnitZ, pitch);
+        double lowest = def.Wheels.Min(w => q.Rotate(w.Position).Y);
+        var rolling = new RigidBodyState(new Vec3(0, -lowest - 0.01, 0), q.Rotate(new Vec3(3, 0, 0)), q, Vec3.Zero);
+        Assert.Equal(def.Wheels.Count, ground.WheelsInContact(rolling, new FlatTerrain()));
+        var m = ground.Evaluate(rolling, new FlatTerrain(), steer).Moment;
+        Assert.True(m.Y < 0, $"{id}: yaw moment {m.Y:F4} N·m (+y is yaw left)");
+    }
+}
