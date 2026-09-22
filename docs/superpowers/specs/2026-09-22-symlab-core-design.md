@@ -36,15 +36,19 @@ fidelity take priority over visual polish.
 ```
 3_SYMLAB/
 ├─ src/Symlab.Flight/          # pure .NET library, no Godot dependency
-│   ├─ Math/                   # Vec3, Quat (double precision)
-│   ├─ Dynamics/               # RigidBody6Dof state, RK4 fixed-step integrator
-│   ├─ Aero/                   # IAeroModel, SurfaceAeroModel, Surface, Airfoil polars
-│   ├─ Propulsion/             # Motor, Battery, Esc, Propeller, PropWash
-│   ├─ Ground/                 # Wheel (spring-damper, friction, steering, brakes), HullPoint, CrashDetector
-│   ├─ Atmosphere/             # ISA density, WindField (steady + gusts + Dryden turbulence), GroundEffect
-│   ├─ Aircraft/               # AircraftDefinition loaders (JSON), Aircraft (assembled simulation object)
+│   ├─ Geometry/               # Vec3, Quat, Mat3, Attitude (double precision)
+│   ├─ Numerics/               # table interpolation
+│   ├─ Dynamics/               # rigid-body state, mass properties, RK4 fixed-step integrator
+│   ├─ Aero/                   # IAeroModel, SurfaceAeroModel, surface geometry, Airfoil polars, induced flow
+│   ├─ Propulsion/             # Motor, Battery, Esc, Propeller, PowerPlant, thrust-stand and APC import
+│   ├─ Controls/               # ControlInputs, mixing, Servo
+│   ├─ Ground/                 # Wheel (spring-damper, friction, steering), HullPoint, crash detection
+│   ├─ Atmosphere/             # ISA density, WindField (steady + log profile + Dryden turbulence)
+│   ├─ Terrain/                # ITerrain, FlatTerrain, obstacles
+│   ├─ Airframe/               # AircraftDefinition, JSON loader, Aircraft (assembled simulation object)
+│   ├─ Sim/                    # FlightEnvironment, Simulation (fixed-step accumulator), InitialConditions
 │   └─ Recording/              # FlightRecorder (CSV)
-├─ src/Symlab.Input/           # pure .NET: channel pipeline, calibration, mixers
+├─ src/Symlab.Input/           # pure .NET: channel pipeline, calibration wizard, switches, keyboard fallback
 ├─ game/                       # Godot C# project: rendering, terrain, cameras, HUD, menus
 ├─ aircraft/                   # one folder per aircraft (see §5)
 ├─ tests/Symlab.Flight.Tests/  # xUnit
@@ -66,9 +70,11 @@ bit-for-bit reproducible on the same machine.
 ### Coordinate conventions
 
 - World: right-handed, **y-up** (matches Godot), x east, z south. SI units, doubles.
-- Body: x forward, y up, z right-handed → **z points left**. Aero computations use pilot
-  convention (roll right, pitch up, yaw right positive) and convert at the boundary, as in the
-  Sightline mockup. A single conversion helper lives in `Math/` and is covered by tests.
+- Body: **x forward, y up, z right** (right-handed). Positive rotation about +x is roll right,
+  about +z is pitch up, about +y is yaw **left** (yaw-right rate = −ω_y). Aero forces are computed
+  per surface as vectors, so no stability-derivative sign conventions are needed. Mapping to a
+  Godot node basis (−Z forward, +X right) is a fixed rotation in the game layer.
+- Note: the Sightline mockup claimed "z left, right-handed", which is inconsistent; not reused.
 
 ## 4. Flight Model
 
@@ -133,8 +139,8 @@ Each surface has a mechanical deflection range per direction and a servo speed
 
 ### 4.5 Ground contact
 
-- Wheels: spring-damper along strut axis, tire friction (rolling + lateral, with slip),
-  steerable nose/tail wheel, brakes.
+- Wheels: spring-damper along the ground normal, tire friction (rolling + lateral, regularized),
+  steerable nose/tail wheel. Brakes are out of scope (RC aircraft rarely have them).
 - Hull points (wingtips, nose, tail, belly): stiff contact with high friction, used for belly
   landings (flying wing hand-launch/belly land) and crash detection.
 - Obstacles: trees and fences as simple collision volumes.
@@ -145,8 +151,8 @@ Each surface has a mechanical deflection range per direction and a servo speed
 ### 4.6 Atmosphere
 
 - ISA density (field elevation and temperature configurable).
-- Wind: steady speed/direction, gusts, **Dryden turbulence**, a simple wind gradient near the
-  ground (log profile).
+- Wind: steady speed/direction, **Dryden turbulence** (low-altitude MIL-F-8785C model, first-order
+  filters, seeded for reproducibility) providing the gusts, and a log-profile wind gradient near the ground.
 
 ## 5. Aircraft Definition Format
 
@@ -176,11 +182,13 @@ published data; all tagged `estimated`.
 ## 6. Radio Input — `Symlab.Input`
 
 - Channel pipeline, each stage unit-tested:
-  `raw → calibrated → reversed → trim → expo → rates → mixer → servo command`.
+  `raw → calibrated → reversed → trim → expo → rates → stick function`.
+- Mixing (elevons, V-tail, flaperons) is a property of the airframe and lives in `aircraft.json`:
+  each control surface declares a `mix` of stick functions. The radio model used for the sim must
+  have no mixes.
 - Calibration wizard (4 steps, from the mockup): center, extremes, then stick identification by
   moving one stick at a time. Stored per radio GUID in the user config.
-- Mode 1 / Mode 2 selection.
-- Mixers: elevons, V-tail, flaperons.
+- Mode 1 / Mode 2 only changes the wizard's instructions (UI text); identification is by function.
 - Switches assignable to: reset, pause, camera change (later), wind toggle.
 - Sim-side expo and rates default to **neutral** so the pilot trains with their real radio settings.
 - Keyboard fallback for testing without a radio.
