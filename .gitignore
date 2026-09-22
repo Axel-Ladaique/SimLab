@@ -1,0 +1,6 @@
+.godot/
+bin/
+obj/
+*.user
+.DS_Store
+recordings/
