@@ -93,4 +93,36 @@ public class GroundContactTests
         var s = new RigidBodyState(new Vec3(10, 5, 0), new Vec3(10, 0, 0), Quat.Identity, Vec3.Zero);
         Assert.Equal(CrashCause.TreeStrike, model.DetectCrash(s, terrain, Limits));
     }
+
+    static readonly HullPointSpec[] BellyHull =
+    [
+        new("front", new Vec3(0.2, -0.05, 0), "belly"),
+        new("rearLeft", new Vec3(-0.2, -0.05, -0.15), "belly"),
+        new("rearRight", new Vec3(-0.2, -0.05, 0.15), "belly"),
+    ];
+
+    // Each hull point uses the full per-point stiffness/damping (3000/80 * mass), not a share of it;
+    // three points in contact therefore act like three independent springs of 3000 N/m each (mass = 1 kg
+    // here), for a combined 9000 N/m supporting the weight m*g.
+    const double HullSettleDepth = 9.81 / 9000.0;
+
+    [Fact]
+    public void Hull_points_support_the_aircraft_on_its_belly()
+    {
+        var model = new GroundContactModel([], BellyHull, Cart.Mass);
+        var s = Simulate(model, new RigidBodyState(new Vec3(0, 0.05, 0), Vec3.Zero, Quat.Identity, Vec3.Zero), 3);
+        Assert.InRange(s.Position.Y, 0.05 - HullSettleDepth - 0.002, 0.05 - HullSettleDepth + 0.002);
+        Assert.True(s.Velocity.Length < 1e-3, $"velocity {s.Velocity}");
+    }
+
+    [Fact]
+    public void Belly_slide_decelerates_by_friction()
+    {
+        var model = new GroundContactModel([], BellyHull, Cart.Mass);
+        var start = new RigidBodyState(new Vec3(0, 0.05 - HullSettleDepth, 0), new Vec3(5, 0, 0), Quat.Identity, Vec3.Zero);
+        var s = Simulate(model, start, 0.5);
+        Assert.InRange(s.Velocity.X, 1.5, 2.6);
+        Assert.True(s.Velocity.X > 0, $"forward speed {s.Velocity.X}");
+        Assert.True(Math.Abs(s.Velocity.Z) < 1e-6, $"lateral speed {s.Velocity.Z}");
+    }
 }
