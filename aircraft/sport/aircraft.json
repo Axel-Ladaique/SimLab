@@ -19,7 +19,7 @@
     { "name": "elevator", "surface": "stab", "side": "both", "chordFraction": 0.45,
       "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.08, "mix": { "elevator": -1 } },
     { "name": "rudder", "surface": "fin", "side": "both", "chordFraction": 0.5,
-      "maxPositiveDeg": 30, "maxNegativeDeg": 30, "servoSecondsPer60Deg": 0.08, "mix": { "rudder": 1 } }
+      "maxPositiveDeg": 35, "maxNegativeDeg": 35, "servoSecondsPer60Deg": 0.08, "mix": { "rudder": 1 } }
   ],
   "bodies": [ { "name": "fuselage", "position": [-0.10, 0, 0], "cdA": [0.005, 0.035, 0.03] } ],
   "power": "power.json",
