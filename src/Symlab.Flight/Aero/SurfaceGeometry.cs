@@ -44,6 +44,13 @@ public static class SurfaceGeometry
         return 1 - (theta - Math.Sin(theta)) / Math.PI;
     }
 
+    /// <summary>Thin-airfoil quarter-chord pitching-moment coefficient per unit flap deflection, ΔCm_c/4 / δ.</summary>
+    public static double FlapMomentCoefficient(double chordFraction)
+    {
+        double theta = Math.Acos(2 * Math.Clamp(chordFraction, 0, 1) - 1);
+        return -0.5 * Math.Sin(theta) * (1 - Math.Cos(theta));
+    }
+
     static Vec3 Mirror(Vec3 v) => new(v.X, v.Y, -v.Z);
 
     static SurfaceSegment Make(SurfaceSpec spec, Side side, Vec3 position, Vec3 chordAxis, Vec3 normal,

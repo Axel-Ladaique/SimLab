@@ -20,7 +20,7 @@ public readonly record struct AeroContext(
 
 public interface IAeroModel
 {
-    /// <summary>Total aerodynamic force and moment about the CG, body axes. Must not change model state.</summary>
+    /// <summary>Total aerodynamic force and moment about the CG, body axes. May cache inputs used by Advance; must not advance lagged states.</summary>
     BodyLoad Evaluate(in AeroContext ctx);
 
     /// <summary>Advances internal lagged states (e.g. downwash) using the last evaluation.</summary>

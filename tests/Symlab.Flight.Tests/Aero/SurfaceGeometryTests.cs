@@ -44,6 +44,10 @@ public class SurfaceGeometryTests
     public void Flap_effectiveness_matches_thin_airfoil_theory()
         => Assert.Equal(0.609, SurfaceGeometry.FlapEffectiveness(0.25), 3);
 
+    [Fact]
+    public void Flap_moment_coefficient_matches_thin_airfoil_theory()
+        => Assert.Equal(-0.650, SurfaceGeometry.FlapMomentCoefficient(0.25), 3);
+
     static void Approx(Vec3 e, Vec3 a)
     {
         Assert.Equal(e.X, a.X, 6);

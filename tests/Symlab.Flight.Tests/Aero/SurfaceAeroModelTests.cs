@@ -13,6 +13,8 @@ public class SurfaceAeroModelTests
     static readonly ControlSurfaceSpec AileronLeft = AileronRight with { Name = "aileronLeft", Side = Side.Left, Mix = new Dictionary<string, double> { ["aileron"] = 1 } };
     static readonly ControlSurfaceSpec Elevator = new("elevator", "stab", Side.Both, 0.4, 0, 1, 20, 20, 0.1,
         new Dictionary<string, double> { ["elevator"] = -1 });
+    static readonly ControlSurfaceSpec Flap = new("flap", "wing", Side.Both, 0.25, 0, 1, 20, 20, 0.1,
+        new Dictionary<string, double> { ["flap"] = 1 });
 
     static AeroContext Context(Vec3 air, Vec3 omega = default, double[]? deflections = null, PropWash wash = default) =>
         new(air, omega, 1.225, 100, Vec3.UnitY, deflections ?? [0, 0, 0], wash);
@@ -103,6 +105,16 @@ public class SurfaceAeroModelTests
     [Fact]
     public void Overlapping_controls_are_rejected()
         => Assert.Throws<ArgumentException>(() => new SurfaceAeroModel([Wing], TestAirfoils.Map(), [AileronRight, AileronRight with { Name = "flap" }], []));
+
+    [Fact]
+    public void Flap_deflection_creates_a_pitching_moment_from_thin_airfoil_theory()
+    {
+        var model = new SurfaceAeroModel([Wing], TestAirfoils.Map(), [Flap], []);
+        var up = model.Evaluate(Context(Flow(15, 0), deflections: [-0.2]));
+        var down = model.Evaluate(Context(Flow(15, 0), deflections: [0.2]));
+        Assert.True(up.Moment.Z > 0, $"nose-up moment {up.Moment.Z}");
+        Assert.True(down.Moment.Z < 0, $"nose-down moment {down.Moment.Z}");
+    }
 
     [Fact]
     public void Fuselage_body_adds_drag()

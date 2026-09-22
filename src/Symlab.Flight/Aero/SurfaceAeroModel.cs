@@ -87,7 +87,8 @@ public sealed class SurfaceAeroModel : IAeroModel
             double qa = q * seg.Area;
             var f = (liftDir * cl + dragDir * cd) * qa;
             force += f;
-            moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * coeff.Cm);
+            double cm = coeff.Cm + seg.FlapMomentEffectiveness * FlapEfficiency * delta;
+            moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * cm);
 
             if (seg.Role == SurfaceRole.Wing)
             {
@@ -147,6 +148,7 @@ public sealed class SurfaceAeroModel : IAeroModel
                 throw new ArgumentException($"Control '{control.Name}' overlaps another control on surface '{control.Surface}'.");
             seg.ControlIndex = index;
             seg.FlapEffectiveness = SurfaceGeometry.FlapEffectiveness(control.ChordFraction);
+            seg.FlapMomentEffectiveness = SurfaceGeometry.FlapMomentCoefficient(control.ChordFraction);
             seg.ControlChordFraction = control.ChordFraction;
             covered++;
         }

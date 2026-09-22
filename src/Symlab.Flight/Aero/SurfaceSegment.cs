@@ -32,5 +32,6 @@ public sealed class SurfaceSegment
 
     public int ControlIndex { get; set; } = -1;
     public double FlapEffectiveness { get; set; }
+    public double FlapMomentEffectiveness { get; set; }
     public double ControlChordFraction { get; set; }
 }
