@@ -59,8 +59,8 @@ public sealed class SurfaceAeroModel : IAeroModel
         foreach (var seg in _segments)
         {
             var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, seg.Position) + WashAt(ctx.Wash, seg.Position);
-            var c = seg.ChordAxis;
-            var n = seg.NormalAxis;
+            var c = seg.FlowChordAxis;
+            var n = seg.FlowNormalAxis;
             double uc = Vec3.Dot(u, c);
             double un = Vec3.Dot(u, n);
             double v = Math.Sqrt(uc * uc + un * un);

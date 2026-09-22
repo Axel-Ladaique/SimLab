@@ -29,10 +29,11 @@ public static class SurfaceGeometry
             var chordAxis = orientation.Rotate(Vec3.UnitX);
             var normal = orientation.Rotate(Vec3.UnitY);
             var position = spec.Root + dihedral.Rotate(new Vec3(-spec.Span * tm * tanSweep, 0, spec.Span * tm));
+            var spanAxis = dihedral.Rotate(new Vec3(-tanSweep, 0, 1).Normalized());
 
-            segments.Add(Make(spec, Side.Right, position, chordAxis, normal, chord, area, tm, airfoil, inducedFactor));
+            segments.Add(Make(spec, Side.Right, position, chordAxis, normal, spanAxis, chord, area, tm, airfoil, inducedFactor));
             if (spec.Mirror)
-                segments.Add(Make(spec, Side.Left, Mirror(position), Mirror(chordAxis), Mirror(normal), chord, area, tm, airfoil, inducedFactor));
+                segments.Add(Make(spec, Side.Left, Mirror(position), Mirror(chordAxis), Mirror(normal), Mirror(spanAxis), chord, area, tm, airfoil, inducedFactor));
         }
         return segments;
     }
@@ -53,19 +54,27 @@ public static class SurfaceGeometry
 
     static Vec3 Mirror(Vec3 v) => new(v.X, v.Y, -v.Z);
 
-    static SurfaceSegment Make(SurfaceSpec spec, Side side, Vec3 position, Vec3 chordAxis, Vec3 normal,
-        double chord, double area, double spanFraction, Airfoil airfoil, double inducedFactor) => new()
+    static SurfaceSegment Make(SurfaceSpec spec, Side side, Vec3 position, Vec3 chordAxis, Vec3 normal, Vec3 spanAxis,
+        double chord, double area, double spanFraction, Airfoil airfoil, double inducedFactor)
     {
-        SurfaceName = spec.Name,
-        Role = spec.Role,
-        Side = side,
-        Position = position,
-        ChordAxis = chordAxis,
-        NormalAxis = normal,
-        Chord = chord,
-        Area = area,
-        SpanFraction = spanFraction,
-        Airfoil = airfoil,
-        InducedFactor = inducedFactor,
-    };
+        var flowNormal = (normal - spanAxis * Vec3.Dot(normal, spanAxis)).Normalized();
+        var flowChord = Vec3.Cross(flowNormal, spanAxis);
+        if (Vec3.Dot(flowChord, chordAxis) < 0) flowChord = -flowChord;
+        return new SurfaceSegment
+        {
+            SurfaceName = spec.Name,
+            Role = spec.Role,
+            Side = side,
+            Position = position,
+            ChordAxis = chordAxis,
+            NormalAxis = normal,
+            Chord = chord,
+            Area = area,
+            SpanFraction = spanFraction,
+            Airfoil = airfoil,
+            InducedFactor = inducedFactor,
+            FlowChordAxis = flowChord,
+            FlowNormalAxis = flowNormal,
+        };
+    }
 }

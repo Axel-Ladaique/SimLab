@@ -123,4 +123,27 @@ public class SurfaceAeroModelTests
         var load = model.Evaluate(Context(new Vec3(20, 0, 0), deflections: []));
         Assert.Equal(-0.5 * 1.225 * 400 * 0.01, load.Force.X, 9);
     }
+
+    static readonly SurfaceSpec SweptWing = Wing with { SweepDeg = 25 };
+
+    [Fact]
+    public void Swept_wing_in_sideslip_rolls_away_from_the_wind()
+    {
+        // Air from the right (beta > 0): the upwind (right) panel sees less effective sweep and lifts more.
+        double beta = Angle.Rad(5), alpha = Angle.Rad(4);
+        var air = new Vec3(15 * Math.Cos(alpha) * Math.Cos(beta), -15 * Math.Sin(alpha) * Math.Cos(beta), 15 * Math.Sin(beta));
+        var swept = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [], []).Evaluate(Context(air, deflections: []));
+        var straight = new SurfaceAeroModel([Wing], TestAirfoils.Map(), [], []).Evaluate(Context(air, deflections: []));
+        Assert.Equal(0, straight.Moment.X, 6);
+        Assert.True(swept.Moment.X < -0.05, $"roll moment {swept.Moment.X:F4} N·m");
+    }
+
+    [Fact]
+    public void Sweep_reduces_the_lift_slope_by_the_cosine_of_the_sweep()
+    {
+        var flow = Flow(15, 3);
+        double straight = new SurfaceAeroModel([Wing], TestAirfoils.Map(), [], []).Evaluate(Context(flow, deflections: [])).Force.Y;
+        double swept = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [], []).Evaluate(Context(flow, deflections: [])).Force.Y;
+        Assert.InRange(swept / straight, 0.88, 0.95);
+    }
 }

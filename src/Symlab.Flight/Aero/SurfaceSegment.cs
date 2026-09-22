@@ -19,6 +19,16 @@ public sealed class SurfaceSegment
     public required Vec3 NormalAxis { get; init; }
 
     public Vec3 PitchAxis => Vec3.Cross(ChordAxis, NormalAxis);
+
+    /// <summary>
+    /// In-plane axes perpendicular to the swept quarter-chord line (simple sweep theory): the flow component
+    /// along the swept span carries no lift, so the section sees only the flow projected on these two axes.
+    /// Equal to <see cref="ChordAxis"/> and <see cref="NormalAxis"/> for an unswept surface.
+    /// </summary>
+    public required Vec3 FlowChordAxis { get; init; }
+
+    /// <inheritdoc cref="FlowChordAxis"/>
+    public required Vec3 FlowNormalAxis { get; init; }
     public required double Chord { get; init; }
     public required double Area { get; init; }
 
