@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Symlab.Flight.Aero;
 using Symlab.Flight.Controls;
 using Symlab.Flight.Dynamics;
+using Symlab.Flight.Geometry;
 using Symlab.Flight.Ground;
 using Symlab.Flight.Numerics;
 using Symlab.Flight.Propulsion;
@@ -26,6 +27,7 @@ public static class AircraftLoader
         if (dto.Mass <= 0) throw Invalid(path, "mass must be positive.");
         if (dto.Surfaces.Count == 0) throw Invalid(path, "at least one surface is required.");
         var mass = Mass(path, dto);
+        var cg = dto.Cg; // positions in the file are relative to this datum; the body origin is the CG
 
         foreach (var s in dto.Surfaces)
         {
@@ -36,7 +38,7 @@ public static class AircraftLoader
         }
 
         var surfaces = dto.Surfaces.Select(s => new SurfaceSpec(
-            s.Name, s.Role, s.Root, s.Span, s.RootChord, s.TipChord, s.SweepDeg, s.DihedralDeg,
+            s.Name, s.Role, s.Root - cg, s.Span, s.RootChord, s.TipChord, s.SweepDeg, s.DihedralDeg,
             s.IncidenceDeg, s.TwistDeg, s.Airfoil, s.Segments, s.Mirror, s.Oswald)).ToList();
 
         var airfoils = surfaces.Select(s => s.Airfoil).Distinct()
@@ -59,7 +61,7 @@ public static class AircraftLoader
         var controls = dto.Controls.Select(c => new ControlSurfaceSpec(
             c.Name, c.Surface, c.Side, c.ChordFraction, c.SpanStart, c.SpanEnd,
             c.MaxPositiveDeg, c.MaxNegativeDeg, c.ServoSecondsPer60Deg, c.Mix)).ToList();
-        var bodies = dto.Bodies.Select(b => new BodySpec(b.Name, b.Position, b.CdA)).ToList();
+        var bodies = dto.Bodies.Select(b => new BodySpec(b.Name, b.Position - cg, b.CdA)).ToList();
 
         // Build the parts an Aircraft builds, so geometry and control-layout errors surface here with the file name.
         try
@@ -81,13 +83,15 @@ public static class AircraftLoader
             airfoils,
             controls,
             bodies,
-            dto.Power is null ? null : LoadPower(Path.Combine(folder, dto.Power)),
-            dto.Gear.Select(w => new WheelSpec(w.Name, w.Position, w.Stiffness, w.Damping, w.RollingFriction,
+            dto.Power is null ? null : Shift(LoadPower(Path.Combine(folder, dto.Power)), cg),
+            dto.Gear.Select(w => new WheelSpec(w.Name, w.Position - cg, w.Stiffness, w.Damping, w.RollingFriction,
                 w.LateralFriction, w.MaxSteerDeg, w.SteerMix)).ToList(),
-            dto.Hull.Select(h => new HullPointSpec(h.Name, h.Position, h.Tag)).ToList(),
+            dto.Hull.Select(h => new HullPointSpec(h.Name, h.Position - cg, h.Tag)).ToList(),
             new CrashLimits(dto.Crash.MaxGearSinkRate, dto.Crash.MaxHullImpactSpeed, dto.Crash.MaxBellyImpactSpeed),
             dto.Provenance);
     }
+
+    static PowerPlantSpec Shift(PowerPlantSpec power, Vec3 cg) => power with { Position = power.Position - cg };
 
     static MassProperties Mass(string path, AircraftDto dto)
     {

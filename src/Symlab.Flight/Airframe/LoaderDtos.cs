@@ -8,6 +8,7 @@ internal sealed class AircraftDto
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
     public double Mass { get; set; }
+    public Vec3 Cg { get; set; }
     public InertiaDto Inertia { get; set; } = new();
     public List<SurfaceDto> Surfaces { get; set; } = new();
     public List<ControlDto> Controls { get; set; } = new();

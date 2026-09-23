@@ -27,5 +27,8 @@ Requires the .NET 10 SDK (`brew install --cask dotnet-sdk`).
 ## Conventions
 
 - SI units, doubles. World: y-up, x east, z south. Body: x forward, y up, z right.
+- Body origin is the CG. `aircraft.json` may set an optional `"cg": [x, y, z]` datum (default `[0, 0, 0]`); the loader
+  subtracts it from every position in the file (surface roots, bodies, gear, hull points, power position), so
+  positions can be measured from any convenient reference such as the firewall or the wing leading edge.
 - Control deflection: positive = trailing edge down. Mixing (elevons, V-tail) is declared per control surface in
   `aircraft.json`.

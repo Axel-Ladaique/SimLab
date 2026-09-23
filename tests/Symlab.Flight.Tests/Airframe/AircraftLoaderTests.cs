@@ -1,5 +1,7 @@
 using Symlab.Flight.Aero;
 using Symlab.Flight.Airframe;
+using Symlab.Flight.Geometry;
+using Symlab.Flight.Tests.Behavior;
 
 namespace Symlab.Flight.Tests.Airframe;
 
@@ -146,6 +148,30 @@ public sealed class AircraftLoaderTests : IDisposable
     [Fact]
     public void Battery_without_capacity_is_rejected()
         => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"capacityAh\": 2.2", "\"capacityAh\": 0"));
+
+    [Fact]
+    public void Cg_datum_shifts_every_body_position()
+    {
+        var withBody = Edit(Aircraft(), "\"power\": \"power.json\",",
+            "\"bodies\": [ { \"name\": \"pod\", \"position\": [0.1, 0, 0], \"cdA\": [0.01, 0.02, 0.02] } ], \"power\": \"power.json\",");
+        var plain = AircraftLoader.Load(Write(withBody));
+        var shifted = AircraftLoader.Load(Write(Edit(withBody, "\"mass\": 1.2,", "\"mass\": 1.2, \"cg\": [0.05, 0, 0],")));
+        var d = new Vec3(-0.05, 0, 0);
+
+        Assert.Equal(plain.Surfaces[0].Root + d, shifted.Surfaces[0].Root);
+        Assert.Equal(plain.Bodies[0].Position + d, shifted.Bodies[0].Position);
+        Assert.Equal(plain.Wheels[0].Position + d, shifted.Wheels[0].Position);
+        Assert.Equal(plain.Hull[0].Position + d, shifted.Hull[0].Position);
+        Assert.Equal(plain.Power!.Position + d, shifted.Power!.Position);
+    }
+
+    [Fact]
+    public void Shipped_aircraft_keep_their_positions_without_a_cg_datum()
+    {
+        var def = Fleet.Load("trainer");
+        Assert.Equal(new Vec3(0.0175, 0.12, 0), def.Surfaces.Single(s => s.Name == "wing").Root);
+        Assert.Equal(new Vec3(0.40, -0.21, 0), def.Wheels.Single(w => w.Name == "nose").Position);
+    }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }
