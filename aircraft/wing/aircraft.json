@@ -4,8 +4,8 @@
   "mass": 1.1,
   "inertia": { "roll": 0.05, "yaw": 0.08, "pitch": 0.03 },
   "surfaces": [
-    { "name": "wing", "role": "wing", "root": [0.103, 0.0, 0], "span": 0.55, "rootChord": 0.30, "tipChord": 0.15,
-      "sweepDeg": 25, "dihedralDeg": 2, "incidenceDeg": 2.0, "twistDeg": -2.0, "airfoil": "reflex-mh45", "segments": 8, "mirror": true },
+    { "name": "wing", "role": "wing", "root": [0.107, 0.0, 0], "span": 0.55, "rootChord": 0.30, "tipChord": 0.15,
+      "sweepDeg": 25, "incidenceDeg": 2.0, "twistDeg": -2.0, "airfoil": "reflex-mh45", "segments": 8, "mirror": true },
     { "name": "winglets", "role": "verticalTail", "root": [-0.13, 0.0, 0.55], "span": 0.12, "rootChord": 0.12, "tipChord": 0.08,
       "sweepDeg": 30, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 2, "mirror": true }
   ],
