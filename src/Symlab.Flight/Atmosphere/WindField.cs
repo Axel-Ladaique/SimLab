@@ -16,6 +16,8 @@ public sealed class WindField
 
     public WindField(WindSettings settings, int seed)
     {
+        if (settings.RoughnessLength <= 0)
+            throw new ArgumentOutOfRangeException(nameof(settings), settings.RoughnessLength, "RoughnessLength must be positive.");
         Settings = settings;
         _seed = seed;
         _random = new Random(seed);

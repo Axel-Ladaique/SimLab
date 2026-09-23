@@ -85,4 +85,10 @@ public class WindFieldTests
         Assert.Equal(Vec3.Zero, wind.Turbulence);
         for (int i = 0; i < 500; i++) { wind.Advance(0.002, 20, 12); Assert.Equal(first[i], wind.Turbulence); }
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-0.1)]
+    public void Non_positive_roughness_length_is_rejected(double z0)
+        => Assert.Throws<ArgumentOutOfRangeException>(() => new WindField(new WindSettings(5, 0, 0, z0), 1));
 }

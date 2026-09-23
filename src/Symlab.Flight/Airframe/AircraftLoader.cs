@@ -25,6 +25,15 @@ public static class AircraftLoader
         var dto = Read<AircraftDto>(path);
         if (dto.Mass <= 0) throw Invalid(path, "mass must be positive.");
         if (dto.Surfaces.Count == 0) throw Invalid(path, "at least one surface is required.");
+        var mass = Mass(path, dto);
+
+        foreach (var s in dto.Surfaces)
+        {
+            if (s.Segments < 1) throw Invalid(path, $"surface '{s.Name}' needs at least one segment.");
+            if (s.Span <= 0 || s.RootChord <= 0 || s.TipChord <= 0)
+                throw Invalid(path, $"surface '{s.Name}' span and chords must be positive.");
+            if (s.Oswald <= 0) throw Invalid(path, $"surface '{s.Name}' oswald must be positive.");
+        }
 
         var surfaces = dto.Surfaces.Select(s => new SurfaceSpec(
             s.Name, s.Role, s.Root, s.Span, s.RootChord, s.TipChord, s.SweepDeg, s.DihedralDeg,
@@ -37,29 +46,63 @@ public static class AircraftLoader
         foreach (var c in dto.Controls)
         {
             if (!surfaceNames.Contains(c.Surface)) throw Invalid(path, $"control '{c.Name}' references unknown surface '{c.Surface}'.");
+            if (c.Mix is null) throw Invalid(path, $"control '{c.Name}' needs a mix (use {{}} for none).");
+            if (c.ServoSecondsPer60Deg <= 0) throw Invalid(path, $"control '{c.Name}' servoSecondsPer60Deg must be positive.");
             RequireChannels(path, c.Name, c.Mix.Keys);
         }
-        foreach (var w in dto.Gear) RequireChannels(path, w.Name, w.SteerMix.Keys);
+        foreach (var w in dto.Gear)
+        {
+            if (w.SteerMix is null) throw Invalid(path, $"wheel '{w.Name}' needs a steerMix (use {{}} for none).");
+            RequireChannels(path, w.Name, w.SteerMix.Keys);
+        }
 
         var controls = dto.Controls.Select(c => new ControlSurfaceSpec(
             c.Name, c.Surface, c.Side, c.ChordFraction, c.SpanStart, c.SpanEnd,
             c.MaxPositiveDeg, c.MaxNegativeDeg, c.ServoSecondsPer60Deg, c.Mix)).ToList();
+        var bodies = dto.Bodies.Select(b => new BodySpec(b.Name, b.Position, b.CdA)).ToList();
+
+        // Build the parts an Aircraft builds, so geometry and control-layout errors surface here with the file name.
+        try
+        {
+            _ = new SurfaceAeroModel(surfaces, airfoils, controls, bodies);
+            foreach (var c in controls) _ = new Servo(c.ServoSecondsPer60Deg);
+        }
+        catch (ArgumentException ex)
+        {
+            throw Invalid(path, ex.Message);
+        }
 
         return new AircraftDefinition(
             dto.Name,
             dto.Description,
             folder,
-            MassProperties.FromPrincipal(dto.Mass, dto.Inertia.Roll, dto.Inertia.Yaw, dto.Inertia.Pitch, dto.Inertia.RollYaw),
+            mass,
             surfaces,
             airfoils,
             controls,
-            dto.Bodies.Select(b => new BodySpec(b.Name, b.Position, b.CdA)).ToList(),
+            bodies,
             dto.Power is null ? null : LoadPower(Path.Combine(folder, dto.Power)),
             dto.Gear.Select(w => new WheelSpec(w.Name, w.Position, w.Stiffness, w.Damping, w.RollingFriction,
                 w.LateralFriction, w.MaxSteerDeg, w.SteerMix)).ToList(),
             dto.Hull.Select(h => new HullPointSpec(h.Name, h.Position, h.Tag)).ToList(),
             new CrashLimits(dto.Crash.MaxGearSinkRate, dto.Crash.MaxHullImpactSpeed, dto.Crash.MaxBellyImpactSpeed),
             dto.Provenance);
+    }
+
+    static MassProperties Mass(string path, AircraftDto dto)
+    {
+        var i = dto.Inertia;
+        // Positive definite: principal terms positive and the roll-yaw block non-singular.
+        if (i.Roll <= 0 || i.Yaw <= 0 || i.Pitch <= 0 || i.Roll * i.Yaw - i.RollYaw * i.RollYaw <= 1e-12 * i.Roll * i.Yaw)
+            throw Invalid(path, "inertia must be positive definite (roll, yaw, pitch > 0 and rollYaw² < roll·yaw).");
+        try
+        {
+            return MassProperties.FromPrincipal(dto.Mass, i.Roll, i.Yaw, i.Pitch, i.RollYaw);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            throw Invalid(path, ex.Message);
+        }
     }
 
     public static Airfoil LoadAirfoil(string aircraftFolder, string name)
@@ -88,6 +131,8 @@ public static class AircraftLoader
         if (dto.Motor is null || dto.Battery is null || dto.Propeller is null)
             throw Invalid(path, "motor, battery and propeller are required.");
         if (dto.Motor.Kv <= 0 || dto.Motor.RotorInertia <= 0) throw Invalid(path, "motor kv and rotorInertia must be positive.");
+        if (dto.Battery.Cells < 1) throw Invalid(path, "battery cells must be at least 1.");
+        if (dto.Battery.CapacityAh <= 0) throw Invalid(path, "battery capacityAh must be positive.");
 
         var esc = dto.Esc is null ? EscSpec.Linear() : new EscSpec(dto.Esc.ThrottleIn, dto.Esc.ThrottleOut, dto.Esc.Brake);
         Interpolation.RequireIncreasing(esc.ThrottleIn, "esc.throttleIn");

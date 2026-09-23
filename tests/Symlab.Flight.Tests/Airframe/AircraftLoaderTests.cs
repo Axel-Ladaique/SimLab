@@ -40,14 +40,14 @@ public sealed class AircraftLoaderTests : IDisposable
         }
         """;
 
-    string Write(string aircraftJson, bool sharedAirfoil = false)
+    string Write(string aircraftJson, bool sharedAirfoil = false, string power = Power)
     {
         var folder = Path.Combine(_root, "plane");
         Directory.CreateDirectory(folder);
         var airfoilDir = sharedAirfoil ? Path.Combine(_root, "airfoils") : Path.Combine(folder, "airfoils");
         Directory.CreateDirectory(airfoilDir);
         File.WriteAllText(Path.Combine(airfoilDir, "flat.json"), Airfoil);
-        File.WriteAllText(Path.Combine(folder, "power.json"), Power);
+        File.WriteAllText(Path.Combine(folder, "power.json"), power);
         File.WriteAllText(Path.Combine(folder, "aircraft.json"), aircraftJson);
         return folder;
     }
@@ -88,6 +88,64 @@ public sealed class AircraftLoaderTests : IDisposable
         var ex = Assert.Throws<InvalidDataException>(() => AircraftLoader.Load(Write("{ not json")));
         Assert.Contains("aircraft.json", ex.Message);
     }
+
+    static string Edit(string json, string find, string replace)
+    {
+        Assert.Contains(find, json);
+        return json.Replace(find, replace);
+    }
+
+    void AssertRejected(string aircraftJson, string file = "aircraft.json", string power = Power)
+    {
+        var ex = Assert.Throws<InvalidDataException>(() => AircraftLoader.Load(Write(aircraftJson, power: power)));
+        Assert.Contains(file, ex.Message);
+    }
+
+    [Fact]
+    public void Overlapping_controls_are_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"controls\": [", """
+            "controls": [ { "name": "flap", "surface": "wing", "side": "right", "spanStart": 0.4, "spanEnd": 0.8, "mix": { "flap": 1 } },
+            """));
+
+    [Fact]
+    public void Zero_oswald_factor_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"segments\": 4,", "\"segments\": 4, \"oswald\": 0,"));
+
+    [Fact]
+    public void Surface_without_segments_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"segments\": 4,", "\"segments\": 0,"));
+
+    [Fact]
+    public void Zero_chord_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"tipChord\": 0.15", "\"tipChord\": 0"));
+
+    [Fact]
+    public void Singular_inertia_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"pitch\": 0.04 }", "\"pitch\": 0.04, \"rollYaw\": 0.06324555320336759 }"));
+
+    [Fact]
+    public void Non_positive_inertia_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"roll\": 0.05", "\"roll\": 0"));
+
+    [Fact]
+    public void Non_positive_servo_speed_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"maxNegativeDeg\": 15,", "\"maxNegativeDeg\": 15, \"servoSecondsPer60Deg\": 0,"));
+
+    [Fact]
+    public void Null_mix_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"mix\": { \"aileron\": -1 }", "\"mix\": null"));
+
+    [Fact]
+    public void Null_steer_mix_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"steerMix\": { \"rudder\": 1 }", "\"steerMix\": null"));
+
+    [Fact]
+    public void Battery_without_cells_is_rejected()
+        => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"cells\": 3", "\"cells\": 0"));
+
+    [Fact]
+    public void Battery_without_capacity_is_rejected()
+        => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"capacityAh\": 2.2", "\"capacityAh\": 0"));
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }
