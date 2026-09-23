@@ -10,12 +10,14 @@ public sealed class WindField
 {
     const double ReferenceHeight = 10.0;
     const double TwentyFeet = 6.1;
-    readonly Random _random;
+    readonly int _seed;
+    Random _random;
     double _u, _v, _w;
 
     public WindField(WindSettings settings, int seed)
     {
         Settings = settings;
+        _seed = seed;
         _random = new Random(seed);
     }
 
@@ -38,6 +40,14 @@ public sealed class WindField
         double h = Math.Max(heightAgl, 0.5);
         double speed = Settings.SpeedAt10m * Math.Log(h / z0) / Math.Log(ReferenceHeight / z0);
         return Downwind * speed;
+    }
+
+    /// <summary>Restarts the turbulence: re-seeds the generator with the constructor seed and zeroes the filter states.</summary>
+    public void Reset()
+    {
+        _random = new Random(_seed);
+        _u = _v = _w = 0;
+        Turbulence = Vec3.Zero;
     }
 
     public Vec3 At(double heightAgl) => SteadyAt(heightAgl) + Turbulence;

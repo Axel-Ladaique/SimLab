@@ -74,4 +74,15 @@ public class WindFieldTests
         for (int i = 0; i < 500; i++) { a.Advance(0.002, 20, 12); b.Advance(0.002, 20, 12); }
         Assert.Equal(a.Turbulence, b.Turbulence);
     }
+
+    [Fact]
+    public void Reset_restarts_the_turbulence_sequence()
+    {
+        var wind = new WindField(new WindSettings(6, 0, 1), 7);
+        var first = new List<Vec3>();
+        for (int i = 0; i < 500; i++) { wind.Advance(0.002, 20, 12); first.Add(wind.Turbulence); }
+        wind.Reset();
+        Assert.Equal(Vec3.Zero, wind.Turbulence);
+        for (int i = 0; i < 500; i++) { wind.Advance(0.002, 20, 12); Assert.Equal(first[i], wind.Turbulence); }
+    }
 }

@@ -33,6 +33,7 @@ public sealed class Simulation
     public void Reset(RigidBodyState state)
     {
         Aircraft.Reset(state);
+        Environment.Wind.Reset();
         Previous = state;
         Time = 0;
         _accumulator = 0;

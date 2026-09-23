@@ -1,8 +1,10 @@
 using Symlab.Flight.Airframe;
+using Symlab.Flight.Atmosphere;
 using Symlab.Flight.Controls;
 using Symlab.Flight.Geometry;
 using Symlab.Flight.Ground;
 using Symlab.Flight.Sim;
+using Symlab.Flight.Terrain;
 using Symlab.Flight.Tests.Airframe;
 
 namespace Symlab.Flight.Tests.Sim;
@@ -84,8 +86,49 @@ public class SimulationTests
     public void On_ground_start_puts_the_lowest_point_on_the_terrain()
     {
         var def = TestDefinitions.Glider();
-        var s = InitialConditions.OnGround(def, new Symlab.Flight.Terrain.FlatTerrain(10), 0, 0, 90);
+        var s = InitialConditions.OnGround(def, new FlatTerrain(10), 0, 0, 90);
         Assert.Equal(10.051, s.Position.Y, 6);
         Assert.Equal(1.0, s.Orientation.Rotate(Vec3.UnitX).X, 9);
+    }
+
+    static Simulation GliderInWind(WindSettings wind, double altitude = 50, double speed = 12)
+    {
+        var env = new FlightEnvironment(new FlatTerrain(), new WindField(wind, seed: 3));
+        var sim = new Simulation(new Aircraft(TestDefinitions.Glider()), env);
+        var start = InitialConditions.InFlight(new Vec3(0, altitude, 0), headingDeg: 0, airspeed: speed);
+        sim.Reset(start with { Velocity = start.Velocity + env.Wind.SteadyAt(altitude) }); // start at the given airspeed
+        return sim;
+    }
+
+    [Fact]
+    public void Reset_with_turbulence_replays_bit_identically()
+    {
+        var sim = GliderInWind(new WindSettings(6, 270, 1));
+        var start = sim.Aircraft.State;
+        var input = new ControlInputs(0, 0.1, 0.2, 0);
+        for (int i = 0; i < 1000; i++) sim.StepOnce(input);
+        var first = sim.Aircraft.State;
+
+        sim.Reset(start);
+        for (int i = 0; i < 1000; i++) sim.StepOnce(input);
+        Assert.Equal(first, sim.Aircraft.State);
+    }
+
+    [Theory]
+    [InlineData(0, true)]     // wind from the north, glider heading north: headwind
+    [InlineData(180, false)]  // wind from the south: tailwind
+    public void Steady_wind_changes_ground_speed_but_not_airspeed(double fromDeg, bool headwind)
+    {
+        var sim = GliderInWind(new WindSettings(SpeedAt10m: 4, FromDirectionDeg: fromDeg));
+        for (int i = 0; i < 1500; i++) sim.StepOnce(ControlInputs.Neutral);
+        var s = sim.Aircraft.State;
+        var wind = sim.Environment.Wind.At(s.Position.Y);
+        double airspeed = sim.Aircraft.AirData.Airspeed;
+        double groundSpeed = s.Velocity.Length;
+
+        Assert.Equal(CrashCause.None, sim.Aircraft.Crash);
+        Assert.Equal((s.Velocity - wind).Length, airspeed, 2);
+        if (headwind) Assert.True(groundSpeed < airspeed - 2, $"ground {groundSpeed:F2} air {airspeed:F2}");
+        else Assert.True(groundSpeed > airspeed + 2, $"ground {groundSpeed:F2} air {airspeed:F2}");
     }
 }
