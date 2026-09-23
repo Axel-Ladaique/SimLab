@@ -43,7 +43,11 @@ public partial class Main : Node
             var eye = Symlab.App.Field.ClubField.PilotPosition.ToGodot() + new Vector3(0, (float)Symlab.App.Field.ClubField.EyeHeight, 0);
             var camera = new Camera3D { Current = true, Fov = (float)_services.Settings.FovDeg, Far = 4000f };
             preview.AddChild(camera);
-            camera.LookAtFromPosition(eye, new Vector3(45, 6, 15), Vector3.Up);
+            // Aim between the runway's east half and the windsock so the screenshot keeps both in frame
+            // (the windsock sits close to the pilot, well off the runway's own axis).
+            var runwayEastQuarter = new Vector3((float)(Symlab.App.Field.ClubField.RunwayLength / 4), 4f, 0f);
+            var windsockAim = Symlab.App.Field.ClubField.WindsockPosition.ToGodot() + new Vector3(0, 3f, 0);
+            camera.LookAtFromPosition(eye, (runwayEastQuarter + windsockAim) / 2f, Vector3.Up);
             CaptureAfterFrames(20, fieldShot);
             return;
         }

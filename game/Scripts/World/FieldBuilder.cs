@@ -10,8 +10,8 @@ namespace Symlab.Game.World;
 public static class FieldBuilder
 {
     const float GridStep = 10f;
-    static readonly Color Grass = new(0.30f, 0.47f, 0.19f);
-    static readonly Color Mowed = new(0.40f, 0.60f, 0.26f);
+    static readonly Color Grass = new(0.14f, 0.34f, 0.10f);
+    static readonly Color Mowed = new(0.20f, 0.44f, 0.14f);
     static readonly Color Gravel = new(0.55f, 0.52f, 0.47f);
 
     public static WindsockNode Build(Node3D root, ClubFieldTerrain terrain, FlightConditions conditions)
@@ -35,10 +35,10 @@ public static class FieldBuilder
         {
             SkyMaterial = new ProceduralSkyMaterial
             {
-                SkyTopColor = new Color(0.30f, 0.50f, 0.85f),
-                SkyHorizonColor = new Color(0.72f, 0.80f, 0.90f),
-                GroundHorizonColor = new Color(0.60f, 0.62f, 0.55f),
-                GroundBottomColor = new Color(0.25f, 0.30f, 0.20f),
+                SkyTopColor = new Color(0.05f, 0.20f, 0.55f),
+                SkyHorizonColor = new Color(0.30f, 0.45f, 0.65f),
+                GroundHorizonColor = new Color(0.35f, 0.38f, 0.30f),
+                GroundBottomColor = new Color(0.12f, 0.15f, 0.10f),
                 SunAngleMax = 30f,
             },
         };
@@ -47,10 +47,15 @@ public static class FieldBuilder
             BackgroundMode = Godot.Environment.BGMode.Sky,
             Sky = sky,
             AmbientLightSource = Godot.Environment.AmbientSource.Sky,
-            TonemapMode = Godot.Environment.ToneMapper.Filmic,
+            AmbientLightEnergy = 0.35f,
+            TonemapMode = Godot.Environment.ToneMapper.Linear,
             FogEnabled = true,
-            FogLightColor = new Color(0.75f, 0.80f, 0.88f),
-            FogDensity = 0.0004f,
+            FogLightColor = new Color(0.60f, 0.66f, 0.75f),
+            FogDensity = 0.00008f,
+            // Fog otherwise fully replaces the skybox at long (effectively infinite) view distance,
+            // washing the sky out to FogLightColor regardless of density; keep it to hazing the
+            // terrain and tree lines only.
+            FogSkyAffect = 0f,
         };
         return new WorldEnvironment { Environment = environment };
     }
@@ -62,7 +67,7 @@ public static class FieldBuilder
         return new DirectionalLight3D
         {
             ShadowEnabled = true,
-            LightEnergy = 1.2f,
+            LightEnergy = 1.0f,
             Transform = Transform3D.Identity.LookingAt(-toSun, up),
         };
     }
@@ -115,7 +120,13 @@ public static class FieldBuilder
         var material = new StandardMaterial3D { AlbedoColor = new Color(0.45f, 0.33f, 0.20f) };
         for (float x = -10; x <= 10; x += 2)
             fence.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.08f, 1.1f, 0.08f) }, Position = new Vector3(x, 0.55f, z), MaterialOverride = material });
-        fence.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(20f, 0.06f, 0.04f) }, Position = new Vector3(0, 1.0f, z), MaterialOverride = material });
+        fence.AddChild(new MeshInstance3D
+        {
+            Mesh = new BoxMesh { Size = new Vector3(20f, 0.06f, 0.04f) },
+            Position = new Vector3(0, 1.0f, z),
+            MaterialOverride = material,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        });
         return fence;
     }
 
