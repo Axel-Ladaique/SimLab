@@ -146,4 +146,40 @@ public class SurfaceAeroModelTests
         double swept = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [], []).Evaluate(Context(flow, deflections: [])).Force.Y;
         Assert.InRange(swept / straight, 0.88, 0.95);
     }
+
+    [Fact]
+    public void Swept_wing_incidence_is_equivalent_to_the_same_angle_of_attack()
+    {
+        // Rotating the whole wing by its incidence i must look exactly like flying the unrotated wing at alpha = i.
+        const double i = 2;
+        var set = new SurfaceAeroModel([SweptWing with { IncidenceDeg = i }], TestAirfoils.Map(), [], [])
+            .Evaluate(Context(Flow(15, 0), deflections: []));
+        var flown = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [], [])
+            .Evaluate(Context(Flow(15, i), deflections: []));
+        double liftSet = set.Force.Y;
+        double liftFlown = flown.Force.Y * Math.Cos(Angle.Rad(i)) + flown.Force.X * Math.Sin(Angle.Rad(i));
+        Assert.InRange(liftSet / liftFlown, 0.99, 1.01);
+    }
+
+    [Fact]
+    public void Swept_section_moment_acts_about_the_swept_axis_with_normal_chord_and_normal_flow()
+    {
+        // Simple sweep theory: a section of the swept panel sees q_n = q cos²Λ, has chord c_n = c cosΛ and
+        // pitches about the swept quarter-chord line, whose body-z component is cosΛ. At zero lift the only
+        // pitching moment is the section Cm, so Mz = q S c Cm cos⁴Λ and the two panels' roll parts cancel.
+        const double cm = -0.05, sweep = 25, speed = 15;
+        double[] alpha = [-10, -5, 0, 5, 10];
+        var cambered = new Airfoil("cm", [new AirfoilTable(200_000, alpha,
+            alpha.Select(a => 2 * Math.PI * Angle.Rad(a)).ToArray(),
+            alpha.Select(_ => 0.01).ToArray(),
+            alpha.Select(_ => cm).ToArray())]);
+        var wing = Wing with { SweepDeg = sweep, Airfoil = "cm" };
+        var load = new SurfaceAeroModel([wing], new Dictionary<string, Airfoil> { ["cm"] = cambered }, [], [])
+            .Evaluate(Context(Flow(speed, 0), deflections: []));
+
+        double q = 0.5 * 1.225 * speed * speed;
+        double expected = q * wing.TotalArea * wing.RootChord * cm * Math.Pow(Math.Cos(Angle.Rad(sweep)), 4);
+        Assert.Equal(expected, load.Moment.Z, 1e-9);
+        Assert.Equal(0, load.Moment.X, 9);
+    }
 }

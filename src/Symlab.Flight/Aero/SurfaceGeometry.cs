@@ -29,7 +29,9 @@ public static class SurfaceGeometry
             var chordAxis = orientation.Rotate(Vec3.UnitX);
             var normal = orientation.Rotate(Vec3.UnitY);
             var position = spec.Root + dihedral.Rotate(new Vec3(-spec.Span * tm * tanSweep, 0, spec.Span * tm));
-            var spanAxis = dihedral.Rotate(new Vec3(-tanSweep, 0, 1).Normalized());
+            // The swept quarter-chord line turns with the section (dihedral, incidence and twist), so setting the
+            // surface at incidence i is the same as flying it at angle of attack i.
+            var spanAxis = orientation.Rotate(new Vec3(-tanSweep, 0, 1).Normalized());
 
             segments.Add(Make(spec, Side.Right, position, chordAxis, normal, spanAxis, chord, area, tm, airfoil, inducedFactor));
             if (spec.Mirror)
@@ -57,7 +59,10 @@ public static class SurfaceGeometry
     static SurfaceSegment Make(SurfaceSpec spec, Side side, Vec3 position, Vec3 chordAxis, Vec3 normal, Vec3 spanAxis,
         double chord, double area, double spanFraction, Airfoil airfoil, double inducedFactor)
     {
-        var flowNormal = (normal - spanAxis * Vec3.Dot(normal, spanAxis)).Normalized();
+        // The section plane of simple sweep theory is perpendicular to the swept span line; its normal is
+        // perpendicular to the plane that holds the streamwise chord and the swept span line.
+        var flowNormal = Vec3.Cross(spanAxis, chordAxis).Normalized();
+        if (Vec3.Dot(flowNormal, normal) < 0) flowNormal = -flowNormal;
         var flowChord = Vec3.Cross(flowNormal, spanAxis);
         if (Vec3.Dot(flowChord, chordAxis) < 0) flowChord = -flowChord;
         return new SurfaceSegment
@@ -75,6 +80,7 @@ public static class SurfaceGeometry
             InducedFactor = inducedFactor,
             FlowChordAxis = flowChord,
             FlowNormalAxis = flowNormal,
+            FlowChord = chord * Vec3.Dot(flowChord, chordAxis),
         };
     }
 }

@@ -88,7 +88,7 @@ public sealed class SurfaceAeroModel : IAeroModel
             var f = (liftDir * cl + dragDir * cd) * qa;
             force += f;
             double cm = coeff.Cm + seg.FlapMomentEffectiveness * FlapEfficiency * delta;
-            moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * cm);
+            moment += Vec3.Cross(seg.Position, f) + seg.FlowPitchAxis * (qa * seg.FlowChord * cm);
 
             if (seg.Role == SurfaceRole.Wing)
             {
