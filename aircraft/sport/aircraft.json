@@ -8,7 +8,7 @@
       "dihedralDeg": 1, "incidenceDeg": 0.5, "airfoil": "naca0012", "segments": 6, "mirror": true },
     { "name": "stab", "role": "horizontalTail", "root": [-0.72, 0.03, 0], "span": 0.22, "rootChord": 0.19, "tipChord": 0.15,
       "incidenceDeg": -1.0, "airfoil": "naca0012", "segments": 3, "mirror": true },
-    { "name": "fin", "role": "verticalTail", "root": [-0.74, 0.04, 0], "span": 0.175, "rootChord": 0.22, "tipChord": 0.12,
+    { "name": "fin", "role": "verticalTail", "root": [-0.74, 0.04, 0], "span": 0.20, "rootChord": 0.22, "tipChord": 0.12,
       "sweepDeg": 20, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 3, "mirror": false }
   ],
   "controls": [
