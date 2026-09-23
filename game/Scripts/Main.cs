@@ -34,6 +34,19 @@ public partial class Main : Node
             GetTree().Quit(0);
             return;
         }
+        if (ArgValue(args, "--screenshot-field") is { } fieldShot)
+        {
+            var preview = new Node3D();
+            AddChild(preview);
+            var terrain = new Symlab.App.Field.ClubFieldTerrain(Symlab.App.Field.TreePlanter.Plant(FlightSession.TreeSeed));
+            World.FieldBuilder.Build(preview, terrain, _services.Settings.Conditions);
+            var eye = Symlab.App.Field.ClubField.PilotPosition.ToGodot() + new Vector3(0, (float)Symlab.App.Field.ClubField.EyeHeight, 0);
+            var camera = new Camera3D { Current = true, Fov = (float)_services.Settings.FovDeg, Far = 4000f };
+            preview.AddChild(camera);
+            camera.LookAtFromPosition(eye, new Vector3(45, 6, 15), Vector3.Up);
+            CaptureAfterFrames(20, fieldShot);
+            return;
+        }
         ShowRadio();
     }
 
@@ -52,4 +65,18 @@ public partial class Main : Node
     }
 
     static bool Has(string[] args, string flag) => System.Array.IndexOf(args, flag) >= 0;
+
+    static string? ArgValue(string[] args, string flag)
+    {
+        int i = System.Array.IndexOf(args, flag);
+        return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+    }
+
+    async void CaptureAfterFrames(int frames, string path)
+    {
+        for (int i = 0; i < frames; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        var error = GetViewport().GetTexture().GetImage().SavePng(path);
+        GD.Print($"SYMLAB_SCREENSHOT path={path} error={error}");
+        GetTree().Quit(error == Error.Ok ? 0 : 1);
+    }
 }
