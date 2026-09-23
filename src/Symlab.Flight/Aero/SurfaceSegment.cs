@@ -29,12 +29,6 @@ public sealed class SurfaceSegment
 
     /// <inheritdoc cref="FlowChordAxis"/>
     public required Vec3 FlowNormalAxis { get; init; }
-
-    /// <summary>Axis of the section pitching moment in the swept section plane (along the swept span line).</summary>
-    public Vec3 FlowPitchAxis => Vec3.Cross(FlowChordAxis, FlowNormalAxis);
-
-    /// <summary>Section chord measured perpendicular to the swept span line, Chord·cos Λ.</summary>
-    public required double FlowChord { get; init; }
     public required double Chord { get; init; }
     public required double Area { get; init; }
 

@@ -162,11 +162,12 @@ public class SurfaceAeroModelTests
     }
 
     [Fact]
-    public void Swept_section_moment_acts_about_the_swept_axis_with_normal_chord_and_normal_flow()
+    public void Swept_section_moment_is_the_streamwise_moment_with_normal_flow_pressure()
     {
-        // Simple sweep theory: a section of the swept panel sees q_n = q cos²Λ, has chord c_n = c cosΛ and
-        // pitches about the swept quarter-chord line, whose body-z component is cosΛ. At zero lift the only
-        // pitching moment is the section Cm, so Mz = q S c Cm cos⁴Λ and the two panels' roll parts cancel.
+        // Simple sweep theory on an infinite swept wing: the chordwise pressure distribution is the normal-section
+        // one, scaled by q_n = q cos²Λ and stretched over the streamwise chord c. Its moment about the streamwise
+        // quarter-chord foot, per unit (z) span, is q_n c² Cm about +z. A strip of span b then carries
+        // q cos²Λ · (c b) · c · Cm, so for the whole wing at zero lift Mz = q S c Cm cos²Λ, with no roll part.
         const double cm = -0.05, sweep = 25, speed = 15;
         double[] alpha = [-10, -5, 0, 5, 10];
         var cambered = new Airfoil("cm", [new AirfoilTable(200_000, alpha,
@@ -178,8 +179,29 @@ public class SurfaceAeroModelTests
             .Evaluate(Context(Flow(speed, 0), deflections: []));
 
         double q = 0.5 * 1.225 * speed * speed;
-        double expected = q * wing.TotalArea * wing.RootChord * cm * Math.Pow(Math.Cos(Angle.Rad(sweep)), 4);
+        double expected = q * wing.TotalArea * wing.RootChord * cm * Math.Pow(Math.Cos(Angle.Rad(sweep)), 2);
         Assert.Equal(expected, load.Moment.Z, 1e-9);
         Assert.Equal(0, load.Moment.X, 9);
+    }
+
+    [Fact]
+    public void Swept_elevon_section_moment_adds_no_roll_or_yaw()
+    {
+        // Pure roll command on elevons of a swept wing (right +0.2 rad, left -0.2 rad) at alpha = 0. The flap's
+        // section pitching moment acts about +z only, so removing it must leave Mx and My unchanged: any roll
+        // difference would be a spurious 2·sinΛ·q·S·c·ΔCm term from a tilted moment axis.
+        var right = new ControlSurfaceSpec("elevonRight", "wing", Side.Right, 0.22, 0.15, 0.95, 20, 20, 0.1,
+            new Dictionary<string, double> { ["aileron"] = -1 });
+        var left = right with { Name = "elevonLeft", Side = Side.Left, Mix = new Dictionary<string, double> { ["aileron"] = 1 } };
+        var model = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [right, left], []);
+        var ctx = Context(Flow(15, 0), deflections: [0.2, -0.2]);
+
+        var withFlapMoment = model.Evaluate(ctx);
+        Assert.True(Math.Abs(withFlapMoment.Moment.X) > 0.01, "the lift asymmetry still rolls the wing");
+        foreach (var seg in model.Segments) seg.FlapMomentEffectiveness = 0;
+        var withoutFlapMoment = model.Evaluate(ctx);
+
+        Assert.Equal(withoutFlapMoment.Moment.X, withFlapMoment.Moment.X, 1e-9);
+        Assert.Equal(withoutFlapMoment.Moment.Y, withFlapMoment.Moment.Y, 1e-9);
     }
 }

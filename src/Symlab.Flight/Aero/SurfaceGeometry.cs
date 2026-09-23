@@ -80,7 +80,6 @@ public static class SurfaceGeometry
             InducedFactor = inducedFactor,
             FlowChordAxis = flowChord,
             FlowNormalAxis = flowNormal,
-            FlowChord = chord * Vec3.Dot(flowChord, chordAxis),
         };
     }
 }
