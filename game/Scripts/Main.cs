@@ -51,6 +51,29 @@ public partial class Main : Node
             CaptureAfterFrames(20, fieldShot);
             return;
         }
+        if (ArgValue(args, "--screenshot-aircraft") is { } aircraftId && args.Length > System.Array.IndexOf(args, "--screenshot-aircraft") + 2)
+        {
+            string shotPath = args[System.Array.IndexOf(args, "--screenshot-aircraft") + 2];
+            var def = Symlab.Flight.Airframe.AircraftLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId));
+            var session = new FlightSession(def, _services.Settings.Conditions);
+            var preview = new Node3D();
+            AddChild(preview);
+            World.FieldBuilder.Build(preview, session.Terrain, _services.Settings.Conditions);
+            var visual = new Flight.AircraftVisual();
+            preview.AddChild(visual);
+            visual.Build(Symlab.App.Visual.AircraftMeshBuilder.Build(def, session.Aircraft.Aero.Segments));
+            var start = session.StartState();
+            visual.UpdateFrom(session.Aircraft, start);
+            visual.SetAllDeflections(0.35);
+            var p = start.Position.ToGodot();
+            var forward = start.Orientation.Rotate(Symlab.Flight.Geometry.Vec3.UnitX).ToGodot();
+            var left = -start.Orientation.Rotate(Symlab.Flight.Geometry.Vec3.UnitZ).ToGodot();
+            var camera = new Camera3D { Current = true, Fov = 50f, Near = 0.05f, Far = 4000f };
+            preview.AddChild(camera);
+            camera.LookAtFromPosition(p + forward * 2.5f + left * 3f + Vector3.Up * 1.2f, p, Vector3.Up);
+            CaptureAfterFrames(20, shotPath);
+            return;
+        }
         ShowRadio();
     }
 
