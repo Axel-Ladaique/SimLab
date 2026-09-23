@@ -30,7 +30,8 @@ public class GroundHandlingTests
         double startNorth = -sim.Aircraft.State.Position.Z;
         double? liftOff = null;
         // Pitch-attitude pilot: hold 15 deg nose-up after t = 4 s (Kp = 2.0 per rad, Kd = 0.3 per rad/s).
-        const double targetPitch = 15 * Math.PI / 180, kp = 2.0, kd = 0.3;
+        double targetPitch = Angle.Rad(15);
+        const double kp = 2.0, kd = 0.3;
         ControlInputs Pilot(double t)
         {
             if (t <= 4) return new ControlInputs(1, 0, 0, 0);
