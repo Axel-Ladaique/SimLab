@@ -21,8 +21,8 @@ internal static class Fleet
 
     public static (double Airspeed, double Throttle) Cruise(string id) => id switch
     {
-        "trainer" => (15, 0.5),
-        "sport" => (18, 0.5),
+        "trainer" => (15, 0.65),
+        "sport" => (18, 0.6),
         "wing" => (14, 0.6),
         _ => throw new ArgumentException(id),
     };
