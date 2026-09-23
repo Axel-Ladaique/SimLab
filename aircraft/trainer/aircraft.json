@@ -30,8 +30,8 @@
   ],
   "hull": [
     { "name": "nose", "position": [0.50, 0.0, 0], "tag": "nose" },
-    { "name": "wingtipLeft", "position": [0.0175, 0.159, -0.75], "tag": "wingtip" },
-    { "name": "wingtipRight", "position": [0.0175, 0.159, 0.75], "tag": "wingtip" },
+    { "name": "wingtipLeft", "position": [0.0175, 0.185, -0.75], "tag": "wingtip" },
+    { "name": "wingtipRight", "position": [0.0175, 0.185, 0.75], "tag": "wingtip" },
     { "name": "tail", "position": [-0.95, 0.0, 0], "tag": "tail" },
     { "name": "finTop", "position": [-0.98, 0.25, 0], "tag": "tail" },
     { "name": "belly", "position": [0.0, -0.08, 0], "tag": "belly" },

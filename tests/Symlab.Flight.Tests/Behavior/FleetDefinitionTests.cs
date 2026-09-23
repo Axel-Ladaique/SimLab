@@ -1,3 +1,4 @@
+using Symlab.Flight.Aero;
 using Symlab.Flight.Airframe;
 using Symlab.Flight.Atmosphere;
 using Symlab.Flight.Propulsion;
@@ -37,5 +38,19 @@ public class FleetDefinitionTests
         double batteryCurrent = half.Current * def.Power!.Esc.Map(0.5);
         double minutes = def.Power.Battery.CapacityAh / batteryCurrent * 60;
         Assert.InRange(minutes, 10, 45);
+    }
+
+    [Theory]
+    [InlineData("trainer")]
+    [InlineData("sport")]
+    [InlineData("wing")]
+    public void Wingtip_hull_points_sit_at_the_wing_tip_height(string id)
+    {
+        var def = Fleet.Load(id);
+        var wing = def.Surfaces.Single(s => s.Role == SurfaceRole.Wing);
+        double tipY = wing.Root.Y + wing.Span * Math.Sin(wing.DihedralDeg * Math.PI / 180);
+        var tips = def.Hull.Where(h => h.Name.StartsWith("wingtip", StringComparison.Ordinal)).ToList();
+        Assert.Equal(2, tips.Count);
+        foreach (var tip in tips) Assert.True(Math.Abs(tip.Position.Y - tipY) < 0.005, $"{tip.Name} y {tip.Position.Y:F3}, wing tip {tipY:F3}");
     }
 }
