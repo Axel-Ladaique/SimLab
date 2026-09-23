@@ -1,0 +1,70 @@
+keys,fr,en
+APP_TITLE,Symlab — simulateur de vol RC,Symlab — RC flight simulator
+MENU_FLY,Voler,Fly
+MENU_RADIO,Radio,Radio
+MENU_SETTINGS,Réglages,Settings
+MENU_QUIT,Quitter,Quit
+MENU_AIRCRAFT,Avion,Aircraft
+MENU_CONDITIONS,Conditions sur le terrain,Field conditions
+COND_WIND_SPEED,Vent (m/s),Wind (m/s)
+COND_WIND_DIR,Vent venant de (°),Wind from (°)
+COND_TURBULENCE,Turbulence,Turbulence
+COND_SUN_AZIMUTH,Soleil : azimut (°),Sun azimuth (°)
+COND_SUN_ELEVATION,Soleil : hauteur (°),Sun elevation (°)
+BACK,Retour,Back
+RADIO_TITLE,Radio,Radio
+RADIO_NO_DEVICE,"Aucune radio détectée. Branchez la radio en USB et choisissez « USB Joystick (HID) » sur la radio.","No radio detected. Plug the radio in over USB and choose ""USB Joystick (HID)"" on the radio."
+RADIO_DEVICE_READY,Calibrée — prête à voler,Calibrated — ready to fly
+RADIO_DEVICE_UNCALIBRATED,Non calibrée,Not calibrated
+RADIO_CALIBRATE,Calibrer,Calibrate
+RADIO_NEXT,Suivant,Next
+RADIO_CANCEL,Annuler,Cancel
+RADIO_SAVED,Calibration enregistrée.,Calibration saved.
+RADIO_MODE,Mode des manches,Stick mode
+RADIO_BIND_RESET,Interrupteur « reset »,Reset switch
+RADIO_BIND_PAUSE,Interrupteur « pause »,Pause switch
+RADIO_BIND_WIND,Interrupteur « vent »,Wind switch
+RADIO_BIND_WAIT,Basculez l'interrupteur maintenant…,Flip the switch now…
+RADIO_BIND_DONE,Interrupteur assigné.,Switch assigned.
+RADIO_AXES,Voies brutes,Raw axes
+RADIO_HELP,"EdgeTX : Réglages radio → USB → mode Joystick. Créez un modèle « Simulateur » sans mixage (voies 1 à 4 = manches). Si la radio n'apparaît pas, débranchez-la et rebranchez-la puis choisissez « USB Joystick (HID) ».","EdgeTX: Radio settings → USB → Joystick mode. Create a ""Simulator"" model with no mixes (channels 1–4 = sticks). If the radio does not show up, unplug and replug it, then choose ""USB Joystick (HID)""."
+CAL_CENTER,"Lâchez les manches (gaz où vous voulez), puis Suivant.","Release the sticks (throttle anywhere), then Next."
+CAL_EXTREMES,"Faites de grands cercles avec les deux manches jusqu'aux butées, puis Suivant.","Move both sticks in full circles to their limits, then Next."
+CAL_ID_THROTTLE,"Mettez les gaz à fond ({0}), puis Suivant.","Push the throttle to full ({0}), then Next."
+CAL_ID_AILERON,"Ailerons à droite à fond ({0}), puis Suivant.","Full right aileron ({0}), then Next."
+CAL_ID_ELEVATOR,"Tirez la profondeur à fond, vers vous ({0}), puis Suivant.","Pull full up elevator, toward you ({0}), then Next."
+CAL_ID_RUDDER,"Dérive à droite à fond ({0}), puis Suivant.","Full right rudder ({0}), then Next."
+CAL_DONE,Calibration terminée.,Calibration complete.
+CAL_FAILED,"Aucun manche n'a assez bougé. Recommencez ce geste plus franchement.","No stick moved enough. Repeat the move more firmly."
+STICK_LEFT,manche gauche,left stick
+STICK_RIGHT,manche droit,right stick
+SET_TITLE,Réglages,Settings
+SET_FOV,Champ de vision vertical (°),Vertical field of view (°)
+SET_SCREEN_HEIGHT,Hauteur de l'écran (cm),Screen height (cm)
+SET_VIEW_DISTANCE,Distance aux yeux (cm),Viewing distance (cm)
+SET_FOV_FROM_SCREEN,Calculer depuis l'écran,Compute from screen
+SET_AUTOZOOM,Zoom automatique limité,Limited auto-zoom
+SET_FLIGHT_DATA,Afficher les données de vol,Show flight data
+SET_RECORD,Enregistrer les vols (CSV),Record flights (CSV)
+SET_LANGUAGE,Langue,Language
+SET_VSYNC,Synchronisation verticale,Vertical sync
+HUD_AIRSPEED,Vitesse,Airspeed
+HUD_ALTITUDE,Hauteur,Height
+HUD_THROTTLE,Gaz,Throttle
+HUD_BATTERY,Batterie,Battery
+HUD_TIMER,Chrono,Timer
+HUD_PAUSED,PAUSE,PAUSED
+HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind"
+HUD_LATENCY,Latence estimée,Estimated latency
+HUD_FPS,Images/s,FPS
+HUD_INPUT,Commande,Input
+WIND_ON,Vent activé,Wind on
+WIND_OFF,Vent coupé,Wind off
+CRASH_TITLE,Crash !,Crash!
+CRASH_HINT,Appuyez sur R (ou l'interrupteur reset) pour recommencer.,Press R (or the reset switch) to try again.
+CRASH_NONE,—,—
+CRASH_HARDLANDING,Atterrissage trop dur,Landing too hard
+CRASH_TREESTRIKE,Dans les arbres,Into the trees
+CRASH_WINGTIPSTRIKE,Saumon d'aile au sol,Wingtip strike
+CRASH_NOSEOVER,Passage sur le nez,Nose-over
+CRASH_HULLIMPACT,Choc de la cellule,Airframe impact
