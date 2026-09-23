@@ -41,11 +41,15 @@ public sealed class Aircraft
     public AirData AirData { get; private set; }
     public IReadOnlyList<double> Deflections => _deflections;
 
+    /// <summary>Wind (world frame, m/s, steady + turbulence) used in the last step.</summary>
+    public Vec3 LastWind { get; private set; }
+
     public void Reset(RigidBodyState state)
     {
         State = state;
         Crash = CrashCause.None;
         AirData = default;
+        LastWind = Vec3.Zero;
         Aero.Reset();
         Power?.Reset();
         foreach (var s in _servos) s.Reset();
@@ -74,6 +78,7 @@ public sealed class Aircraft
         var start = State;
         double heightAgl = start.Position.Y - env.Terrain.Height(start.Position.X, start.Position.Z);
         var wind = env.Wind.At(heightAgl);
+        LastWind = wind;
         double density = env.Density(start.Position.Y);
 
         PowerTelemetry telemetry = default;
