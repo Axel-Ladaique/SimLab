@@ -87,10 +87,15 @@ public class FlightQualityTests
     [InlineData("sport")]
     public void Dutch_roll_damps_after_a_rudder_pulse(string id)
     {
-        var sim = Trimmed(id);
-        double start = sim.Time;
-        Fleet.Fly(sim, 6.3, t => t - start < 0.3 ? Cruise(id) with { Rudder = 0.5 } : Cruise(id));
-        Assert.True(Math.Abs(sim.Aircraft.State.AngularVelocity.Y) < 0.1, $"yaw rate {sim.Aircraft.State.AngularVelocity.Y:F3}");
+        double Run(bool pulse)
+        {
+            var sim = Trimmed(id);
+            double start = sim.Time;
+            Fleet.Fly(sim, 6.3, t => pulse && t - start < 0.3 ? Cruise(id) with { Rudder = 0.5 } : Cruise(id));
+            return sim.Aircraft.State.AngularVelocity.Y;
+        }
+        double residual = Run(true) - Run(false);
+        Assert.True(Math.Abs(residual) < 0.1, $"yaw rate vs baseline {residual:F3}");
     }
 
     [Fact]

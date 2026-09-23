@@ -28,7 +28,7 @@ public class GroundHandlingTests
         Fleet.Fly(sim, 1, _ => ControlInputs.Neutral);
         double startNorth = -sim.Aircraft.State.Position.Z;
         double? liftOff = null;
-        Fleet.Fly(sim, 14, t => new ControlInputs(1, 0, t > 4 ? 0.35 : 0, 0), s =>
+        Fleet.Fly(sim, 14, t => new ControlInputs(1, 0, t > 5.5 ? 0.1 : t > 4 ? 0.35 : 0, 0), s =>
         {
             if (liftOff is null && s.Aircraft.Ground.WheelsInContact(s.Aircraft.State, s.Environment.Terrain) == 0)
                 liftOff = -s.Aircraft.State.Position.Z - startNorth;
