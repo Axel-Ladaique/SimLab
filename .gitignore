@@ -5,3 +5,5 @@ obj/
 .DS_Store
 recordings/
 .superpowers/
+game/.godot/
+game/export/
