@@ -1,4 +1,5 @@
 using Symlab.Flight.Controls;
+using Symlab.Flight.Geometry;
 using Symlab.Flight.Ground;
 
 namespace Symlab.Flight.Tests.Behavior;
@@ -28,7 +29,17 @@ public class GroundHandlingTests
         Fleet.Fly(sim, 1, _ => ControlInputs.Neutral);
         double startNorth = -sim.Aircraft.State.Position.Z;
         double? liftOff = null;
-        Fleet.Fly(sim, 14, t => new ControlInputs(1, 0, t > 5.5 ? 0.1 : t > 4 ? 0.35 : 0, 0), s =>
+        // Pitch-attitude pilot: hold 15 deg nose-up after t = 4 s (Kp = 2.0 per rad, Kd = 0.3 per rad/s).
+        const double targetPitch = 15 * Math.PI / 180, kp = 2.0, kd = 0.3;
+        ControlInputs Pilot(double t)
+        {
+            if (t <= 4) return new ControlInputs(1, 0, 0, 0);
+            var st = sim.Aircraft.State;
+            double pitch = Attitude.FromOrientation(st.Orientation).Pitch;
+            double elevator = Math.Clamp(kp * (targetPitch - pitch) - kd * st.AngularVelocity.Z, -1, 1);
+            return new ControlInputs(1, 0, elevator, 0);
+        }
+        Fleet.Fly(sim, 14, Pilot, s =>
         {
             if (liftOff is null && s.Aircraft.Ground.WheelsInContact(s.Aircraft.State, s.Environment.Terrain) == 0)
                 liftOff = -s.Aircraft.State.Position.Z - startNorth;
