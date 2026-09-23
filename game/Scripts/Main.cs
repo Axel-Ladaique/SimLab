@@ -10,6 +10,9 @@ public partial class Main : Node
 {
     Services _services = null!;
     Node? _current;
+    double _smokeSeconds = -1;
+    string? _smokeScreenshot;
+    string _smokeAircraft = "";
 
     public override void _Ready()
     {
@@ -74,6 +77,23 @@ public partial class Main : Node
             CaptureAfterFrames(20, shotPath);
             return;
         }
+        int smokeIndex = System.Array.IndexOf(args, "--smoke-flight");
+        if (smokeIndex >= 0 && smokeIndex + 2 < args.Length)
+        {
+            _smokeAircraft = args[smokeIndex + 1];
+            _smokeSeconds = double.Parse(args[smokeIndex + 2], System.Globalization.CultureInfo.InvariantCulture);
+            StartFlight(_smokeAircraft, _ => new Symlab.Flight.Controls.ControlInputs(0.7, 0, 0, 0));
+            return;
+        }
+        int shotIndex = System.Array.IndexOf(args, "--screenshot-flight");
+        if (shotIndex >= 0 && shotIndex + 3 < args.Length)
+        {
+            _smokeAircraft = args[shotIndex + 1];
+            _smokeSeconds = double.Parse(args[shotIndex + 2], System.Globalization.CultureInfo.InvariantCulture);
+            _smokeScreenshot = args[shotIndex + 3];
+            StartFlight(_smokeAircraft, t => new Symlab.Flight.Controls.ControlInputs(1, 0, t > 3.5 && t < 5 ? 0.25 : 0.05, 0));
+            return;
+        }
         ShowRadio();
     }
 
@@ -82,6 +102,31 @@ public partial class Main : Node
         var screen = new RadioScreen();
         screen.Init(_services, ShowRadio);
         Switch(screen);
+    }
+
+    public void StartFlight(string aircraftId, System.Func<double, Symlab.Flight.Controls.ControlInputs>? script = null)
+    {
+        var scene = new Flight.FlightScene();
+        scene.Init(_services, aircraftId, ShowRadio, script);
+        Switch(scene);
+    }
+
+    public override void _Process(double delta)
+    {
+        if (_smokeSeconds < 0 || _current is not Flight.FlightScene flight) return;
+        var session = flight.Session;
+        bool crashed = session.Aircraft.Crash != Symlab.Flight.Ground.CrashCause.None;
+        if (session.Simulation.Time < _smokeSeconds && !crashed) return;
+        _smokeSeconds = -1;
+        if (_smokeScreenshot is { } path)
+        {
+            CaptureAfterFrames(2, path);
+            return;
+        }
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var p = session.Aircraft.State.Position;
+        GD.Print($"SYMLAB_SMOKE_OK aircraft={_smokeAircraft} t={session.Simulation.Time.ToString("0.00", inv)} x={p.X.ToString("0.0", inv)} y={p.Y.ToString("0.00", inv)} z={p.Z.ToString("0.0", inv)} crash={session.Aircraft.Crash}");
+        GetTree().Quit(0);
     }
 
     void Switch(Node next)
