@@ -1,9 +1,11 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Symlab.App/Symlab.App.csproj" />
     <Project Path="src/Symlab.Flight/Symlab.Flight.csproj" />
     <Project Path="src/Symlab.Input/Symlab.Input.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Symlab.App.Tests/Symlab.App.Tests.csproj" />
     <Project Path="tests/Symlab.Flight.Tests/Symlab.Flight.Tests.csproj" />
     <Project Path="tests/Symlab.Input.Tests/Symlab.Input.Tests.csproj" />
   </Folder>
