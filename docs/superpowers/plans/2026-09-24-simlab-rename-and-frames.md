@@ -8,7 +8,7 @@
 
 **Tech Stack:** .NET 10 SDK, C#, xUnit, Godot 4.7.2 .NET, Python 3 (one-off data conversion only).
 
-**Spec:** `docs/superpowers/specs/2026-09-22-symlab-core-design.md` (renamed and amended in Task 6). User decisions (2026-09-24): name SimLab; body x back / y right / z up; world ENU; aircraft.json positions from a free datum (e.g. nose) + `cg`.
+**Spec:** `docs/superpowers/specs/2026-09-22-symlab-core-design.md` (renamed in Task 2, amended in Task 5). User decisions (2026-09-24): name SimLab; body x back / y right / z up; world ENU; aircraft.json positions from a free datum (e.g. nose) + `cg`.
 
 ## Global Constraints
 
