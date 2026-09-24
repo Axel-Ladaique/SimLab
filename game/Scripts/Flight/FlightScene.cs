@@ -23,6 +23,7 @@ public partial class FlightScene : Node3D
     WindsockNode _windsock = null!;
     FlightHud _hud = null!;
     CrashOverlay _crash = null!;
+    DiagnosticsOverlay _diagnostics = null!;
     System.Action _exit = null!;
     System.Func<double, ControlInputs>? _script;
     readonly LatencyMeter _latency = new();
@@ -56,6 +57,8 @@ public partial class FlightScene : Node3D
         AddChild(_hud);
         _crash = new CrashOverlay();
         AddChild(_crash);
+        _diagnostics = new DiagnosticsOverlay();
+        AddChild(_diagnostics);
     }
 
     public override void _Process(double delta)
@@ -78,6 +81,7 @@ public partial class FlightScene : Node3D
         _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(6)));
         _hud.UpdateHud(_session, LastInput, _services.Settings.ShowFlightData);
         _crash.UpdateCrash(_session.Aircraft.Crash);
+        _diagnostics.UpdateDiagnostics(this);
     }
 
     public override void _UnhandledInput(InputEvent @event)

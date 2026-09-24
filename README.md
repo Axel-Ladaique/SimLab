@@ -13,8 +13,19 @@ Sub-project 1 (core) — headless libraries:
   keyboard fallback.
 - `aircraft/` — data-driven aircraft (trainer, sport, FPV wing). Values are estimates; see `docs/tuning-log.md`.
 
-Next: the Godot game layer (field, line-of-sight camera, menus), then VSPAERO/CFD import, FPV and chase cameras,
-and VTOL/drones. Design: `docs/superpowers/specs/2026-09-22-symlab-core-design.md`.
+- `src/Symlab.App` — testable game logic: club field and terrain, line-of-sight camera, procedural aircraft
+  meshes, input routing, flight session, settings, translations.
+- `game/` — Godot 4 (.NET) simulator: radio setup and calibration, club field, line-of-sight flying, HUD,
+  crash screen, French/English menus. See `docs/dev-setup.md` to build and run, and
+  `docs/manual-acceptance.md` for the pilot's checklist.
+
+Next: VSPAERO/CFD import and telemetry replay (sub-project 2), FPV and chase cameras (sub-project 3),
+VTOL/drones (sub-project 4).
+
+## Keyboard (without a radio)
+
+W/S (Z/S on AZERTY) throttle · arrows aileron/elevator (↓ = pull) · A/D (Q/D on AZERTY) rudder ·
+R reset · P pause · V wind on/off · F3 diagnostics · Esc menu.
 
 ## Build and test
 
