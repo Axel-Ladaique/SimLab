@@ -1,12 +1,192 @@
 # Entering an aircraft
 
-Positions are in body axes **x back, y right, z up**, in metres, measured from any datum you like
-(the nose tip is used for the shipped aircraft). Give the centre of gravity with `"cg": [x, y, z]` in the
-same datum — it is required. The simulator moves everything so the CG is the origin.
+This describes `aircraft.json` and `power.json` well enough to enter a real model from its
+build sheet and CG measurement.
 
-- Surfaces are defined by their right panel (`"mirror": true` makes the left one). `root` is the root
-  quarter-chord point; `span` is the panel span; `sweepDeg`, `dihedralDeg`, `incidenceDeg`, `twistDeg`
-  keep their usual meaning; a fin is a surface with `dihedralDeg: 90`.
-- `power.json`: `position` of the prop disc (same datum), `thrustAxis` is the thrust direction
-  (`[-1, 0, 0]` = straight ahead).
-- Inertia: `roll` = I_xx, `pitch` = I_yy, `yaw` = I_zz (kg·m², about the CG).
+## Units and axes
+
+All lengths are in **metres**, areas in **m²**, masses in **kg**, inertias in **kg·m²**, angles
+in **degrees**.
+
+Every position field in `aircraft.json` and `power.json` — surface `root`, body `position`,
+gear `position`, hull `position`, power `position` — is measured in **body axes** (x back
+toward the tail, y right, z up) **from one free datum of your choosing**. The shipped aircraft
+use the nose tip (`[0, 0, 0]`) as that datum, but any fixed reference works as long as every
+field uses the *same* one.
+
+- Left side is **−y** (a left aileron, a left main wheel, a left-mounted pod all get negative y).
+- Ground/below is **−z** (gear contact points, a belly line, a down-thrust component are negative z).
+- Back/aft is **+x** (the tail is at larger x than the nose); forward is −x.
+
+## `cg` (required)
+
+```json
+"cg": [x, y, z]
+```
+
+`cg` is the centre of gravity in the **same datum and axes** as every other position field.
+The loader subtracts it from every position when building the aircraft, so the simulator's
+body origin is always the CG regardless of which datum you picked (see
+`AircraftLoader.Load`, which throws if `cg` is missing).
+
+If you don't know the vertical CG (z), it is measured far less often than the fore-aft one:
+put the fuselage reference line (a straight line along the fuselage, e.g. the top of the
+fuselage sides or the thrustline) at **z = 0** and measure everything relative to that line —
+gear and hull points get their z from how far above (+) or below (−) the reference line they
+sit. This keeps the model geometrically consistent even with an approximate vertical CG.
+
+## Surfaces
+
+```json
+{ "name": "wing", "role": "wing", "root": [x, y, z], "span": 0.75,
+  "rootChord": 0.35, "tipChord": 0.35, "sweepDeg": 0, "dihedralDeg": 5,
+  "incidenceDeg": 1.0, "twistDeg": 0, "airfoil": "clarky", "segments": 6, "mirror": true }
+```
+
+- `root` is the **root quarter-chord point** of the panel, in the same datum as `cg`.
+- `span` is one panel's span (root to tip); a mirrored surface's total span is twice that.
+- `sweepDeg` is quarter-chord sweep (positive sweeps the tip aft, +x).
+- `dihedralDeg` rotates the panel about body +x, tip up; **90° makes a vertical fin** whose
+  span points up and whose normal points **left (−y)**. This is why the shipped fins have
+  `dihedralDeg: 90`.
+- `incidenceDeg` / `twistDeg` keep their usual meaning (twist is tip-relative, linear along span).
+- A surface is defined by its **right panel** (toward +y); `"mirror": true` adds the left one
+  automatically. A one-off surface (e.g. an asymmetric fin) uses `mirror: false`.
+
+## Bodies (fuselage, pods)
+
+```json
+"bodies": [ { "name": "fuselage", "position": [0.65, 0, 0], "cdA": [0.006, 0.035, 0.04] } ]
+```
+
+`position` is the body's reference point in the same datum as `cg`. `cdA` is the drag area in
+m², **in body-axis order [x back, y right, z up] = [frontal, side, top]** — i.e. the drag area
+you'd measure facing the nose, facing the side, and looking down from above.
+
+## Gear
+
+```json
+{ "name": "mainLeft", "position": [0.56, -0.2, -0.22], "stiffness": 2500, "damping": 60,
+  "rollingFriction": 0.04, "lateralFriction": 0.8, "maxSteerDeg": 0, "steerMix": {} }
+```
+
+`position` is the wheel contact point in the same datum as `cg`; a left wheel has negative y,
+and a wheel is below the CG datum line so it normally has negative z. A steerable wheel
+(nosewheel, tailwheel) gets a non-zero `maxSteerDeg` and a `steerMix` (see Controls below);
+a free or fixed wheel uses `"steerMix": {}`.
+
+## Hull points
+
+```json
+{ "name": "wingtipLeft", "position": [0.4825, -0.75, 0.185], "tag": "wingtip" }
+```
+
+Hull points are collision/crash-detection points (nose, wingtips, tail, belly, canopy), each
+with a `tag` used by the crash logic (`nose`, `wingtip`, `tail`, `belly`, `canopy`, …). Same
+datum and axes as everything else — a left wingtip has negative y, a belly point has negative z.
+
+## Inertia
+
+```json
+"inertia": { "roll": 0.14, "yaw": 0.33, "pitch": 0.22, "rollYaw": 0 }
+```
+
+About the **CG**, in body axes:
+
+- `roll` = I_xx, `pitch` = I_yy, `yaw` = I_zz (kg·m²).
+- `rollYaw` (optional, defaults to 0) is the roll–yaw product of inertia. It equals the
+  classical FRD-axes I_xz, so a value from a literature table or CAD tool using the usual
+  aircraft (forward-right-down) convention can be **entered as-is**, with no sign flip.
+- The loader requires `roll`, `yaw`, `pitch` > 0 and `roll·yaw > rollYaw²` (positive-definite).
+
+## `power.json`
+
+```json
+{ "position": [0.05, 0, 0], "thrustAxis": [-0.9988, 0.0349, -0.0349], ... }
+```
+
+- `position` is the prop disc / motor mount, same datum as `cg`.
+- `thrustAxis` is the thrust direction in body axes (need not be unit-length; it's normalized
+  on load):
+  - straight-ahead thrust: `[-1, 0, 0]` (the wing and sport aircraft use this, or nearly so).
+  - a **right** thrust offset (common on single-engine props to counter torque/P-factor) adds a
+    small **+y** component.
+  - a **down** thrust offset adds a small **−z** component.
+  - the trainer combines both: `[-0.9988, 0.0349, -0.0349]` (about 2° right, 2° down thrust).
+
+## Controls
+
+```json
+{ "name": "rudder", "surface": "fin", "side": "both", "chordFraction": 0.4,
+  "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.12,
+  "mix": { "rudder": 1 } }
+```
+
+Positive deflection is always **trailing edge down relative to the surface's own normal**
+(`maxPositiveDeg`/`maxNegativeDeg` are the magnitudes of the down/up throws). `side` selects
+which panel of a mirrored surface the control lives on: `right`, `left`, or `both` (a
+single-panel surface, like the fin, always uses `both`).
+
+`mix` maps pilot stick channels (`aileron`, `elevator`, `rudder`, `flap`; positive aileron =
+roll right, positive elevator = pitch up, positive rudder = yaw right) to a deflection command:
+`deflection = clamp(Σ weight · channel, −1, 1)` × the appropriate max throw.
+
+Because the fin has `dihedralDeg: 90`, its normal points **left (−y)**, not up. So "trailing
+edge down relative to the normal" for the rudder means the trailing edge moves toward −normal,
+i.e. to the **right (+y)** — which pushes the tail right and yaws the nose **right**. That is
+why the shipped rudder uses `"mix": { "rudder": 1 }` (positive, not negative): a positive
+rudder command (yaw right) needs a positive (trailing-edge-down) deflection, because of the
+fin's left-pointing normal. Getting this sign backwards is a classic bug, not a tuning choice —
+it was caught by `FleetControlSignTests` and is logged in `docs/tuning-log.md` (2026-09-22).
+
+The other mixes follow the same reasoning:
+- `aileronRight: { "aileron": -1 }`, `aileronLeft: { "aileron": 1 }` — a roll-right command
+  (`aileron` > 0) deflects the right aileron **up** (negative) and the left aileron **down**
+  (positive), increasing left-wing lift and decreasing right-wing lift so the aircraft rolls
+  right (right wing drops).
+- `elevator: { "elevator": -1 }` — a pitch-up command deflects the elevator **up** (negative),
+  reducing (or reversing) tail lift so the tail drops and the nose rises.
+- A tailwheel/nosewheel `steerMix` follows the same yaw-right-positive convention, but its sign
+  also depends on whether the wheel is ahead of or behind the CG (compare the trainer's
+  nosewheel, `{ "rudder": 1 }`, with the sport's tailwheel, `{ "rudder": -1 }`).
+
+## Annotated excerpt (trimmed trainer)
+
+```json
+{
+  "mass": 2.6,
+  "cg": [0.5, 0, 0],                          // datum = nose tip; CG is 0.5 m aft, on the fuselage reference line
+  "inertia": { "roll": 0.14, "yaw": 0.33, "pitch": 0.22 },   // kg·m² about the CG; rollYaw omitted (0)
+
+  "surfaces": [
+    { "name": "wing", "role": "wing", "root": [0.4825, 0, 0.12],  // root quarter-chord, 0.12 m above the ref. line
+      "span": 0.75, "rootChord": 0.35, "tipChord": 0.35,
+      "dihedralDeg": 5, "incidenceDeg": 1.0, "airfoil": "clarky", "segments": 6, "mirror": true },
+    { "name": "fin", "role": "verticalTail", "root": [1.38, 0, 0.03],
+      "span": 0.22, "rootChord": 0.25, "tipChord": 0.14,
+      "sweepDeg": 25, "dihedralDeg": 90,           // 90° dihedral = vertical fin, normal points left
+      "airfoil": "naca0012", "segments": 3, "mirror": false }
+  ],
+
+  "controls": [
+    { "name": "rudder", "surface": "fin", "side": "both", "chordFraction": 0.4,
+      "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.12,
+      "mix": { "rudder": 1 } }                     // + rudder command -> TE right -> yaw right
+  ],
+
+  "bodies": [
+    { "name": "fuselage", "position": [0.65, 0, 0], "cdA": [0.006, 0.035, 0.04] }
+    // cdA = [frontal, side, top] drag area in m²
+  ],
+
+  "gear": [
+    { "name": "mainLeft", "position": [0.56, -0.2, -0.22], "stiffness": 2500, "damping": 60 }
+    // left main wheel: -y; below the reference line: -z
+  ],
+
+  "hull": [
+    { "name": "wingtipLeft", "position": [0.4825, -0.75, 0.185], "tag": "wingtip" }
+    // left wingtip: -y; above the reference line by the dihedral rise: +z
+  ]
+}
+```

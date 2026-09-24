@@ -24,7 +24,7 @@ Smoke checks (after `--`, arguments go to the game):
 "$GODOT" --headless --path game -- --smoke-boot
 ```
 
-User data (settings, radio profiles, flight recordings): `~/Library/Application Support/Godot/app_userdata/SimLab/`.
+User data (settings, radio profiles, flight recordings): `~/Library/Application Support/Godot/app_userdata/SimLab/`. Godot user data moved from `app_userdata/Symlab` to `app_userdata/SimLab` in the rename; copy the `radios/` folder over to keep radio profiles, and note that recordings made before 2026-09-24 use the old axes.
 
 ## Command-line modes (after `--`)
 

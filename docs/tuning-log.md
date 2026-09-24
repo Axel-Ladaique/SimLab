@@ -2,6 +2,9 @@
 
 All values in `aircraft/` are estimates until measured. Every change made to pass a behavior test is logged here.
 
+Entries dated before 2026-09-24 use the old frame (x forward from the CG, y up, z right), not the current
+world/body axis convention described in `aircraft/README.md`.
+
 | Date | File | Parameter | Old → New | Failing test | Reason |
 |------|------|-----------|-----------|--------------|--------|
 | 2026-09-22 | aircraft/trainer/aircraft.json, aircraft/sport/aircraft.json | rudder `mix.rudder`; sport tailwheel `steerMix.rudder` | -1 → 1; 1 → -1 | ControlResponseTests.Right_rudder_yaws_right | Sign bug, not tuning: the fin normal points left, so a positive (trailing-edge-down) rudder yaws the nose right. Proven by `FleetControlSignTests`, committed separately as `fix(aircraft)`. |
