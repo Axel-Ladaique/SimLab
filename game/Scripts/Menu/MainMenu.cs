@@ -6,9 +6,15 @@ namespace Symlab.Game.Menu;
 
 public partial class MainMenu : Control
 {
-    public void Init(Services services, System.Action<string> fly, System.Action radio, System.Action settings, System.Action quit)
+    public void Init(Services services, System.Action<string> fly, System.Action radio, System.Action settings, System.Action quit, string? flightError = null)
     {
         var column = Ui.Screen(this, Ui.T("APP_TITLE"));
+        if (flightError is not null)
+        {
+            var message = Ui.Text(flightError, 18);
+            message.AddThemeColorOverride("font_color", new Color(1f, 0.45f, 0.35f));
+            column.AddChild(message);
+        }
         var aircraft = AircraftCatalog.List(AppPaths.AircraftRoot, out var errors);
 
         var picker = new OptionButton();

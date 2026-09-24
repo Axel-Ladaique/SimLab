@@ -1,3 +1,4 @@
+using System.Linq;
 using Godot;
 using Symlab.App.Cameras;
 using Symlab.App.Field;
@@ -30,6 +31,7 @@ public partial class FlightScene : Node3D
 
     public FlightSession Session => _session;
     public LatencyMeter Latency => _latency;
+    public DiagnosticsOverlay Diagnostics => _diagnostics;
     public RouterOutput LastInput { get; private set; }
     public int LastSteps { get; private set; }
 
@@ -40,7 +42,7 @@ public partial class FlightScene : Node3D
         _script = script;
         var definition = AircraftLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId));
         _session = new FlightSession(definition, services.Settings.Conditions);
-        if (services.Settings.RecordFlights && script is null) StartRecording(aircraftId, definition);
+        services.Router.ResetForNewFlight();
 
         _windsock = FieldBuilder.Build(this, _session.Terrain, services.Settings.Conditions);
         _visual = new AircraftVisual();
@@ -59,6 +61,7 @@ public partial class FlightScene : Node3D
         AddChild(_crash);
         _diagnostics = new DiagnosticsOverlay();
         AddChild(_diagnostics);
+        if (services.Settings.RecordFlights && script is null) StartRecording(aircraftId, definition);
     }
 
     public override void _Process(double delta)
@@ -68,6 +71,7 @@ public partial class FlightScene : Node3D
             ? _services.Router.Update(delta, JoypadReader.Poll(), KeyboardInput.Keys(), KeyboardInput.Commands())
             : new RouterOutput(_script(_session.Simulation.Time), [], InputSource.Keyboard, "script");
         foreach (var action in LastInput.Actions) _session.Handle(action);
+        if (_session.Recorder is { } recorder) recorder.RawChannels = LastInput.RawFrame?.Axes;
         LastSteps = _session.Tick(delta, LastInput.Controls);
         _latency.Add((Time.GetTicksUsec() - start) / 1e6, delta, _session.Simulation.InterpolationAlpha);
 
@@ -78,7 +82,7 @@ public partial class FlightScene : Node3D
         var up = Mathf.Abs((to - from).Normalized().Y) > 0.999f ? Vector3.Back : Vector3.Up;
         _camera.Fov = (float)pose.VerticalFovDeg;
         _camera.LookAtFromPosition(from, to, up);
-        _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(6)));
+        _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
         _hud.UpdateHud(_session, LastInput, _services.Settings.ShowFlightData);
         _crash.UpdateCrash(_session.Aircraft.Crash);
         _diagnostics.UpdateDiagnostics(this);
@@ -86,7 +90,9 @@ public partial class FlightScene : Node3D
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event.IsActionPressed("ui_cancel")) _exit();
+        if (!@event.IsActionPressed("ui_cancel")) return;
+        GetViewport().SetInputAsHandled();
+        _exit();
     }
 
     public override void _ExitTree() => _session.Dispose();
@@ -97,10 +103,23 @@ public partial class FlightScene : Node3D
         return new CameraContext(display.Position, display.Orientation, _session.Span);
     }
 
+    /// <summary>Raw radio axes recorded next to the processed controls (columns raw_axis0…).</summary>
+    static readonly string[] RawChannelNames = Enumerable.Range(0, JoypadReader.MaxAxes).Select(i => $"axis{i}").ToArray();
+
     void StartRecording(string aircraftId, AircraftDefinition definition)
     {
-        System.IO.Directory.CreateDirectory(AppPaths.RecordingsDir);
-        var path = System.IO.Path.Combine(AppPaths.RecordingsDir, $"{System.DateTime.Now:yyyyMMdd-HHmmss}-{aircraftId}.csv");
-        _session.AttachRecorder(new FlightRecorder(new System.IO.StreamWriter(path), definition));
+        System.IO.StreamWriter? writer = null;
+        try
+        {
+            System.IO.Directory.CreateDirectory(AppPaths.RecordingsDir);
+            var path = System.IO.Path.Combine(AppPaths.RecordingsDir, $"{System.DateTime.Now:yyyyMMdd-HHmmss-fff}-{aircraftId}.csv");
+            writer = new System.IO.StreamWriter(path);
+            _session.AttachRecorder(new FlightRecorder(writer, definition, rawChannelNames: RawChannelNames));
+        }
+        catch (System.Exception ex) when (ex is System.IO.IOException or System.UnauthorizedAccessException)
+        {
+            writer?.Dispose();
+            GD.PushWarning($"Flight recording disabled: {ex.Message}");
+        }
     }
 }

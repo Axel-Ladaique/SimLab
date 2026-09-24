@@ -34,10 +34,13 @@ public partial class Main : Node
         if (!RunCommandLine(OS.GetCmdlineUserArgs())) ShowMenu();
     }
 
-    public void ShowMenu()
+    public void ShowMenu() => ShowMenu(null);
+
+    /// <param name="error">Shown at the top of the menu, e.g. why the last flight could not start.</param>
+    public void ShowMenu(string? error)
     {
         var menu = new MainMenu();
-        menu.Init(_services, id => StartFlight(id), ShowRadio, ShowSettings, () => GetTree().Quit());
+        menu.Init(_services, id => StartFlight(id), ShowRadio, ShowSettings, () => GetTree().Quit(), error);
         Switch(menu);
     }
 
@@ -55,11 +58,27 @@ public partial class Main : Node
         Switch(screen);
     }
 
-    public void StartFlight(string aircraftId, System.Func<double, ControlInputs>? script = null)
+    public bool StartFlight(string aircraftId, System.Func<double, ControlInputs>? script = null)
     {
         var scene = new FlightScene();
-        scene.Init(_services, aircraftId, ShowMenu, script);
+        try
+        {
+            scene.Init(_services, aircraftId, ShowMenu, script);
+        }
+        catch (System.Exception ex)
+        {
+            scene.Free();
+            GD.PushError($"Flight start failed for '{aircraftId}': {ex}");
+            if (_smokeAircraft.Length > 0)
+            {
+                GD.Print($"SYMLAB_SMOKE_FAIL {ex.Message}");
+                GetTree().Quit(1);
+            }
+            else ShowMenu($"{aircraftId}: {ex.Message}");
+            return false;
+        }
         Switch(scene);
+        return true;
     }
 
     public override void _Process(double delta)
@@ -97,7 +116,14 @@ public partial class Main : Node
             GetTree().Quit(0);
             return true;
         }
-        if (ArgValue(args, "--screen") == "radio")
+        if (Has(args, "--smoke-input-map"))
+        {
+            foreach (var action in new[] { "ui_left", "ui_right", "ui_up", "ui_down" })
+                GD.Print($"INPUT_MAP {action} = {string.Join(" | ", InputMap.ActionGetEvents(action).Select(e => $"{e.GetClass()}({e.AsText()})"))}");
+            GetTree().Quit(0);
+            return true;
+        }
+                if (ArgValue(args, "--screen") == "radio")
         {
             ShowRadio();
             return true;
@@ -133,13 +159,15 @@ public partial class Main : Node
             StartFlight(_smokeAircraft, _ => new ControlInputs(0.7, 0, 0, 0));
             return true;
         }
-        int flightShot = System.Array.IndexOf(args, "--screenshot-flight");
-        if (flightShot >= 0 && flightShot + 3 < args.Length)
+        foreach (var (flag, diagnostics) in new[] { ("--screenshot-flight", false), ("--screenshot-diagnostics", true) })
         {
-            _smokeAircraft = args[flightShot + 1];
-            _smokeSeconds = double.Parse(args[flightShot + 2], CultureInfo.InvariantCulture);
-            _smokeScreenshot = args[flightShot + 3];
-            StartFlight(_smokeAircraft, t => new ControlInputs(1, 0, t > 3.5 && t < 5 ? 0.25 : 0.05, 0));
+            int shot = System.Array.IndexOf(args, flag);
+            if (shot < 0 || shot + 3 >= args.Length) continue;
+            _smokeAircraft = args[shot + 1];
+            _smokeSeconds = double.Parse(args[shot + 2], CultureInfo.InvariantCulture);
+            _smokeScreenshot = args[shot + 3];
+            if (StartFlight(_smokeAircraft, t => new ControlInputs(1, 0, t > 3.5 && t < 5 ? 0.25 : 0.05, 0)) && diagnostics)
+                ((FlightScene)_current!).Diagnostics.Shown = true;
             return true;
         }
         return false;

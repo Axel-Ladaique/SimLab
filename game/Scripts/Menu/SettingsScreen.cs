@@ -16,7 +16,7 @@ public partial class SettingsScreen : Control
         }
         var s = services.Settings;
 
-        var fovRow = Ui.Slider(Ui.T("SET_FOV"), 20, 90, 1, s.FovDeg, v => Change(x => x with { FovDeg = v }), "0");
+        var fovRow = Ui.Slider(Ui.T("SET_FOV"), 10, 90, 1, s.FovDeg, v => Change(x => x with { FovDeg = v }), "0");
         column.AddChild(fovRow);
         double screenCm = 30, distanceCm = 60;
         column.AddChild(Ui.Slider(Ui.T("SET_SCREEN_HEIGHT"), 10, 150, 1, screenCm, v => screenCm = v, "0"));

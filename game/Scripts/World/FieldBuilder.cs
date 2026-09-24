@@ -12,6 +12,7 @@ public static class FieldBuilder
     const float GridStep = 10f;
     static readonly Color Grass = new(0.14f, 0.34f, 0.10f);
     static readonly Color Mowed = new(0.20f, 0.44f, 0.14f);
+    static readonly Color SkyHorizon = new(0.66f, 0.76f, 0.88f);
     static readonly Color Gravel = new(0.55f, 0.52f, 0.47f);
 
     public static WindsockNode Build(Node3D root, ClubFieldTerrain terrain, FlightConditions conditions)
@@ -35,8 +36,9 @@ public static class FieldBuilder
         {
             SkyMaterial = new ProceduralSkyMaterial
             {
-                SkyTopColor = new Color(0.05f, 0.20f, 0.55f),
-                SkyHorizonColor = new Color(0.30f, 0.45f, 0.65f),
+                SkyTopColor = new Color(0.28f, 0.48f, 0.80f),
+                SkyHorizonColor = SkyHorizon,
+                SkyCurve = 0.30f,
                 GroundHorizonColor = new Color(0.35f, 0.38f, 0.30f),
                 GroundBottomColor = new Color(0.12f, 0.15f, 0.10f),
                 SunAngleMax = 30f,
@@ -50,7 +52,7 @@ public static class FieldBuilder
             AmbientLightEnergy = 0.35f,
             TonemapMode = Godot.Environment.ToneMapper.Linear,
             FogEnabled = true,
-            FogLightColor = new Color(0.60f, 0.66f, 0.75f),
+            FogLightColor = SkyHorizon,
             FogDensity = 0.00008f,
             // Fog otherwise fully replaces the skybox at long (effectively infinite) view distance,
             // washing the sky out to FogLightColor regardless of density; keep it to hazing the

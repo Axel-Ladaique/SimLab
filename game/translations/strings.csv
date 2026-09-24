@@ -5,7 +5,7 @@ MENU_RADIO,Radio,Radio
 MENU_SETTINGS,Réglages,Settings
 MENU_QUIT,Quitter,Quit
 MENU_AIRCRAFT,Avion,Aircraft
-MENU_CONDITIONS,Conditions sur le terrain,Field conditions
+MENU_CONDITIONS,Conditions de vol,Flight conditions
 COND_WIND_SPEED,Vent (m/s),Wind (m/s)
 COND_WIND_DIR,Vent venant de (°),Wind from (°)
 COND_TURBULENCE,Turbulence,Turbulence
@@ -58,6 +58,8 @@ HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R 
 HUD_LATENCY,Latence estimée,Estimated latency
 HUD_FPS,Images/s,FPS
 HUD_INPUT,Commande,Input
+HUD_KEYBOARD_SHORT,Clavier,Keyboard
+HUD_PHYSICS_STEPS,Pas physiques/image,Physics steps/frame
 WIND_ON,Vent activé,Wind on
 WIND_OFF,Vent coupé,Wind off
 CRASH_TITLE,Crash !,Crash!
@@ -66,5 +68,5 @@ CRASH_NONE,—,—
 CRASH_HARDLANDING,Atterrissage trop dur,Landing too hard
 CRASH_TREESTRIKE,Dans les arbres,Into the trees
 CRASH_WINGTIPSTRIKE,Saumon d'aile au sol,Wingtip strike
-CRASH_NOSEOVER,Passage sur le nez,Nose-over
+CRASH_NOSEOVER,Capotage,Nose-over
 CRASH_HULLIMPACT,Choc de la cellule,Airframe impact

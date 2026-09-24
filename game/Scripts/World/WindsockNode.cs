@@ -6,7 +6,7 @@ namespace Symlab.Game.World;
 /// <summary>6 m pole with an orange sock that points downwind and droops in light air.</summary>
 public partial class WindsockNode : Node3D
 {
-    const float PoleHeight = 6f;
+    public const float PoleHeight = 6f;
     Node3D _sock = null!;
 
     public override void _Ready()

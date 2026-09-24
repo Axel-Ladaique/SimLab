@@ -58,7 +58,9 @@ public partial class RadioScreen : Control
         {
             var bar = new ProgressBar { MinValue = 0, MaxValue = 100, ShowPercentage = false, CustomMinimumSize = new Vector2(420, 16) };
             _bars.Add(bar);
-            column.AddChild(Ui.Row(Ui.Text($"{i + 1}", 16), bar));
+            var index = Ui.RowLabel($"{i + 1}", 16);
+            index.CustomMinimumSize = new Vector2(32, 0);
+            column.AddChild(Ui.Row(index, bar));
         }
 
         _prompt = Ui.Text("", 22);
