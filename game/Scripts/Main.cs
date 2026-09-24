@@ -164,13 +164,21 @@ public partial class Main : Node
         int render = System.Array.IndexOf(args, "--render-audio");
         if (render >= 0 && render + 2 < args.Length)
         {
-            var id = args[render + 1];
-            var folder = System.IO.Path.Combine(AppPaths.AircraftRoot, id);
-            using var session = new FlightSession(AircraftLoader.Load(folder), _services.Settings.Conditions with { WindSpeed = 0, Turbulence = 0 });
-            var samples = OfflineAudio.Render(session, new AircraftSound(session, SoundSpecLoader.Load(folder)), 20, 44100, OfflineAudio.TakeoffScript);
-            using (var file = System.IO.File.Create(args[render + 2])) WavWriter.Write(file, samples, 44100);
-            GD.Print($"SIMLAB_AUDIO_OK path={args[render + 2]} samples={samples.Length}");
-            GetTree().Quit(0);
+            try
+            {
+                var folder = System.IO.Path.Combine(AppPaths.AircraftRoot, args[render + 1]);
+                using var session = new FlightSession(AircraftLoader.Load(folder), _services.Settings.Conditions with { WindSpeed = 0, Turbulence = 0 });
+                var samples = OfflineAudio.Render(session, new AircraftSound(session, SoundSpecLoader.Load(folder)), 20, 44100, OfflineAudio.TakeoffScript);
+                using (var file = System.IO.File.Create(args[render + 2])) WavWriter.Write(file, samples, 44100);
+                GD.Print($"SIMLAB_AUDIO_OK path={args[render + 2]} samples={samples.Length}");
+                GetTree().Quit(0);
+            }
+            catch (System.Exception ex)
+            {
+                GD.PushError($"Audio render failed for '{args[render + 1]}': {ex}");
+                GD.Print($"SIMLAB_AUDIO_FAIL {ex.Message}");
+                GetTree().Quit(1);
+            }
             return true;
         }
         int smoke = System.Array.IndexOf(args, "--smoke-flight");
