@@ -70,3 +70,30 @@ CRASH_TREESTRIKE,Dans les arbres,Into the trees
 CRASH_WINGTIPSTRIKE,Saumon d'aile au sol,Wingtip strike
 CRASH_NOSEOVER,Capotage,Nose-over
 CRASH_HULLIMPACT,Choc de la cellule,Airframe impact
+RADIO_REVERSE_TITLE,Sens des voies,Channel direction
+RADIO_REVERSE,Inverser,Reverse
+RADIO_PREVIEW_TITLE,Contrôle des gouvernes,Control check
+RADIO_PREVIEW_AIRCRAFT,Maquette,Model
+CHECK_THROTTLE,Gaz,Throttle
+CHECK_AILERON,Ailerons,Aileron
+CHECK_ELEVATOR,Profondeur,Elevator
+CHECK_RUDDER,Dérive,Rudder
+CHECK_STICK_NEUTRAL,au neutre,centred
+CHECK_STICK_UP,à cabrer,up
+CHECK_STICK_DOWN,à piquer,down
+CHECK_STICK_LEFT,à gauche,left
+CHECK_STICK_RIGHT,à droite,right
+CHECK_TE_UP,bord de fuite en haut,trailing edge up
+CHECK_TE_DOWN,bord de fuite en bas,trailing edge down
+CHECK_TE_LEFT,bord de fuite à gauche,trailing edge left
+CHECK_TE_RIGHT,bord de fuite à droite,trailing edge right
+CHECK_STEER_LEFT,tourne à gauche,steers left
+CHECK_STEER_RIGHT,tourne à droite,steers right
+CHECK_EFFECT_ROLLRIGHT,roulis à droite,roll right
+CHECK_EFFECT_ROLLLEFT,roulis à gauche,roll left
+CHECK_EFFECT_PITCHUP,cabre,pitch up
+CHECK_EFFECT_PITCHDOWN,pique,pitch down
+CHECK_EFFECT_YAWRIGHT,lacet à droite,yaw right
+CHECK_EFFECT_YAWLEFT,lacet à gauche,yaw left
+CHECK_NO_SURFACE,aucune gouverne,no control surface
+CHECK_WRONG_WAY,(SENS INVERSÉ !),(WRONG WAY!)

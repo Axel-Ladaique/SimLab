@@ -1,6 +1,8 @@
 using SimLab.App.Localization;
 using SimLab.App.Ui;
+using SimLab.App.Visual;
 using SimLab.Flight.Ground;
+using SimLab.Input;
 
 namespace SimLab.App.Tests.Localization;
 
@@ -37,6 +39,24 @@ public class TranslationTests
         foreach (var k in new[] { "HUD_AIRSPEED", "HUD_ALTITUDE", "HUD_THROTTLE", "HUD_BATTERY", "HUD_TIMER",
                      "CAL_CENTER", "CAL_EXTREMES", "CAL_ID_THROTTLE", "CAL_ID_AILERON", "CAL_ID_ELEVATOR", "CAL_ID_RUDDER",
                      "CAL_DONE", "STICK_LEFT", "STICK_RIGHT" })
+            Assert.Contains(k, keys);
+    }
+
+    [Fact]
+    public void Every_key_used_by_the_radio_screen_exists()
+    {
+        var keys = Shipped().Keys.ToHashSet();
+        foreach (StickFunction f in Enum.GetValues<StickFunction>()) Assert.Contains(ControlCheck.ChannelKey(f), keys);
+        foreach (CheckDirection d in Enum.GetValues<CheckDirection>())
+        {
+            Assert.Contains("CHECK_STICK_" + d.ToString().ToUpperInvariant(), keys);
+            if (d == CheckDirection.Neutral) continue;
+            Assert.Contains("CHECK_TE_" + d.ToString().ToUpperInvariant(), keys);
+        }
+        foreach (CheckEffect e in Enum.GetValues<CheckEffect>().Where(e => e != CheckEffect.None))
+            Assert.Contains("CHECK_EFFECT_" + e.ToString().ToUpperInvariant(), keys);
+        foreach (var k in new[] { "CHECK_STEER_LEFT", "CHECK_STEER_RIGHT", "CHECK_NO_SURFACE", "CHECK_WRONG_WAY",
+                     "RADIO_REVERSE", "RADIO_REVERSE_TITLE", "RADIO_PREVIEW_TITLE", "RADIO_PREVIEW_AIRCRAFT" })
             Assert.Contains(k, keys);
     }
 }

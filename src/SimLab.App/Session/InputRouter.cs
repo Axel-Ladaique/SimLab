@@ -67,5 +67,6 @@ public sealed class InputRouter
         return new RouterOutput(ToControls(keyboardSticks), actions, InputSource.Keyboard, "");
     }
 
-    static ControlInputs ToControls(StickState s) => new(s.Throttle, s.Aileron, s.Elevator, s.Rudder);
+    /// <summary>Calibrated sticks to simulator commands (same signs: right, pitch up, right positive).</summary>
+    public static ControlInputs ToControls(StickState s) => new(s.Throttle, s.Aileron, s.Elevator, s.Rudder);
 }
