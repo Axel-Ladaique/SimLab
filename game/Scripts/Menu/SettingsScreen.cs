@@ -47,7 +47,7 @@ public partial class SettingsScreen : Control
             TranslationServer.SetLocale(services.Settings.Language);
             reopen();
         };
-        column.AddChild(Ui.Row(Ui.Text(Ui.T("SET_LANGUAGE")), language));
+        column.AddChild(Ui.Row(Ui.RowLabel(Ui.T("SET_LANGUAGE")), language));
         column.AddChild(Ui.Button(Ui.T("BACK"), back));
     }
 }

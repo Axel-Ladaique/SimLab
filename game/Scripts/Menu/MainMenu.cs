@@ -26,7 +26,7 @@ public partial class MainMenu : Control
             Describe(selected);
         }
         picker.ItemSelected += Describe;
-        column.AddChild(Ui.Row(Ui.Text(Ui.T("MENU_AIRCRAFT")), picker));
+        column.AddChild(Ui.Row(Ui.RowLabel(Ui.T("MENU_AIRCRAFT")), picker));
         column.AddChild(description);
 
         column.AddChild(Ui.Text(Ui.T("MENU_CONDITIONS"), 24));

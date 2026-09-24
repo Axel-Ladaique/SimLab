@@ -51,7 +51,7 @@ public partial class RadioScreen : Control
             _services.Settings = _services.Settings with { StickMode = index == 0 ? StickMode.Mode1 : StickMode.Mode2 };
             _services.SaveSettings();
         };
-        column.AddChild(Ui.Row(Ui.Text(Ui.T("RADIO_MODE")), mode));
+        column.AddChild(Ui.Row(Ui.RowLabel(Ui.T("RADIO_MODE")), mode));
 
         column.AddChild(Ui.Text(Ui.T("RADIO_AXES"), 22));
         for (int i = 0; i < JoypadReader.MaxAxes; i++)

@@ -38,6 +38,16 @@ public static class Ui
         return label;
     }
 
+    /// <summary>Label meant to sit at the start of a Row next to a control (OptionButton, slider…):
+    /// no word-wrap and a minimum width, so it never collapses to one letter per line.</summary>
+    public static Label RowLabel(string text, int size = 18)
+    {
+        var label = Text(text, size);
+        label.AutowrapMode = TextServer.AutowrapMode.Off;
+        label.CustomMinimumSize = new Vector2(220, 0);
+        return label;
+    }
+
     public static Button Button(string text, System.Action pressed)
     {
         var button = new Button { Text = text, CustomMinimumSize = new Vector2(240, 44) };
