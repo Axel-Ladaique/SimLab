@@ -71,8 +71,10 @@ public sealed class SurfaceAeroModel : IAeroModel
             double height = ctx.HeightAboveGround + Vec3.Dot(seg.Position, ctx.UpBody);
             double groundEffect = InducedFlow.GroundEffectFactor(height, WingSpan);
             double delta = seg.ControlIndex >= 0 ? ctx.Deflections[seg.ControlIndex] : 0;
+            // Plain flaps lose effectiveness at large deflections as the flow separates on the flap.
+            double flap = delta == 0 ? 0 : FlapEfficiency * SurfaceGeometry.LargeDeflectionFactor(delta, seg.ControlChordFraction) * delta;
 
-            double alphaGeo = alpha + seg.FlapEffectiveness * FlapEfficiency * delta;
+            double alphaGeo = alpha + seg.FlapEffectiveness * flap;
             if (seg.Role == SurfaceRole.HorizontalTail) alphaGeo -= Downwash * groundEffect;
 
             double reynolds = ctx.Density * v * seg.Chord / Isa.DynamicViscosity;
@@ -87,7 +89,7 @@ public sealed class SurfaceAeroModel : IAeroModel
             double qa = q * seg.Area;
             var f = (liftDir * cl + dragDir * cd) * qa;
             force += f;
-            double cm = coeff.Cm + seg.FlapMomentEffectiveness * FlapEfficiency * delta;
+            double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap;
             moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * cm);
 
             if (seg.Role == SurfaceRole.Wing)
