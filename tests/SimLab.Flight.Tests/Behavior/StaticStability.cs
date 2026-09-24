@@ -9,6 +9,8 @@ namespace SimLab.Flight.Tests.Behavior;
 /// <summary>
 /// Static longitudinal stability from the aircraft's own aero model (power off, zero rates, out of ground effect):
 /// neutral point and static margin by finite differences, and the level-flight trim point.
+/// Tailless aircraft only: every evaluation calls <c>Aero.Reset()</c>, which zeroes the lagged wing downwash at the tail,
+/// so for a tailed aircraft the tail would see no downwash and the margin and trim would be wrong.
 /// </summary>
 internal static class StaticStability
 {
@@ -48,22 +50,26 @@ internal static class StaticStability
         return (aft, aft / MeanAerodynamicChord(def));
     }
 
-    /// <summary>Alpha (rad) and elevator command for lift = weight and zero pitch moment at this airspeed.</summary>
+    /// <summary>
+    /// Alpha (rad, searched in −8°..12°) and elevator command (searched in ±0.5: at full up elevon the wing needs more than 12° alpha
+    /// for lift = weight, so the inner search would fail) for lift = weight and zero pitch moment at this airspeed. Throws if there is no trim in range.
+    /// </summary>
     public static (double Alpha, double Elevator) Trim(AircraftDefinition def, double airspeed)
     {
         var aircraft = new Aircraft(def);
         double weight = def.Mass.Mass * Aircraft.Gravity;
         double AlphaForWeight(double elevator) =>
             Bisect(a => Loads(aircraft, airspeed, a, elevator).Lift - weight, Angle.Rad(-8), Angle.Rad(12));
-        double elevator = Bisect(e => -Loads(aircraft, airspeed, AlphaForWeight(e), e).PitchMoment, -1, 1);
+        double elevator = Bisect(e => -Loads(aircraft, airspeed, AlphaForWeight(e), e).PitchMoment, -0.5, 0.5);
         return (AlphaForWeight(elevator), elevator);
     }
 
-    /// <summary>Root of an increasing-or-decreasing function on [lo, hi] by bisection (clamps to the ends if no sign change).</summary>
+    /// <summary>Root of an increasing-or-decreasing function on [lo, hi] by bisection; throws if f does not change sign.</summary>
     static double Bisect(Func<double, double> f, double lo, double hi)
     {
-        double flo = f(lo);
-        if (Math.Sign(flo) == Math.Sign(f(hi))) return Math.Abs(flo) < Math.Abs(f(hi)) ? lo : hi;
+        double flo = f(lo), fhi = f(hi);
+        if (Math.Sign(flo) == Math.Sign(fhi))
+            throw new InvalidOperationException($"No sign change on [{lo}, {hi}]: f(lo) = {flo}, f(hi) = {fhi}; no trim in range.");
         for (int i = 0; i < 60; i++)
         {
             double mid = 0.5 * (lo + hi);
