@@ -32,6 +32,21 @@ public class WingPitchStabilityTests(ITestOutputHelper output)
     }
 
     /// <summary>
+    /// A slow pull to the stall from cruise trim must not snap into a tip-stall roll: the root stalls first, so the
+    /// uncommanded roll rate stays below 60°/s. The result is CG sensitive (docs/tuning-log.md, 2026-09-25 scan):
+    /// with −6° washout it holds from cg x 0.308 to 0.312, not beyond, so this checks the shipped CG only.
+    /// </summary>
+    [Fact]
+    public void Wing_slow_pull_to_stall_does_not_roll_off()
+    {
+        var def = Fleet.Load("wing");
+        var (trimAlpha, trimElevator) = StaticStability.Trim(def, CruiseSpeed);
+        var (maxRoll, alphaAtMaxRoll, maxBank, _, _) = SlowStallPull(trimAlpha, trimElevator, Fleet.Cruise("wing").Throttle);
+        output.WriteLine($"max roll rate {Angle.Deg(maxRoll):F0} deg/s at alpha {Angle.Deg(alphaAtMaxRoll):F1} deg, max bank {Angle.Deg(maxBank):F0} deg");
+        Assert.True(maxRoll < Angle.Rad(60), $"max uncommanded roll rate {Angle.Deg(maxRoll):F0} deg/s (limit 60)");
+    }
+
+    /// <summary>
     /// Dynamic handling numbers from the flight log that prompted the re-trim: pitch response to a small elevator step,
     /// the uncommanded roll at a slow pull to the stall, sideslip after a small aileron pulse, and the hand launch.
     /// </summary>
@@ -54,26 +69,12 @@ public class WingPitchStabilityTests(ITestOutputHelper output)
             peakAlpha = Math.Max(peakAlpha, s.Aircraft.AirData.Alpha);
         });
 
-        // Slow pull to the stall: elevator ramps from the trim to full up over 8 s, wings level, cruise throttle.
-        sim = Fleet.InFlight("wing", 150, CruiseSpeed, pitchDeg: Angle.Deg(trimAlpha));
-        Fleet.Fly(sim, 1, _ => trim);
-        double start = sim.Time, maxRoll = 0, alphaAtMaxRoll = 0, maxBank = 0, onsetAlpha = double.NaN, onsetElevator = double.NaN;
-        Fleet.Fly(sim, 8, t => trim with { Elevator = trimElevator + (1 - trimElevator) * Math.Min(1, (t - start) / 8) }, s =>
-        {
-            double p = Math.Abs(PilotFrame.RollRightRate(s.Aircraft.State.AngularVelocity));
-            if (p > maxRoll) { maxRoll = p; alphaAtMaxRoll = s.Aircraft.AirData.Alpha; }
-            if (double.IsNaN(onsetAlpha) && p > Angle.Rad(60))
-            {
-                onsetAlpha = s.Aircraft.AirData.Alpha;
-                onsetElevator = trimElevator + (1 - trimElevator) * Math.Min(1, (s.Time - start) / 8);
-            }
-            maxBank = Math.Max(maxBank, Math.Abs(Fleet.Roll(s)));
-        });
+        var (maxRoll, alphaAtMaxRoll, maxBank, onsetAlpha, onsetElevator) = SlowStallPull(trimAlpha, trimElevator, throttle);
 
         // Small aileron pulse (0.15 for 0.5 s): peak sideslip.
         sim = Fleet.InFlight("wing", 150, CruiseSpeed, pitchDeg: Angle.Deg(trimAlpha));
         Fleet.Fly(sim, 1, _ => trim);
-        start = sim.Time;
+        double start = sim.Time;
         double peakBeta = 0;
         Fleet.Fly(sim, 3, t => t - start < 0.5 ? trim with { Aileron = 0.15 } : trim,
             s => peakBeta = Math.Max(peakBeta, Math.Abs(s.Aircraft.AirData.Beta)));
@@ -95,5 +96,30 @@ public class WingPitchStabilityTests(ITestOutputHelper output)
         output.WriteLine($"hand launch: altitude after 6 s {openLoop:F1} m open loop ({openLoopCrash}), " +
                          $"{sim.Aircraft.State.Position.Z:F1} m with the launch pilot ({sim.Aircraft.Crash}, max bank {Angle.Deg(launchMaxBank):F0} deg)");
         Assert.True(peakQ > 0);
+    }
+
+    /// <summary>
+    /// Slow pull to the stall from level cruise trim: the elevator ramps from the trim to full up over 8 s, wings level,
+    /// cruise throttle. Returns the peak uncommanded roll rate and where it happened.
+    /// </summary>
+    static (double MaxRoll, double AlphaAtMaxRoll, double MaxBank, double OnsetAlpha, double OnsetElevator) SlowStallPull(
+        double trimAlpha, double trimElevator, double throttle)
+    {
+        var trim = new ControlInputs(throttle, 0, trimElevator, 0);
+        var sim = Fleet.InFlight("wing", 150, CruiseSpeed, pitchDeg: Angle.Deg(trimAlpha));
+        Fleet.Fly(sim, 1, _ => trim);
+        double start = sim.Time, maxRoll = 0, alphaAtMaxRoll = 0, maxBank = 0, onsetAlpha = double.NaN, onsetElevator = double.NaN;
+        Fleet.Fly(sim, 8, t => trim with { Elevator = trimElevator + (1 - trimElevator) * Math.Min(1, (t - start) / 8) }, s =>
+        {
+            double p = Math.Abs(PilotFrame.RollRightRate(s.Aircraft.State.AngularVelocity));
+            if (p > maxRoll) { maxRoll = p; alphaAtMaxRoll = s.Aircraft.AirData.Alpha; }
+            if (double.IsNaN(onsetAlpha) && p > Angle.Rad(60))
+            {
+                onsetAlpha = s.Aircraft.AirData.Alpha;
+                onsetElevator = trimElevator + (1 - trimElevator) * Math.Min(1, (s.Time - start) / 8);
+            }
+            maxBank = Math.Max(maxBank, Math.Abs(Fleet.Roll(s)));
+        });
+        return (maxRoll, alphaAtMaxRoll, maxBank, onsetAlpha, onsetElevator);
     }
 }
