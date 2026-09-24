@@ -25,10 +25,14 @@ public static class SoundSpecLoader
         using var power = JsonDocument.Parse(File.ReadAllText(path), Options);
         if (!TryGet(power.RootElement, "sound", out var sound)) return SoundSpec.Default;
 
-        int blades = TryGet(sound, "blades", out var b) ? b.GetInt32() : SoundSpec.Default.Blades;
-        int polePairs = TryGet(sound, "polePairs", out var pp) ? pp.GetInt32() : SoundSpec.Default.PolePairs;
-        string? sample = TryGet(sound, "sample", out var s) && s.ValueKind == JsonValueKind.String ? s.GetString() : null;
-        double? sampleRpm = TryGet(sound, "sampleRpm", out var r) && r.ValueKind == JsonValueKind.Number ? r.GetDouble() : null;
+        int blades = Int(sound, "blades", path) ?? SoundSpec.Default.Blades;
+        int polePairs = Int(sound, "polePairs", path) ?? SoundSpec.Default.PolePairs;
+        string? sample = null;
+        if (TryGet(sound, "sample", out var s))
+            sample = s.ValueKind == JsonValueKind.String ? s.GetString() : throw Invalid(path, "sound.sample must be a file name string.");
+        double? sampleRpm = null;
+        if (TryGet(sound, "sampleRpm", out var r))
+            sampleRpm = r.ValueKind == JsonValueKind.Number ? r.GetDouble() : throw Invalid(path, "sound.sampleRpm must be a number.");
 
         if (blades is < 1 or > 6) throw Invalid(path, "sound.blades must be between 1 and 6.");
         if (polePairs is < 1 or > 20) throw Invalid(path, "sound.polePairs must be between 1 and 20.");
@@ -37,6 +41,15 @@ public static class SoundSpecLoader
         string? samplePath = sample is null ? null : Path.Combine(Path.GetDirectoryName(path)!, sample);
         if (samplePath is not null && !File.Exists(samplePath)) throw Invalid(path, $"sound.sample file not found: {sample}.");
         return new SoundSpec(blades, polePairs, samplePath, sampleRpm);
+    }
+
+    /// <summary>An optional whole-number field; a string, fraction or out-of-range value is rejected with the file and field.</summary>
+    static int? Int(JsonElement sound, string name, string path)
+    {
+        if (!TryGet(sound, name, out var v)) return null;
+        if (v.ValueKind != JsonValueKind.Number || !v.TryGetInt32(out int value))
+            throw Invalid(path, $"sound.{name} must be a whole number.");
+        return value;
     }
 
     static bool TryGet(JsonElement e, string name, out JsonElement value)
