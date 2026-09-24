@@ -79,6 +79,38 @@ public class SurfaceGeometryTests
     public void Flap_moment_coefficient_matches_thin_airfoil_theory()
         => Assert.Equal(-0.650, SurfaceGeometry.FlapMomentCoefficient(0.25), 3);
 
+    [Theory]
+    [InlineData(0.0, 0.25)]
+    [InlineData(5.0, 0.25)]
+    [InlineData(10.0, 0.10)]
+    [InlineData(10.0, 0.50)]
+    public void Large_deflection_factor_is_one_for_small_deflections(double deg, double chordFraction)
+        => Assert.Equal(1.0, SurfaceGeometry.LargeDeflectionFactor(Angle.Rad(deg), chordFraction), 12);
+
+    [Theory]
+    [InlineData(20.0, 0.25, 0.850)]
+    [InlineData(30.0, 0.10, 0.722)]
+    [InlineData(60.0, 0.50, 0.423)]
+    [InlineData(25.0, 0.25, (0.740 + 0.677) / 2)]
+    [InlineData(20.0, 0.35, (0.800 + 0.750) / 2)]
+    [InlineData(80.0, 0.60, 0.423)]
+    [InlineData(20.0, 0.05, 0.900)]
+    public void Large_deflection_factor_interpolates_the_datcom_chart(double deg, double chordFraction, double expected)
+        => Assert.Equal(expected, SurfaceGeometry.LargeDeflectionFactor(Angle.Rad(deg), chordFraction), 3);
+
+    [Fact]
+    public void Large_deflection_factor_is_even_and_continuous_in_deflection()
+    {
+        double previous = 1;
+        for (double deg = 0; deg <= 70; deg += 0.25)
+        {
+            double k = SurfaceGeometry.LargeDeflectionFactor(Angle.Rad(deg), 0.28);
+            Assert.Equal(k, SurfaceGeometry.LargeDeflectionFactor(Angle.Rad(-deg), 0.28), 12);
+            Assert.True(k <= previous + 1e-12 && previous - k < 0.02, $"step at {deg} deg");
+            previous = k;
+        }
+    }
+
     static void Approx(Vec3 e, Vec3 a)
     {
         Assert.Equal(e.X, a.X, 6);
