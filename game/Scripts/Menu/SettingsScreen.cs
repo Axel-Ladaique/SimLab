@@ -37,6 +37,10 @@ public partial class SettingsScreen : Control
             DisplaySettings.Apply(services.Settings);
         }));
 
+        column.AddChild(Ui.Slider(Ui.T("SET_VOLUME_MASTER"), 0, 1, 0.05, s.MasterVolume, v => Change(x => x with { MasterVolume = v }), "0.00"));
+        column.AddChild(Ui.Slider(Ui.T("SET_VOLUME_AIRCRAFT"), 0, 1, 0.05, s.AircraftVolume, v => Change(x => x with { AircraftVolume = v }), "0.00"));
+        column.AddChild(Ui.Slider(Ui.T("SET_VOLUME_AMBIENCE"), 0, 1, 0.05, s.AmbienceVolume, v => Change(x => x with { AmbienceVolume = v }), "0.00"));
+
         var language = new OptionButton();
         language.AddItem("Français", 0);
         language.AddItem("English", 1);

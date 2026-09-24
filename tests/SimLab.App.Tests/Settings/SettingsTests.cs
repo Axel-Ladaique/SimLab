@@ -72,6 +72,22 @@ public sealed class SettingsTests : IDisposable
     }
 
     [Fact]
+    public void Volumes_default_round_trip_and_clamp()
+    {
+        var path = Path.Combine(_dir, "settings.json");
+        File.WriteAllText(path, """{ "FovDeg": 50 }""");
+        var loaded = AppSettings.Load(path);
+        Assert.Equal((0.8, 1.0, 0.5), (loaded.MasterVolume, loaded.AircraftVolume, loaded.AmbienceVolume));
+
+        (loaded with { MasterVolume = 0.3, AircraftVolume = 0.6, AmbienceVolume = 0 }).Save(path);
+        var again = AppSettings.Load(path);
+        Assert.Equal((0.3, 0.6, 0.0), (again.MasterVolume, again.AircraftVolume, again.AmbienceVolume));
+
+        var clamped = (new AppSettings() with { MasterVolume = 3, AmbienceVolume = -1 }).Sanitized();
+        Assert.Equal((1.0, 0.0), (clamped.MasterVolume, clamped.AmbienceVolume));
+    }
+
+    [Fact]
     public void Radio_profiles_are_stored_per_guid()
     {
         var store = new RadioProfileStore(_dir);

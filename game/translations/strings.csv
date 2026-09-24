@@ -48,6 +48,9 @@ SET_FLIGHT_DATA,Afficher les données de vol,Show flight data
 SET_RECORD,Enregistrer les vols (CSV),Record flights (CSV)
 SET_LANGUAGE,Langue,Language
 SET_VSYNC,Synchronisation verticale,Vertical sync
+SET_VOLUME_MASTER,Volume général,Master volume
+SET_VOLUME_AIRCRAFT,Volume avion,Aircraft volume
+SET_VOLUME_AMBIENCE,Volume ambiance,Ambience volume
 HUD_AIRSPEED,Vitesse,Airspeed
 HUD_ALTITUDE,Hauteur,Height
 HUD_THROTTLE,Gaz,Throttle
