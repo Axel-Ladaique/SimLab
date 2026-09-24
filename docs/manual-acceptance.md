@@ -11,6 +11,11 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Calibration: the four steps complete; the status turns green ("Calibrée — prête à voler").
 - [ ] Mode 1/Mode 2 changes the instructions (which stick to move).
 - [ ] A switch assigned to "reset" resets the aircraft in flight; "pause" and "vent" work too.
+- [ ] Control check ("Contrôle des gouvernes"), for each of trainer, sport, wing: right aileron raises the right
+  aileron (elevon) and lowers the left one, pulling the elevator stick raises the elevator (both elevons), right
+  rudder moves the rudder trailing edge right; the model and the text under it agree and no line turns red.
+- [ ] Reverse: tick "Inverser" on the rudder; the rudder line now reads "à gauche" for a right stick and the model
+  follows. Leave the screen and come back: the box is still ticked (the profile was saved). Untick it again.
 
 ## Flight (for each of trainer, sport, wing)
 - [ ] Right aileron rolls right, pulling the elevator stick pitches up, right rudder yaws right, throttle up accelerates.

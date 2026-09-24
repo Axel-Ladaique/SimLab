@@ -51,4 +51,27 @@ public class RadioProfileTests
         Assert.Equal(0.0, sticks.Elevator);
         Assert.Equal(0.0, sticks.Throttle);
     }
+
+    [Fact]
+    public void Set_reversed_flips_the_channel_and_keeps_its_other_settings()
+    {
+        var calibration = new AxisCalibration(-0.9, 0.02, 0.95);
+        var p = new RadioProfile { Channels = { [StickFunction.Rudder] = new ChannelSettings(3, true, calibration, Trim: 0.1, Expo: 0.2, Rate: 0.9) } };
+        var frame = new RawInputFrame([0, 0, 0, 0.5], []);
+        double before = p.Read(frame).Rudder;
+
+        Assert.True(p.SetReversed(StickFunction.Rudder, false));
+
+        Assert.Equal(new ChannelSettings(3, false, calibration, Trim: 0.1, Expo: 0.2, Rate: 0.9), p.Channels[StickFunction.Rudder]);
+        Assert.True(p.Read(frame).Rudder > 0);
+        Assert.True(before < 0);
+    }
+
+    [Fact]
+    public void Set_reversed_on_an_unassigned_channel_does_nothing()
+    {
+        var p = new RadioProfile();
+        Assert.False(p.SetReversed(StickFunction.Throttle, true));
+        Assert.Empty(p.Channels);
+    }
 }

@@ -3,12 +3,18 @@ using Godot;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 using SimLab.App.Ui;
+using SimLab.App.Visual;
+using SimLab.Flight.Airframe;
+using SimLab.Flight.Controls;
 using SimLab.Input;
 using SimLab.Game;
 
 namespace SimLab.Game.Radio;
 
-/// <summary>Radio setup: detected devices, live raw axes, calibration wizard, stick mode and switch assignment.</summary>
+/// <summary>
+/// Radio setup: detected devices, live raw axes, calibration wizard, stick mode and switch assignment on the left;
+/// on the right a live control check (3D model driven by the calibrated sticks) with per-channel reverse toggles.
+/// </summary>
 public partial class RadioScreen : Control
 {
     static readonly Color Good = new(0.35f, 0.85f, 0.45f);
@@ -29,11 +35,28 @@ public partial class RadioScreen : Control
     CalibrationWizard? _wizard;
     SwitchCapture? _capture;
     SwitchAction _captureAction;
+    ControlPreview _preview = null!;
+    Label _previewError = null!;
+    readonly Dictionary<StickFunction, (CheckBox Reverse, Label Readout)> _channels = new();
+    IReadOnlyList<AircraftEntry> _aircraft = [];
+    RadioProfile? _profile;
+    string? _profileGuid;
+    bool _profileStale = true;
+    ControlInputs? _forcedInputs;
+    OptionButton _picker = null!;
+
+    static readonly StickFunction[] Functions = [StickFunction.Throttle, StickFunction.Aileron, StickFunction.Elevator, StickFunction.Rudder];
 
     public void Init(Services services, System.Action back)
     {
         _services = services;
-        var column = Ui.Screen(this, Ui.T("RADIO_TITLE"));
+        var screen = Ui.Screen(this, Ui.T("RADIO_TITLE"));
+        var columns = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        columns.AddThemeConstantOverride("separation", 40);
+        screen.AddChild(columns);
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 12);
+        columns.AddChild(column);
 
         _devices = new ItemList { CustomMinimumSize = new Vector2(600, 90) };
         _devices.ItemSelected += index => _selectedGuid = index < _pads.Count ? _pads[(int)index].Guid : null;
@@ -74,7 +97,114 @@ public partial class RadioScreen : Control
             Ui.Button(Ui.T("RADIO_BIND_WIND"), () => StartCapture(SwitchAction.ToggleWind))));
         column.AddChild(Ui.Text(Ui.T("RADIO_HELP"), 16));
         column.AddChild(Ui.Button(Ui.T("BACK"), back));
+        BuildControlCheck(columns);
         SetBusy(false);
+    }
+
+    void BuildControlCheck(HBoxContainer columns)
+    {
+        var column = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        column.AddThemeConstantOverride("separation", 8);
+        columns.AddChild(column);
+        column.AddChild(Ui.Text(Ui.T("RADIO_PREVIEW_TITLE"), 22));
+
+        _aircraft = AircraftCatalog.List(AppPaths.AircraftRoot, out _);
+        var picker = _picker = new OptionButton();
+        int selected = 0;
+        for (int i = 0; i < _aircraft.Count; i++)
+        {
+            picker.AddItem(_aircraft[i].Name, i);
+            if (_aircraft[i].Id == _services.Settings.LastAircraft) selected = i;
+        }
+        picker.ItemSelected += index => ShowAircraft(_aircraft[(int)index].Id);
+        column.AddChild(Ui.Row(Ui.RowLabel(Ui.T("RADIO_PREVIEW_AIRCRAFT")), picker));
+
+        _preview = new ControlPreview();
+        _preview.Init(new Vector2(720, 400));
+        column.AddChild(_preview);
+        _previewError = Ui.Text("", 14);
+        column.AddChild(_previewError);
+
+        column.AddChild(Ui.Text(Ui.T("RADIO_REVERSE_TITLE"), 18));
+        foreach (var function in Functions)
+        {
+            var reverse = Ui.Check(Ui.T("RADIO_REVERSE"), false, on => SetReversed(function, on));
+            reverse.CustomMinimumSize = new Vector2(130, 0);
+            reverse.SizeFlagsVertical = SizeFlags.ShrinkBegin;
+            var readout = Ui.Text("", 16);
+            readout.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            readout.CustomMinimumSize = new Vector2(560, 0);
+            _channels[function] = (reverse, readout);
+            column.AddChild(Ui.Row(reverse, readout));
+        }
+
+        if (_aircraft.Count > 0)
+        {
+            picker.Selected = selected;
+            ShowAircraft(_aircraft[selected].Id);
+        }
+    }
+
+    void ShowAircraft(string id)
+    {
+        try
+        {
+            _preview.ShowAircraft(AircraftLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, id)));
+            _previewError.Text = "";
+        }
+        catch (System.Exception ex) when (ex is System.IO.InvalidDataException or System.IO.FileNotFoundException or System.ArgumentException)
+        {
+            _previewError.Text = $"{id}: {ex.Message}";
+        }
+    }
+
+    /// <summary>Screenshot mode: shows this aircraft and drives it with fixed commands instead of the radio.</summary>
+    public void ForceControlCheck(string aircraftId, ControlInputs inputs)
+    {
+        int index = _aircraft.ToList().FindIndex(a => a.Id == aircraftId);
+        if (index >= 0) _picker.Selected = index;
+        ShowAircraft(aircraftId);
+        _forcedInputs = inputs;
+    }
+
+    void SetReversed(StickFunction function, bool reversed)
+    {
+        if (_profileGuid is not { } guid || !_services.Radios.SetReversed(guid, function, reversed)) return;
+        _services.Router.InvalidateProfiles();
+        _profileStale = true;
+        _prompt.Text = Ui.T("RADIO_SAVED");
+    }
+
+    /// <summary>Keeps the selected device's profile loaded; the reverse toggles show it and hide without one.</summary>
+    void RefreshProfile(JoypadSnapshot? pad)
+    {
+        var guid = pad?.Guid;
+        if (!_profileStale && guid == _profileGuid) return;
+        _profileStale = false;
+        _profileGuid = guid;
+        _profile = guid is null ? null : _services.Radios.Load(guid, out _);
+        foreach (var (function, (reverse, _)) in _channels)
+        {
+            var channel = _profile is not null && _profile.Channels.TryGetValue(function, out var c) ? c : null;
+            reverse.Visible = channel is not null;
+            reverse.SetPressedNoSignal(channel?.Reversed ?? false);
+        }
+    }
+
+    void UpdateControlCheck(double delta, JoypadSnapshot? pad)
+    {
+        var inputs = _forcedInputs
+            ?? (pad is { } p && _profile is not null ? InputRouter.ToControls(_profile.Read(p.Frame)) : ControlInputs.Neutral);
+        _preview.Step(delta, inputs);
+        _channels[StickFunction.Throttle].Readout.Text = ControlCheck.FormatThrottle(inputs.Throttle, Ui.T);
+        if (_preview.Aircraft is not { } aircraft) return;
+        foreach (var function in Functions.Skip(1))
+        {
+            var check = ControlCheck.Describe(aircraft, function, inputs);
+            var readout = _channels[function].Readout;
+            readout.Text = ControlCheck.Format(check, Ui.T);
+            readout.Modulate = check.Consistent ? Colors.White : Bad;
+        }
     }
 
     JoypadSnapshot? Selected
@@ -131,6 +261,9 @@ public partial class RadioScreen : Control
                 }
             }
         }
+
+        RefreshProfile(Selected);
+        UpdateControlCheck(delta, Selected);
 
         if (Selected is not { } pad)
         {
@@ -203,6 +336,7 @@ public partial class RadioScreen : Control
         if (previous is not null) profile.Switches.AddRange(previous.Switches);
         _services.Radios.Save(profile);
         _services.Router.InvalidateProfiles();
+        _profileStale = true;
         _calibrated[pad.Guid] = true;
         _wizard = null;
         _pinnedGuid = null;
@@ -242,6 +376,7 @@ public partial class RadioScreen : Control
         profile.Switches.Add(binding);
         _services.Radios.Save(profile);
         _services.Router.InvalidateProfiles();
+        _profileStale = true;
         _calibrated[pad.Guid] = true;
     }
 
