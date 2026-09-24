@@ -77,10 +77,11 @@ public static class AircraftMeshBuilder
 
     static List<Vec3> Fuselage(AircraftDefinition definition)
     {
-        double front = definition.Hull.Count > 0 ? definition.Hull.Max(h => Vec3.Dot(h.Position, BodyAxes.Forward)) : 0.5;
-        double back = definition.Hull.Count > 0 ? definition.Hull.Min(h => Vec3.Dot(h.Position, BodyAxes.Forward)) : -0.5;
+        // Along body x (back) between the foremost and the rearmost hull points.
+        double front = definition.Hull.Count > 0 ? definition.Hull.Min(h => h.Position.X) : -0.5;
+        double back = definition.Hull.Count > 0 ? definition.Hull.Max(h => h.Position.X) : 0.5;
         var triangles = new List<Vec3>();
-        AddBox(triangles, BodyAxes.Forward * ((front + back) / 2), (front - back) / 2, FuselageHeight / 2, FuselageWidth / 2);
+        AddBox(triangles, new Vec3((front + back) / 2, 0, 0), (back - front) / 2, FuselageHeight / 2, FuselageWidth / 2);
         return triangles;
     }
 

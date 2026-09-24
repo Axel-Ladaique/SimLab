@@ -17,7 +17,7 @@ public class FleetControlSignTests
         var deflections = def.Controls
             .Select(c => ControlMapping.CommandToDeflection(ControlInputs.Mix(c.Mix, input), c.MaxPositiveDeg, c.MaxNegativeDeg))
             .ToArray();
-        var ctx = new AeroContext(new Vec3(Fleet.Cruise(id).Airspeed, 0, 0), Vec3.Zero, 1.225, 100, BodyAxes.Up, deflections, default);
+        var ctx = new AeroContext(new Vec3(-Fleet.Cruise(id).Airspeed, 0, 0), Vec3.Zero, 1.225, 100, BodyAxes.Up, deflections, default);
         return aero.Evaluate(ctx).Moment;
     }
 
@@ -28,14 +28,14 @@ public class FleetControlSignTests
     [InlineData("sport")]
     [InlineData("wing")]
     public void Right_aileron_gives_a_right_roll_moment(string id) =>
-        Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Aileron = 0.5 }).X > 0);
+        Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Aileron = 0.5 }).X < 0, "roll right is -x");
 
     [Theory]
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("wing")]
     public void Up_elevator_gives_a_nose_up_moment(string id) =>
-        Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Elevator = 0.5 }).Z > 0);
+        Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Elevator = 0.5 }).Y > 0);
 
     [Theory]
     [InlineData("trainer")]
@@ -43,7 +43,7 @@ public class FleetControlSignTests
     public void Right_rudder_gives_a_nose_right_yaw_moment(string id)
     {
         var m = MomentDueTo(id, ControlInputs.Neutral with { Rudder = 0.5 });
-        Assert.True(m.Y < 0, $"{id}: yaw moment {m.Y:F4} N·m (+y is yaw left)");
+        Assert.True(m.Z < 0, $"{id}: yaw moment {m.Z:F4} N·m (+z is yaw left)");
     }
 
     [Theory]
@@ -59,12 +59,12 @@ public class FleetControlSignTests
         // Pitch the airframe so the steered wheel and the fixed wheels touch together (taildraggers sit tail-down).
         var steered = def.Wheels.First(w => w.SteerMix.Count > 0).Position;
         var fixedWheel = def.Wheels.First(w => w.SteerMix.Count == 0).Position;
-        double pitch = Math.Atan((fixedWheel.Y - steered.Y) / (steered.X - fixedWheel.X));
+        double pitch = Math.Atan((fixedWheel.Z - steered.Z) / (fixedWheel.X - steered.X));
         var q = Attitude.ToOrientation(0, pitch, Math.PI / 2);
         double lowest = def.Wheels.Min(w => q.Rotate(w.Position).Z);
         var rolling = new RigidBodyState(new Vec3(0, 0, -lowest - 0.01), q.Rotate(BodyAxes.Forward * 3), q, Vec3.Zero);
         Assert.Equal(def.Wheels.Count, ground.WheelsInContact(rolling, new FlatTerrain()));
         var m = ground.Evaluate(rolling, new FlatTerrain(), steer).Moment;
-        Assert.True(m.Y < 0, $"{id}: yaw moment {m.Y:F4} N·m (+y is yaw left)");
+        Assert.True(m.Z < 0, $"{id}: yaw moment {m.Z:F4} N·m (+z is yaw left)");
     }
 }

@@ -1,6 +1,6 @@
 {
-  "position": [-0.22, 0.0, 0.0],
-  "thrustAxis": [1, 0, 0],
+  "position": [0.54, 0, 0],
+  "thrustAxis": [-1, 0, 0],
   "spinDirection": 1,
   "pFactor": 0.1,
   "motor": { "kv": 1400, "resistanceOhm": 0.09, "noLoadCurrentA": 0.6, "maxCurrentA": 30, "rotorInertia": 3.0e-5 },

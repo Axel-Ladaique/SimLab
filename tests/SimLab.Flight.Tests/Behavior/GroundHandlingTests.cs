@@ -37,7 +37,7 @@ public class GroundHandlingTests
             if (t <= 4) return new ControlInputs(1, 0, 0, 0);
             var st = sim.Aircraft.State;
             double pitch = Attitude.FromOrientation(st.Orientation).Pitch;
-            double elevator = Math.Clamp(kp * (targetPitch - pitch) - kd * st.AngularVelocity.Z, -1, 1);
+            double elevator = Math.Clamp(kp * (targetPitch - pitch) - kd * st.AngularVelocity.Y, -1, 1);
             return new ControlInputs(1, 0, elevator, 0);
         }
         Fleet.Fly(sim, 14, Pilot, s =>

@@ -36,7 +36,7 @@ public class AircraftMeshBuilderTests
     {
         var aileron = Parts("trainer").Single(p => p.Name == "aileronRight");
         var c = Centroid(aileron.Triangles);
-        Assert.True(RotateAboutHinge(aileron, c, 0.3).Y < c.Y);
+        Assert.True(RotateAboutHinge(aileron, c, 0.3).Z < c.Z);
     }
 
     [Fact]
@@ -44,14 +44,14 @@ public class AircraftMeshBuilderTests
     {
         var rudder = Parts("trainer").Single(p => p.Name == "rudder");
         var c = Centroid(rudder.Triangles);
-        Assert.True(RotateAboutHinge(rudder, c, 0.3).Z > c.Z);
+        Assert.True(RotateAboutHinge(rudder, c, 0.3).Y > c.Y);
     }
 
     [Fact]
     public void Control_parts_sit_aft_of_their_hinge()
     {
         var elevator = Parts("trainer").Single(p => p.Name == "elevator");
-        Assert.True(Centroid(elevator.Triangles).X < elevator.HingePoint.X);
+        Assert.True(Centroid(elevator.Triangles).X > elevator.HingePoint.X);
     }
 
     [Fact]

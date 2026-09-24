@@ -10,9 +10,9 @@ public class GroundContactTests
     static readonly Dictionary<string, double> NoSteer = new();
     static readonly WheelSpec[] Tricycle =
     [
-        new("nose", new Vec3(0.2, -0.1, 0), 1000, 20, 0.03, 0.8, 0, NoSteer),
-        new("left", new Vec3(-0.1, -0.1, -0.15), 1000, 20, 0.03, 0.8, 0, NoSteer),
-        new("right", new Vec3(-0.1, -0.1, 0.15), 1000, 20, 0.03, 0.8, 0, NoSteer),
+        new("nose", new Vec3(-0.2, 0, -0.1), 1000, 20, 0.03, 0.8, 0, NoSteer),
+        new("left", new Vec3(0.1, -0.15, -0.1), 1000, 20, 0.03, 0.8, 0, NoSteer),
+        new("right", new Vec3(0.1, 0.15, -0.1), 1000, 20, 0.03, 0.8, 0, NoSteer),
     ];
     /// <summary>Level attitude heading east (body forward = world +x).</summary>
     static readonly Quat Level = Attitude.ToOrientation(0, 0, Math.PI / 2);
@@ -90,7 +90,7 @@ public class GroundContactTests
     [Fact]
     public void Flying_into_a_tree_is_a_crash()
     {
-        var model = new GroundContactModel([], [new HullPointSpec("nose", new Vec3(0.3, 0, 0), "nose")], 1.0);
+        var model = new GroundContactModel([], [new HullPointSpec("nose", new Vec3(-0.3, 0, 0), "nose")], 1.0);
         var terrain = new FlatTerrain(0, [new CylinderObstacle(10.3, 0, 1, 10)]);
         var s = new RigidBodyState(new Vec3(10, 0, 5), new Vec3(10, 0, 0), Level, Vec3.Zero);
         Assert.Equal(CrashCause.TreeStrike, model.DetectCrash(s, terrain, Limits));
@@ -98,9 +98,9 @@ public class GroundContactTests
 
     static readonly HullPointSpec[] BellyHull =
     [
-        new("front", new Vec3(0.2, -0.05, 0), "belly"),
-        new("rearLeft", new Vec3(-0.2, -0.05, -0.15), "belly"),
-        new("rearRight", new Vec3(-0.2, -0.05, 0.15), "belly"),
+        new("front", new Vec3(-0.2, 0, -0.05), "belly"),
+        new("rearLeft", new Vec3(0.2, -0.15, -0.05), "belly"),
+        new("rearRight", new Vec3(0.2, 0.15, -0.05), "belly"),
     ];
 
     // Each hull point uses the full per-point stiffness/damping (3000/80 * mass), not a share of it;

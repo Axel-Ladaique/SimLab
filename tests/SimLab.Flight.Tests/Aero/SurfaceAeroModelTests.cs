@@ -6,7 +6,7 @@ namespace SimLab.Flight.Tests.Aero;
 public class SurfaceAeroModelTests
 {
     static readonly SurfaceSpec Wing = new("wing", SurfaceRole.Wing, Vec3.Zero, 0.75, 0.3, 0.3, 0, 0, 0, 0, "linear", 6, true);
-    static readonly SurfaceSpec Stab = new("stab", SurfaceRole.HorizontalTail, new Vec3(-0.8, 0, 0), 0.25, 0.15, 0.15, 0, 0, 0, 0, "linear", 3, true);
+    static readonly SurfaceSpec Stab = new("stab", SurfaceRole.HorizontalTail, new Vec3(0.8, 0, 0), 0.25, 0.15, 0.15, 0, 0, 0, 0, "linear", 3, true);
 
     static readonly ControlSurfaceSpec AileronRight = new("aileronRight", "wing", Side.Right, 0.25, 0.4, 1.0, 15, 15, 0.1,
         new Dictionary<string, double> { ["aileron"] = -1 });
@@ -20,7 +20,7 @@ public class SurfaceAeroModelTests
         new(air, omega, 1.225, 100, BodyAxes.Up, deflections ?? [0, 0, 0], wash);
 
     static Vec3 Flow(double speed, double alphaDeg) =>
-        new(speed * Math.Cos(Angle.Rad(alphaDeg)), -speed * Math.Sin(Angle.Rad(alphaDeg)), 0);
+        new(-speed * Math.Cos(Angle.Rad(alphaDeg)), 0, -speed * Math.Sin(Angle.Rad(alphaDeg)));
 
     static SurfaceAeroModel WingOnly() => new([Wing], TestAirfoils.Map(), [AileronRight, AileronLeft], []);
 
@@ -29,10 +29,10 @@ public class SurfaceAeroModelTests
     {
         var flow = Flow(15, 5);
         var load = WingOnly().Evaluate(Context(flow));
-        Assert.True(load.Force.Y > 0);
+        Assert.True(load.Force.Z > 0);
         Assert.True(-Vec3.Dot(load.Force, flow.Normalized()) > 0, "drag opposes the flow");
         Assert.Equal(0, load.Moment.X, 9);
-        Assert.Equal(0, load.Moment.Y, 9);
+        Assert.Equal(0, load.Moment.Z, 9);
     }
 
     [Fact]
@@ -43,22 +43,22 @@ public class SurfaceAeroModelTests
         double ar = Wing.AspectRatio;
         double a = 2 * Math.PI / (1 + 2 * Math.PI / (Math.PI * Wing.Oswald * ar));
         double expectedLift = q * Wing.TotalArea * a * Angle.Rad(4);
-        double lift = load.Force.Y * Math.Cos(Angle.Rad(4)) + load.Force.X * Math.Sin(Angle.Rad(4));
+        double lift = load.Force.Z * Math.Cos(Angle.Rad(4)) - load.Force.X * Math.Sin(Angle.Rad(4));
         Assert.InRange(lift, 0.95 * expectedLift, 1.05 * expectedLift);
     }
 
     [Fact]
     public void Rolling_right_creates_an_opposing_roll_moment()
     {
-        var load = WingOnly().Evaluate(Context(Flow(15, 3), omega: new Vec3(2, 0, 0)));
-        Assert.True(load.Moment.X < 0, $"roll damping moment {load.Moment.X}");
+        var load = WingOnly().Evaluate(Context(Flow(15, 3), omega: new Vec3(-2, 0, 0)));
+        Assert.True(load.Moment.X > 0, $"roll damping moment {load.Moment.X}");
     }
 
     [Fact]
     public void Right_aileron_up_and_left_aileron_down_rolls_right()
     {
         var load = WingOnly().Evaluate(Context(Flow(15, 3), deflections: [-0.2, 0.2, 0]));
-        Assert.True(load.Moment.X > 0, $"roll moment {load.Moment.X}");
+        Assert.True(load.Moment.X < 0, $"roll moment {load.Moment.X}");
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class SurfaceAeroModelTests
         var model = new SurfaceAeroModel([Wing, Stab], TestAirfoils.Map(), [Elevator], []);
         var neutral = model.Evaluate(Context(Flow(15, 2), deflections: [0]));
         var up = model.Evaluate(Context(Flow(15, 2), deflections: [-0.2]));
-        Assert.True(up.Moment.Z > neutral.Moment.Z);
+        Assert.True(up.Moment.Y > neutral.Moment.Y);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class SurfaceAeroModelTests
         var still = model.Evaluate(Context(Vec3.Zero, deflections: [-0.3]));
         var blown = model.Evaluate(Context(Vec3.Zero, deflections: [-0.3], wash: wash));
         Assert.Equal(Vec3.Zero, still.Force);
-        Assert.True(blown.Force.Y < 0, "trailing-edge-up elevator in prop wash pushes the tail down");
+        Assert.True(blown.Force.Z < 0, "trailing-edge-up elevator in prop wash pushes the tail down");
     }
 
     [Fact]
@@ -112,16 +112,16 @@ public class SurfaceAeroModelTests
         var model = new SurfaceAeroModel([Wing], TestAirfoils.Map(), [Flap], []);
         var up = model.Evaluate(Context(Flow(15, 0), deflections: [-0.2]));
         var down = model.Evaluate(Context(Flow(15, 0), deflections: [0.2]));
-        Assert.True(up.Moment.Z > 0, $"nose-up moment {up.Moment.Z}");
-        Assert.True(down.Moment.Z < 0, $"nose-down moment {down.Moment.Z}");
+        Assert.True(up.Moment.Y > 0, $"nose-up moment {up.Moment.Y}");
+        Assert.True(down.Moment.Y < 0, $"nose-down moment {down.Moment.Y}");
     }
 
     [Fact]
     public void Fuselage_body_adds_drag()
     {
         var model = new SurfaceAeroModel([], TestAirfoils.Map(), [], [new BodySpec("fuselage", Vec3.Zero, new Vec3(0.01, 0.03, 0.03))]);
-        var load = model.Evaluate(Context(new Vec3(20, 0, 0), deflections: []));
-        Assert.Equal(-0.5 * 1.225 * 400 * 0.01, load.Force.X, 9);
+        var load = model.Evaluate(Context(new Vec3(-20, 0, 0), deflections: []));
+        Assert.Equal(0.5 * 1.225 * 400 * 0.01, load.Force.X, 9);
     }
 
     static readonly SurfaceSpec SweptWing = Wing with { SweepDeg = 25 };
@@ -131,19 +131,19 @@ public class SurfaceAeroModelTests
     {
         // Air from the right (beta > 0): the upwind (right) panel sees less effective sweep and lifts more.
         double beta = Angle.Rad(5), alpha = Angle.Rad(4);
-        var air = new Vec3(15 * Math.Cos(alpha) * Math.Cos(beta), -15 * Math.Sin(alpha) * Math.Cos(beta), 15 * Math.Sin(beta));
+        var air = new Vec3(-15 * Math.Cos(alpha) * Math.Cos(beta), 15 * Math.Sin(beta), -15 * Math.Sin(alpha) * Math.Cos(beta));
         var swept = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [], []).Evaluate(Context(air, deflections: []));
         var straight = new SurfaceAeroModel([Wing], TestAirfoils.Map(), [], []).Evaluate(Context(air, deflections: []));
         Assert.Equal(0, straight.Moment.X, 6);
-        Assert.True(swept.Moment.X < -0.05, $"roll moment {swept.Moment.X:F4} N·m");
+        Assert.True(swept.Moment.X > 0.05, $"roll moment {swept.Moment.X:F4} N·m");
     }
 
     [Fact]
     public void Sweep_reduces_the_lift_slope_by_the_cosine_of_the_sweep()
     {
         var flow = Flow(15, 3);
-        double straight = new SurfaceAeroModel([Wing], TestAirfoils.Map(), [], []).Evaluate(Context(flow, deflections: [])).Force.Y;
-        double swept = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [], []).Evaluate(Context(flow, deflections: [])).Force.Y;
+        double straight = new SurfaceAeroModel([Wing], TestAirfoils.Map(), [], []).Evaluate(Context(flow, deflections: [])).Force.Z;
+        double swept = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [], []).Evaluate(Context(flow, deflections: [])).Force.Z;
         Assert.InRange(swept / straight, 0.88, 0.95);
     }
 
@@ -156,8 +156,8 @@ public class SurfaceAeroModelTests
             .Evaluate(Context(Flow(15, 0), deflections: []));
         var flown = new SurfaceAeroModel([SweptWing], TestAirfoils.Map(), [], [])
             .Evaluate(Context(Flow(15, i), deflections: []));
-        double liftSet = set.Force.Y;
-        double liftFlown = flown.Force.Y * Math.Cos(Angle.Rad(i)) + flown.Force.X * Math.Sin(Angle.Rad(i));
+        double liftSet = set.Force.Z;
+        double liftFlown = flown.Force.Z * Math.Cos(Angle.Rad(i)) - flown.Force.X * Math.Sin(Angle.Rad(i));
         Assert.InRange(liftSet / liftFlown, 0.99, 1.01);
     }
 
@@ -166,8 +166,8 @@ public class SurfaceAeroModelTests
     {
         // Simple sweep theory on an infinite swept wing: the chordwise pressure distribution is the normal-section
         // one, scaled by q_n = q cos²Λ and stretched over the streamwise chord c. Its moment about the streamwise
-        // quarter-chord foot, per unit (z) span, is q_n c² Cm about +z. A strip of span b then carries
-        // q cos²Λ · (c b) · c · Cm, so for the whole wing at zero lift Mz = q S c Cm cos²Λ, with no roll part.
+        // quarter-chord foot, per unit (y) span, is q_n c² Cm about +y. A strip of span b then carries
+        // q cos²Λ · (c b) · c · Cm, so for the whole wing at zero lift My = q S c Cm cos²Λ, with no roll part.
         const double cm = -0.05, sweep = 25, speed = 15;
         double[] alpha = [-10, -5, 0, 5, 10];
         var cambered = new Airfoil("cm", [new AirfoilTable(200_000, alpha,
@@ -180,7 +180,7 @@ public class SurfaceAeroModelTests
 
         double q = 0.5 * 1.225 * speed * speed;
         double expected = q * wing.TotalArea * wing.RootChord * cm * Math.Pow(Math.Cos(Angle.Rad(sweep)), 2);
-        Assert.Equal(expected, load.Moment.Z, 1e-9);
+        Assert.Equal(expected, load.Moment.Y, 1e-9);
         Assert.Equal(0, load.Moment.X, 9);
     }
 
@@ -188,7 +188,7 @@ public class SurfaceAeroModelTests
     public void Swept_elevon_section_moment_adds_no_roll_or_yaw()
     {
         // Pure roll command on elevons of a swept wing (right +0.2 rad, left -0.2 rad) at alpha = 0. The flap's
-        // section pitching moment acts about +z only, so removing it must leave Mx and My unchanged: any roll
+        // section pitching moment acts about +y only, so removing it must leave Mx and Mz unchanged: any roll
         // difference would be a spurious 2·sinΛ·q·S·c·ΔCm term from a tilted moment axis.
         var right = new ControlSurfaceSpec("elevonRight", "wing", Side.Right, 0.22, 0.15, 0.95, 20, 20, 0.1,
             new Dictionary<string, double> { ["aileron"] = -1 });
@@ -202,6 +202,6 @@ public class SurfaceAeroModelTests
         var withoutFlapMoment = model.Evaluate(ctx);
 
         Assert.Equal(withoutFlapMoment.Moment.X, withFlapMoment.Moment.X, 1e-9);
-        Assert.Equal(withoutFlapMoment.Moment.Y, withFlapMoment.Moment.Y, 1e-9);
+        Assert.Equal(withoutFlapMoment.Moment.Z, withFlapMoment.Moment.Z, 1e-9);
     }
 }

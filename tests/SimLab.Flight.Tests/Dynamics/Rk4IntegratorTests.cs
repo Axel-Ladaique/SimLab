@@ -29,7 +29,7 @@ public class Rk4IntegratorTests
     public void Torque_free_rotation_conserves_energy_and_angular_momentum()
     {
         var m = MassProperties.FromPrincipal(1, 0.1, 0.3, 0.2);
-        var s0 = AtRest with { AngularVelocity = new Vec3(0.3, 5, 0.2) };
+        var s0 = AtRest with { AngularVelocity = new Vec3(-0.3, 0.2, 5) };
         static double Energy(RigidBodyState s, MassProperties m) => 0.5 * Vec3.Dot(s.AngularVelocity, m.Inertia * s.AngularVelocity);
         static Vec3 MomentumWorld(RigidBodyState s, MassProperties m) => s.Orientation.Rotate(m.Inertia * s.AngularVelocity);
 
@@ -46,22 +46,22 @@ public class Rk4IntegratorTests
     public void Constant_pitch_torque_gives_uniform_angular_acceleration()
     {
         var m = MassProperties.FromPrincipal(1, 0.1, 0.1, 0.5);
-        var s = Run(AtRest, m, (in RigidBodyState _) => new Wrench(Vec3.Zero, new Vec3(0, 0, 0.5)), 1.0);
-        Assert.Equal(1.0, s.AngularVelocity.Z, 9);
-        var nose = s.Orientation.Rotate(Vec3.UnitX);
-        Assert.Equal(Math.Cos(0.5), nose.X, 9);
-        Assert.Equal(Math.Sin(0.5), nose.Y, 9);
+        var s = Run(AtRest, m, (in RigidBodyState _) => new Wrench(Vec3.Zero, new Vec3(0, 0.5, 0)), 1.0);
+        Assert.Equal(1.0, s.AngularVelocity.Y, 9);
+        var nose = s.Orientation.Rotate(BodyAxes.Forward);
+        Assert.Equal(-Math.Cos(0.5), nose.X, 9);
+        Assert.Equal(Math.Sin(0.5), nose.Z, 9);
     }
 
     [Fact]
     public void Error_shrinks_at_fourth_order()
     {
         var m = MassProperties.FromPrincipal(1, 0.1, 0.3, 0.2);
-        var s0 = AtRest with { AngularVelocity = new Vec3(2, 1, 3) };
+        var s0 = AtRest with { AngularVelocity = new Vec3(-2, 3, 1) };
         WrenchFunction f = (in RigidBodyState _) => new Wrench(Vec3.Zero, Vec3.Zero);
-        var reference = Run(s0, m, f, 2.0, 0.02 / 16).Orientation.Rotate(Vec3.UnitX);
-        var coarse = Run(s0, m, f, 2.0, 0.02).Orientation.Rotate(Vec3.UnitX);
-        var fine = Run(s0, m, f, 2.0, 0.01).Orientation.Rotate(Vec3.UnitX);
+        var reference = Run(s0, m, f, 2.0, 0.02 / 16).Orientation.Rotate(BodyAxes.Forward);
+        var coarse = Run(s0, m, f, 2.0, 0.02).Orientation.Rotate(BodyAxes.Forward);
+        var fine = Run(s0, m, f, 2.0, 0.01).Orientation.Rotate(BodyAxes.Forward);
         var ratio = (coarse - reference).Length / (fine - reference).Length;
         Assert.True(ratio > 10, $"error ratio {ratio}");
     }

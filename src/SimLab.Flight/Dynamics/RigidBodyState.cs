@@ -2,7 +2,7 @@ using SimLab.Flight.Geometry;
 
 namespace SimLab.Flight.Dynamics;
 
-/// <summary>Position and velocity in world ENU axes (x east, y north, z up); orientation maps body to world; angular velocity in body axes.</summary>
+/// <summary>Position and velocity in world ENU axes (x east, y north, z up); orientation maps body to world; angular velocity in body axes (x back, y right, z up).</summary>
 public readonly record struct RigidBodyState(Vec3 Position, Vec3 Velocity, Quat Orientation, Vec3 AngularVelocity);
 
 /// <summary>Force and moment about the CG, both in body axes.</summary>

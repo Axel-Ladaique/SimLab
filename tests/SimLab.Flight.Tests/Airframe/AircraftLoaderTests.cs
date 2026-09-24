@@ -15,7 +15,7 @@ public sealed class AircraftLoaderTests : IDisposable
 
     const string Power = """
         {
-          "position": [0.3, 0, 0], "thrustAxis": [2, 0, 0], "spinDirection": 1, "pFactor": 0.1,
+          "position": [-0.3, 0, 0], "thrustAxis": [-2, 0, 0], "spinDirection": 1, "pFactor": 0.1,
           "motor": { "kv": 1000, "resistanceOhm": 0.05, "noLoadCurrentA": 1, "maxCurrentA": 40, "rotorInertia": 1e-4 },
           "battery": { "cells": 3, "capacityAh": 2.2, "internalResistanceOhm": 0.03 },
           "propeller": { "genericDiameterIn": 10, "genericPitchIn": 5 },
@@ -25,7 +25,7 @@ public sealed class AircraftLoaderTests : IDisposable
     static string Aircraft(string controlSurface = "wing", string mixChannel = "aileron") => $$"""
         {
           // comments are allowed
-          "name": "Loader test", "description": "tiny", "mass": 1.2,
+          "name": "Loader test", "description": "tiny", "mass": 1.2, "cg": [0, 0, 0],
           "inertia": { "roll": 0.05, "yaw": 0.08, "pitch": 0.04 },
           "surfaces": [
             { "name": "wing", "role": "wing", "root": [0, 0, 0], "span": 0.6, "rootChord": 0.2, "tipChord": 0.15,
@@ -36,8 +36,8 @@ public sealed class AircraftLoaderTests : IDisposable
               "spanStart": 0.5, "spanEnd": 1, "maxPositiveDeg": 15, "maxNegativeDeg": 15, "mix": { "{{mixChannel}}": -1 } }
           ],
           "power": "power.json",
-          "gear": [ { "name": "main", "position": [0, -0.1, 0], "stiffness": 800, "damping": 15, "steerMix": { "rudder": 1 }, "maxSteerDeg": 20 } ],
-          "hull": [ { "name": "nose", "position": [0.3, 0, 0], "tag": "nose" } ],
+          "gear": [ { "name": "main", "position": [0, 0, -0.1], "stiffness": 800, "damping": 15, "steerMix": { "rudder": 1 }, "maxSteerDeg": 20 } ],
+          "hull": [ { "name": "nose", "position": [-0.3, 0, 0], "tag": "nose" } ],
           "provenance": { "mass": "measured" },
         }
         """;
@@ -65,7 +65,7 @@ public sealed class AircraftLoaderTests : IDisposable
         Assert.Equal(-1, def.Controls[0].Mix["aileron"]);
         Assert.Equal(4, def.Surfaces[0].Segments);
         Assert.NotNull(def.Power);
-        Assert.Equal(1.0, def.Power!.ThrustAxis.X, 12);
+        Assert.Equal(-1.0, def.Power!.ThrustAxis.X, 12);
         Assert.Equal("measured", def.Provenance["mass"]);
         Assert.Equal(20, def.Wheels[0].MaxSteerDeg);
         Assert.Equal(3, def.Crash.MaxGearSinkRate);
@@ -153,9 +153,9 @@ public sealed class AircraftLoaderTests : IDisposable
     public void Cg_datum_shifts_every_body_position()
     {
         var withBody = Edit(Aircraft(), "\"power\": \"power.json\",",
-            "\"bodies\": [ { \"name\": \"pod\", \"position\": [0.1, 0, 0], \"cdA\": [0.01, 0.02, 0.02] } ], \"power\": \"power.json\",");
+            "\"bodies\": [ { \"name\": \"pod\", \"position\": [-0.1, 0, 0], \"cdA\": [0.01, 0.02, 0.02] } ], \"power\": \"power.json\",");
         var plain = AircraftLoader.Load(Write(withBody));
-        var shifted = AircraftLoader.Load(Write(Edit(withBody, "\"mass\": 1.2,", "\"mass\": 1.2, \"cg\": [0.05, 0, 0],")));
+        var shifted = AircraftLoader.Load(Write(Edit(withBody, "\"cg\": [0, 0, 0]", "\"cg\": [0.05, 0, 0]")));
         var d = new Vec3(-0.05, 0, 0);
 
         Assert.Equal(plain.Surfaces[0].Root + d, shifted.Surfaces[0].Root);
@@ -166,11 +166,31 @@ public sealed class AircraftLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Shipped_aircraft_keep_their_positions_without_a_cg_datum()
+    public void Missing_cg_is_rejected()
+        => AssertRejected(Edit(Aircraft(), "\"cg\": [0, 0, 0],", ""));
+
+    [Fact]
+    public void Positions_are_measured_from_the_datum_and_shifted_to_the_cg()
+    {
+        var json = Edit(Edit(Aircraft(), "\"cg\": [0, 0, 0]", "\"cg\": [0.5, 0, 0]"),
+            "\"position\": [-0.3, 0, 0], \"tag\": \"nose\"", "\"position\": [0, 0, 0], \"tag\": \"nose\"");
+        var def = AircraftLoader.Load(Write(json));
+        Assert.Equal(new Vec3(-0.5, 0, 0), def.Hull.Single(h => h.Tag == "nose").Position);
+    }
+
+    [Fact]
+    public void Shipped_aircraft_positions_are_relative_to_the_cg()
     {
         var def = Fleet.Load("trainer");
-        Assert.Equal(new Vec3(0.0175, 0.12, 0), def.Surfaces.Single(s => s.Name == "wing").Root);
-        Assert.Equal(new Vec3(0.40, -0.21, 0), def.Wheels.Single(w => w.Name == "nose").Position);
+        AssertClose(new Vec3(-0.0175, 0, 0.12), def.Surfaces.Single(s => s.Name == "wing").Root);
+        AssertClose(new Vec3(-0.40, 0, -0.21), def.Wheels.Single(w => w.Name == "nose").Position);
+    }
+
+    static void AssertClose(Vec3 expected, Vec3 actual)
+    {
+        Assert.Equal(expected.X, actual.X, 12);
+        Assert.Equal(expected.Y, actual.Y, 12);
+        Assert.Equal(expected.Z, actual.Z, 12);
     }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);

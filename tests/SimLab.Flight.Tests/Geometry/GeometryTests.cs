@@ -27,16 +27,24 @@ public class Vec3Tests
 public class QuatTests
 {
     [Fact]
-    public void Positive_rotation_about_z_pitches_nose_up()
-        => Approx.Equal(Vec3.UnitY, Quat.FromAxisAngle(Vec3.UnitZ, Math.PI / 2).Rotate(Vec3.UnitX));
+    public void Body_axes_are_x_back_y_right_z_up()
+    {
+        Assert.Equal(new Vec3(-1, 0, 0), BodyAxes.Forward);
+        Assert.Equal(new Vec3(0, 1, 0), BodyAxes.Right);
+        Assert.Equal(new Vec3(0, 0, 1), BodyAxes.Up);
+    }
 
     [Fact]
-    public void Positive_rotation_about_x_lowers_the_right_wing()
-        => Approx.Equal(new Vec3(0, -1, 0), Quat.FromAxisAngle(Vec3.UnitX, Math.PI / 2).Rotate(Vec3.UnitZ));
+    public void Positive_rotation_about_y_pitches_nose_up()
+        => Approx.Equal(BodyAxes.Up, Quat.FromAxisAngle(Vec3.UnitY, Math.PI / 2).Rotate(BodyAxes.Forward));
 
     [Fact]
-    public void Positive_rotation_about_y_yaws_nose_left()
-        => Approx.Equal(new Vec3(0, 0, -1), Quat.FromAxisAngle(Vec3.UnitY, Math.PI / 2).Rotate(Vec3.UnitX));
+    public void Negative_rotation_about_x_lowers_the_right_wing()
+        => Approx.Equal(-BodyAxes.Up, Quat.FromAxisAngle(Vec3.UnitX, -Math.PI / 2).Rotate(BodyAxes.Right));
+
+    [Fact]
+    public void Positive_rotation_about_z_yaws_nose_left()
+        => Approx.Equal(-BodyAxes.Right, Quat.FromAxisAngle(Vec3.UnitZ, Math.PI / 2).Rotate(BodyAxes.Forward));
 
     [Fact]
     public void InverseRotate_undoes_Rotate()
@@ -45,6 +53,10 @@ public class QuatTests
         var v = new Vec3(0.3, -1.2, 2.5);
         Approx.Equal(v, q.InverseRotate(q.Rotate(v)));
     }
+
+    [Fact]
+    public void FromBasis_rejects_a_left_handed_basis()
+        => Assert.Throws<ArgumentException>(() => Quat.FromBasis(Vec3.UnitX, Vec3.UnitY, Vec3.UnitZ, Vec3.UnitX, Vec3.UnitY, -Vec3.UnitZ));
 
     [Fact]
     public void Product_composes_rotations_right_to_left()
@@ -102,8 +114,9 @@ public class AttitudeTests
     public void Heading_zero_points_north_in_enu()
     {
         var q = Attitude.ToOrientation(0, 0, 0);
-        var forwardWorld = q.Rotate(BodyAxes.Forward);
-        Approx.Equal(new Vec3(0, 1, 0), forwardWorld);
+        Approx.Equal(new Vec3(0, 1, 0), q.Rotate(BodyAxes.Forward));
+        Approx.Equal(new Vec3(1, 0, 0), q.Rotate(BodyAxes.Right));
+        Approx.Equal(new Vec3(0, 0, 1), q.Rotate(BodyAxes.Up));
     }
 
     [Fact]

@@ -10,7 +10,7 @@ public class PropulsionTests
         BatterySpec.Lipo(cells: 4, capacityAh: 3.0, internalResistanceOhm: 0.028),
         EscSpec.Linear(),
         PropellerSpec.Generic(diameterIn: 12, pitchIn: 6),
-        Position: new Vec3(0.45, 0, 0),
+        Position: new Vec3(-0.45, 0, 0),
         ThrustAxis: BodyAxes.Forward,
         SpinDirection: 1,
         PFactor: 0.1);
@@ -78,24 +78,24 @@ public class PropulsionTests
     {
         var t = default(PowerTelemetry) with { Thrust = 20, MotorTorque = 0.5 };
         var load = PowerPlantLoads.Compute(TrainerLike(), t, 0, Vec3.Zero, Vec3.Zero);
-        Assert.Equal(20, load.Force.X, 12);
-        Assert.Equal(-0.5, load.Moment.X, 12);
-        Assert.Equal(0, load.Moment.Y, 12);
+        Assert.Equal(-20, load.Force.X, 12);
+        Assert.Equal(0.5, load.Moment.X, 12);
+        Assert.Equal(0, load.Moment.Z, 12);
     }
 
     [Fact]
     public void P_factor_yaws_left_at_positive_angle_of_attack()
     {
         var t = default(PowerTelemetry) with { Thrust = 20 };
-        var level = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(15, 0, 0), Vec3.Zero);
-        var noseUp = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(15, -3, 0), Vec3.Zero);
-        Assert.True(noseUp.Moment.Y > level.Moment.Y);
+        var level = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(-15, 0, 0), Vec3.Zero);
+        var noseUp = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(-15, 0, -3), Vec3.Zero);
+        Assert.True(noseUp.Moment.Z > level.Moment.Z);
     }
 
     [Fact]
     public void Pitching_up_with_a_clockwise_prop_yaws_right()
     {
-        var load = PowerPlantLoads.Compute(TrainerLike(), default, 1000, Vec3.Zero, new Vec3(0, 0, 1));
-        Assert.True(load.Moment.Y < 0, $"gyroscopic yaw moment {load.Moment.Y}");
+        var load = PowerPlantLoads.Compute(TrainerLike(), default, 1000, Vec3.Zero, new Vec3(0, 1, 0));
+        Assert.True(load.Moment.Z < 0, $"gyroscopic yaw moment {load.Moment.Z}");
     }
 }

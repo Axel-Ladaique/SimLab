@@ -2,6 +2,12 @@ using SimLab.Flight.Geometry;
 
 namespace SimLab.Flight.Aero;
 
+/// <summary>
+/// Builds surface strips in body axes (x back, y right, z up). A panel starts with its chord axis toward the leading
+/// edge (−x, <see cref="BodyAxes.Forward"/>), its normal up (+z) and its span to the right (+y). Incidence rotates it
+/// about +y by +i (leading edge up), dihedral about +x by +Γ (tip up; 90° makes a fin with its span up and its normal
+/// to the left, −y). The swept quarter-chord line runs back by span·tanΛ; a mirrored panel is reflected as (x, −y, z).
+/// </summary>
 public static class SurfaceGeometry
 {
     public static IReadOnlyList<SurfaceSegment> Build(SurfaceSpec spec, Airfoil airfoil)
@@ -10,7 +16,7 @@ public static class SurfaceGeometry
         if (spec.Span <= 0 || spec.RootChord <= 0 || spec.TipChord <= 0)
             throw new ArgumentException($"Surface '{spec.Name}' has non-positive dimensions.");
 
-        var dihedral = Quat.FromAxisAngle(BodyAxes.Forward, -Angle.Rad(spec.DihedralDeg));
+        var dihedral = Quat.FromAxisAngle(Vec3.UnitX, Angle.Rad(spec.DihedralDeg));
         double tanSweep = Math.Tan(Angle.Rad(spec.SweepDeg));
         double inducedFactor = 1.0 / (Math.PI * spec.Oswald * spec.AspectRatio);
         var segments = new List<SurfaceSegment>(spec.Mirror ? 2 * spec.Segments : spec.Segments);
@@ -25,13 +31,13 @@ public static class SurfaceGeometry
             double chord = 0.5 * (c0 + c1);
             double area = spec.Span * (t1 - t0) * chord;
 
-            var orientation = dihedral * Quat.FromAxisAngle(BodyAxes.Right, Angle.Rad(spec.IncidenceDeg + spec.TwistDeg * tm));
+            var orientation = dihedral * Quat.FromAxisAngle(Vec3.UnitY, Angle.Rad(spec.IncidenceDeg + spec.TwistDeg * tm));
             var chordAxis = orientation.Rotate(BodyAxes.Forward);
             var normal = orientation.Rotate(BodyAxes.Up);
-            var position = spec.Root + dihedral.Rotate(BodyAxes.Right * (spec.Span * tm) - BodyAxes.Forward * (spec.Span * tm * tanSweep));
+            var position = spec.Root + dihedral.Rotate(new Vec3(spec.Span * tm * tanSweep, spec.Span * tm, 0));
             // The swept quarter-chord line turns with the section (dihedral, incidence and twist), so setting the
             // surface at incidence i is the same as flying it at angle of attack i.
-            var spanAxis = orientation.Rotate((BodyAxes.Right - BodyAxes.Forward * tanSweep).Normalized());
+            var spanAxis = orientation.Rotate(new Vec3(tanSweep, 1, 0).Normalized());
 
             segments.Add(Make(spec, Side.Right, position, chordAxis, normal, spanAxis, chord, area, tm, airfoil, inducedFactor));
             if (spec.Mirror)
@@ -54,8 +60,8 @@ public static class SurfaceGeometry
         return -0.5 * Math.Sin(theta) * (1 - Math.Cos(theta));
     }
 
-    /// <summary>Reflection across the aircraft's plane of symmetry.</summary>
-    static Vec3 Mirror(Vec3 v) => v - BodyAxes.Right * (2 * Vec3.Dot(v, BodyAxes.Right));
+    /// <summary>Reflection across the aircraft's plane of symmetry (the x–z plane).</summary>
+    static Vec3 Mirror(Vec3 v) => new(v.X, -v.Y, v.Z);
 
     static SurfaceSegment Make(SurfaceSpec spec, Side side, Vec3 position, Vec3 chordAxis, Vec3 normal, Vec3 spanAxis,
         double chord, double area, double spanFraction, Airfoil airfoil, double inducedFactor)

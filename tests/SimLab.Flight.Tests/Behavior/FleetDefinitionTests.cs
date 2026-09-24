@@ -48,9 +48,9 @@ public class FleetDefinitionTests
     {
         var def = Fleet.Load(id);
         var wing = def.Surfaces.Single(s => s.Role == SurfaceRole.Wing);
-        double tipY = wing.Root.Y + wing.Span * Math.Sin(wing.DihedralDeg * Math.PI / 180);
+        double tipZ = wing.Root.Z + wing.Span * Math.Sin(wing.DihedralDeg * Math.PI / 180);
         var tips = def.Hull.Where(h => h.Name.StartsWith("wingtip", StringComparison.Ordinal)).ToList();
         Assert.Equal(2, tips.Count);
-        foreach (var tip in tips) Assert.True(Math.Abs(tip.Position.Y - tipY) < 0.005, $"{tip.Name} y {tip.Position.Y:F3}, wing tip {tipY:F3}");
+        foreach (var tip in tips) Assert.True(Math.Abs(tip.Position.Z - tipZ) < 0.005, $"{tip.Name} z {tip.Position.Z:F3}, wing tip {tipZ:F3}");
     }
 }

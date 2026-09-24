@@ -4,8 +4,8 @@ namespace SimLab.App.Mapping;
 
 /// <summary>
 /// SimLab world axes are ENU (x east, y north, z up); Godot world axes are x east, y up, z south, so a world
-/// vector maps as (x, y, z) → (x, z, −y). SimLab body axes (<see cref="BodyAxes"/>) map to a Godot node's
-/// local axes as forward → −Z, up → +Y, right → +X.
+/// vector maps as (x, y, z) → (x, z, −y). SimLab body axes (<see cref="BodyAxes"/>: x back, y right, z up) map to a
+/// Godot node's local axes as back → +Z, right → +X, up → +Y.
 /// </summary>
 public static class GodotBasis
 {
@@ -23,7 +23,6 @@ public static class GodotBasis
     /// <summary>Rotation for a Godot node that displays a body with the given SimLab orientation (body → ENU world).</summary>
     public static Quat NodeRotation(Quat bodyOrientation) => (WorldToGodotRotation * bodyOrientation * NodeToBody).Normalized();
 
-    /// <summary>Converts a body-axis vector to the node's local axes.</summary>
-    public static Vec3 BodyToNodeLocal(Vec3 body) =>
-        new(Vec3.Dot(body, BodyAxes.Right), Vec3.Dot(body, BodyAxes.Up), -Vec3.Dot(body, BodyAxes.Forward));
+    /// <summary>Converts a body-axis vector (x back, y right, z up) to the node's local axes (x right, y up, z back).</summary>
+    public static Vec3 BodyToNodeLocal(Vec3 body) => new(body.Y, body.Z, body.X);
 }

@@ -41,8 +41,11 @@ public readonly record struct Quat(double X, double Y, double Z, double W)
     public Vec3 InverseRotate(Vec3 v) => Conjugate().Rotate(v);
 
     /// <summary>Rotation taking the orthonormal right-handed basis (a1, a2, a3) onto (b1, b2, b3).</summary>
+    /// <exception cref="ArgumentException">The bases differ in handedness, so no rotation maps one onto the other.</exception>
     public static Quat FromBasis(Vec3 a1, Vec3 a2, Vec3 a3, Vec3 b1, Vec3 b2, Vec3 b3)
     {
+        if (Vec3.Dot(Vec3.Cross(a1, a2), a3) * Vec3.Dot(Vec3.Cross(b1, b2), b3) <= 0)
+            throw new ArgumentException("Bases must have the same handedness (a reflection is not a rotation).");
         // R = Σ b_i a_iᵀ, converted to a quaternion (Shepperd's method).
         double M(int r, int c) => Row(b1, r) * Row(a1, c) + Row(b2, r) * Row(a2, c) + Row(b3, r) * Row(a3, c);
         double m00 = M(0, 0), m11 = M(1, 1), m22 = M(2, 2);

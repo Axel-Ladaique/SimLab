@@ -10,7 +10,7 @@ namespace SimLab.Flight.Recording;
 /// Writes one CSV row every <c>decimation</c> physics steps (default 100 Hz). The header depends on the
 /// aircraft (one deflection column per control) and on the optional raw input channels.
 /// Position, velocity and wind columns are world ENU (x east, y north, z up); the quaternion maps body to world;
-/// angular velocity (wx, wy, wz) is in body axes.
+/// angular velocity (wx, wy, wz) is in body axes (x back, y right, z up).
 /// </summary>
 public sealed class FlightRecorder : IDisposable
 {

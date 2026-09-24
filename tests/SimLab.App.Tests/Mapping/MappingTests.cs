@@ -40,9 +40,13 @@ public class MappingTests
         => Near(new Vec3(0, 0, -1), GodotBasis.NodeRotation(Attitude.ToOrientation(0, 0, 0)).Rotate(new Vec3(0, 0, -1)));
 
     [Fact]
+    public void Body_back_right_up_map_to_node_z_x_y()
+        => Near(new Vec3(2, 3, 1), GodotBasis.BodyToNodeLocal(new Vec3(1, 2, 3)));
+
+    [Fact]
     public void Body_points_map_to_the_same_world_points()
     {
-        var p = new Vec3(0.4, -0.2, 0.75);
+        var p = new Vec3(-0.4, 0.75, -0.2);
         Near(GodotBasis.WorldToGodot(Sample.Rotate(p)), GodotBasis.NodeRotation(Sample).Rotate(GodotBasis.BodyToNodeLocal(p)));
     }
 

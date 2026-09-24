@@ -4,12 +4,14 @@ namespace SimLab.Flight.Aero;
 
 public enum SurfaceRole { Wing, HorizontalTail, VerticalTail, Other }
 
-/// <summary>Right = the panel as defined (toward +z for mirrored surfaces); Left = its mirror image.</summary>
+/// <summary>Right = the panel as defined (toward +y for mirrored surfaces); Left = its mirror image.</summary>
 public enum Side { Both, Right, Left }
 
-/// <param name="Root">Root quarter-chord point, body axes (m).</param>
+/// <param name="Root">Root quarter-chord point, body axes (x back, y right, z up; m).</param>
 /// <param name="Span">Panel span from root to tip (m). A mirrored surface's total span is twice this.</param>
-/// <param name="DihedralDeg">Rotation about body x lifting the tip; 90 makes a vertical fin pointing up.</param>
+/// <param name="SweepDeg">Quarter-chord sweep; positive moves the tip back (+x).</param>
+/// <param name="DihedralDeg">Rotation about body +x lifting the tip; 90 makes a vertical fin pointing up (normal to the left, −y).</param>
+/// <param name="IncidenceDeg">Rotation about body +y; positive raises the leading edge.</param>
 /// <param name="TwistDeg">Tip incidence relative to root (negative = washout), linear along the span.</param>
 public sealed record SurfaceSpec(
     string Name,
@@ -51,5 +53,5 @@ public sealed record ControlSurfaceSpec(
     double ServoSecondsPer60Deg,
     IReadOnlyDictionary<string, double> Mix);
 
-/// <summary>Non-lifting body (fuselage, pod). <see cref="CdA"/> holds drag areas in m² along body x, y, z.</summary>
+/// <summary>Non-lifting body (fuselage, pod). <see cref="CdA"/> holds drag areas in m² along body x (back), y (right), z (up).</summary>
 public sealed record BodySpec(string Name, Vec3 Position, Vec3 CdA);

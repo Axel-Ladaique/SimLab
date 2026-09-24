@@ -33,14 +33,14 @@ public class ControlResponseTests
     [InlineData("sport")]
     [InlineData("wing")]
     public void Right_aileron_rolls_right(string id) =>
-        AssertResponse(id, u => u with { Aileron = 0.5 }, s => s.Aircraft.State.AngularVelocity.X, 0.3);
+        AssertResponse(id, u => u with { Aileron = 0.5 }, s => PilotFrame.RollRightRate(s.Aircraft.State.AngularVelocity), 0.3);
 
     [Theory]
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("wing")]
     public void Up_elevator_pitches_up(string id) =>
-        AssertResponse(id, u => u with { Elevator = 0.5 }, s => s.Aircraft.State.AngularVelocity.Z, 0.2);
+        AssertResponse(id, u => u with { Elevator = 0.5 }, s => PilotFrame.PitchUpRate(s.Aircraft.State.AngularVelocity), 0.2);
 
     [Theory]
     [InlineData("trainer")]

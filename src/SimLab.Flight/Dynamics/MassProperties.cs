@@ -16,7 +16,10 @@ public sealed class MassProperties
     public Mat3 Inertia { get; }
     public Mat3 InverseInertia { get; }
 
-    /// <summary>Body-axis inertia: roll = I_xx, yaw = I_yy, pitch = I_zz, rollYaw = product I_xy.</summary>
+    /// <summary>
+    /// Body-axis inertia (x back, y right, z up): roll = I_xx, pitch = I_yy, yaw = I_zz. <paramref name="rollYaw"/> is
+    /// the classical product of inertia I_xz = Σ m·x·z measured in these axes, entered as −I_xz off the diagonal.
+    /// </summary>
     public static MassProperties FromPrincipal(double mass, double roll, double yaw, double pitch, double rollYaw = 0) =>
-        new(mass, new Mat3(roll, -rollYaw, 0, -rollYaw, yaw, 0, 0, 0, pitch));
+        new(mass, new Mat3(roll, 0, -rollYaw, 0, pitch, 0, -rollYaw, 0, yaw));
 }

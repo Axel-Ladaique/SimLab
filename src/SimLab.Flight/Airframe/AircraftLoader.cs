@@ -27,7 +27,8 @@ public static class AircraftLoader
         if (dto.Mass <= 0) throw Invalid(path, "mass must be positive.");
         if (dto.Surfaces.Count == 0) throw Invalid(path, "at least one surface is required.");
         var mass = Mass(path, dto);
-        var cg = dto.Cg; // positions in the file are relative to this datum; the body origin is the CG
+        // Positions in the file are measured from a free datum; the body origin is the CG, given from the same datum.
+        var cg = dto.Cg ?? throw Invalid(path, "\"cg\": [x, y, z] is required (from the same datum as the positions, body axes).");
 
         foreach (var s in dto.Surfaces)
         {

@@ -79,7 +79,7 @@ public class FlightQualityTests
         var sim = Trimmed("trainer");
         double start = sim.Time;
         Fleet.Fly(sim, 3.3, t => t - start < 0.3 ? Cruise("trainer") with { Elevator = 0.5 } : Cruise("trainer"));
-        Assert.True(Math.Abs(sim.Aircraft.State.AngularVelocity.Z) < 0.1, $"pitch rate {sim.Aircraft.State.AngularVelocity.Z:F3}");
+        Assert.True(Math.Abs(sim.Aircraft.State.AngularVelocity.Y) < 0.1, $"pitch rate {sim.Aircraft.State.AngularVelocity.Y:F3}");
     }
 
     [Theory]
@@ -92,7 +92,7 @@ public class FlightQualityTests
             var sim = Trimmed(id);
             double start = sim.Time;
             Fleet.Fly(sim, 6.3, t => pulse && t - start < 0.3 ? Cruise(id) with { Rudder = 0.5 } : Cruise(id));
-            return sim.Aircraft.State.AngularVelocity.Y;
+            return sim.Aircraft.State.AngularVelocity.Z;
         }
         double residual = Run(true) - Run(false);
         Assert.True(Math.Abs(residual) < 0.1, $"yaw rate vs baseline {residual:F3}");
