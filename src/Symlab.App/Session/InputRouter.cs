@@ -9,14 +9,15 @@ public readonly record struct JoypadSnapshot(string Guid, string Name, RawInputF
 
 public readonly record struct KeyboardCommands(bool Reset, bool Pause, bool ToggleWind);
 
-public readonly record struct RouterOutput(ControlInputs Controls, IReadOnlyList<SwitchAction> Actions, InputSource Source, string DeviceName);
+/// <param name="RawFrame">Raw poll of the radio that produced <paramref name="Controls"/>; null on the keyboard.</param>
+public readonly record struct RouterOutput(ControlInputs Controls, IReadOnlyList<SwitchAction> Actions, InputSource Source, string DeviceName, RawInputFrame? RawFrame = null);
 
 /// <summary>Chooses the calibrated radio when one is connected, else the keyboard, and turns switches and keys into actions.</summary>
 public sealed class InputRouter
 {
     readonly Func<string, RadioProfile?> _loadProfile;
     readonly Dictionary<string, RadioProfile?> _profiles = new();
-    readonly KeyboardStick _keyboard = new();
+    KeyboardStick _keyboard = new();
     SwitchTracker? _switches;
     string? _activeGuid;
     KeyboardCommands _previousCommands;
@@ -28,6 +29,14 @@ public sealed class InputRouter
         _profiles.Clear();
         _activeGuid = null;
         _switches = null;
+    }
+
+    /// <summary>Forgets cached profiles, the active radio and the keyboard stick (throttle back to idle).</summary>
+    public void ResetForNewFlight()
+    {
+        InvalidateProfiles();
+        _keyboard = new KeyboardStick();
+        _previousCommands = default;
     }
 
     public RouterOutput Update(double dt, IReadOnlyList<JoypadSnapshot> pads, KeyboardKeys keys, KeyboardCommands commands)
@@ -50,7 +59,7 @@ public sealed class InputRouter
                 _switches = new SwitchTracker(profile.Switches);
             }
             actions.AddRange(_switches!.Update(pad.Frame));
-            return new RouterOutput(ToControls(profile.Read(pad.Frame)), actions, InputSource.Radio, pad.Name);
+            return new RouterOutput(ToControls(profile.Read(pad.Frame)), actions, InputSource.Radio, pad.Name, pad.Frame);
         }
 
         _activeGuid = null;

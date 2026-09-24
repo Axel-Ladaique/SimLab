@@ -17,6 +17,41 @@ public sealed class SettingsTests : IDisposable
     }
 
     [Fact]
+    public void Unreadable_settings_fall_back_to_defaults()
+    {
+        if (OperatingSystem.IsWindows()) return; // relies on Unix file permissions
+        var path = Path.Combine(_dir, "settings.json");
+        new AppSettings { Language = "en" }.Save(path);
+        File.SetUnixFileMode(path, UnixFileMode.None);
+        try
+        {
+            Assert.Equal(new AppSettings(), AppSettings.Load(path));
+        }
+        finally
+        {
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+    }
+
+    [Fact]
+    public void Unreadable_profile_reports_an_error_instead_of_throwing()
+    {
+        if (OperatingSystem.IsWindows()) return; // relies on Unix file permissions
+        var store = new RadioProfileStore(_dir);
+        store.Save(new RadioProfile { DeviceGuid = "locked", DeviceName = "TX16S" });
+        File.SetUnixFileMode(store.PathFor("locked"), UnixFileMode.None);
+        try
+        {
+            Assert.Null(store.Load("locked", out var error));
+            Assert.NotNull(error);
+        }
+        finally
+        {
+            File.SetUnixFileMode(store.PathFor("locked"), UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+    }
+
+    [Fact]
     public void Settings_round_trip()
     {
         var path = Path.Combine(_dir, "nested", "settings.json");

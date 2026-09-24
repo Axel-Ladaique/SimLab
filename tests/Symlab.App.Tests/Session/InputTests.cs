@@ -33,6 +33,29 @@ public class InputTests
     }
 
     [Fact]
+    public void Radio_output_carries_the_raw_frame_of_the_active_pad_and_keyboard_output_none()
+    {
+        var router = new InputRouter(guid => guid == "radio-1" ? Profile() : null);
+        var radio = Pad("radio-1", [0.5, -0.25, 1.0, 0]);
+        var output = router.Update(0.016, [Pad("other", [1, 1, 1, 1]), radio], default, default);
+        Assert.Equal(radio.Frame, output.RawFrame);
+        Assert.Null(router.Update(0.016, [Pad("other", [1, 1, 1, 1])], default, default).RawFrame);
+    }
+
+    [Fact]
+    public void Reset_for_new_flight_idles_the_keyboard_throttle_and_reloads_profiles()
+    {
+        int loads = 0;
+        var router = new InputRouter(_ => { loads++; return null; });
+        var up = default(KeyboardKeys) with { ThrottleUp = true };
+        router.Update(1.0, [Pad("radio-1", [0, 0, 0, 0])], up, default);
+        Assert.True(router.Update(0.01, [], default, default).Controls.Throttle > 0.4);
+        router.ResetForNewFlight();
+        Assert.Equal(0.0, router.Update(0.01, [Pad("radio-1", [0, 0, 0, 0])], default, default).Controls.Throttle, 12);
+        Assert.Equal(2, loads);
+    }
+
+    [Fact]
     public void Uncalibrated_pad_falls_back_to_the_keyboard()
     {
         var router = new InputRouter(_ => null);

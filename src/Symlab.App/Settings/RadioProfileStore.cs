@@ -25,7 +25,7 @@ public sealed class RadioProfileStore
         {
             return RadioProfile.FromJson(File.ReadAllText(path));
         }
-        catch (Exception ex) when (ex is InvalidDataException or JsonException)
+        catch (Exception ex) when (ex is InvalidDataException or JsonException or IOException or UnauthorizedAccessException)
         {
             error = $"{path}: {ex.Message}";
             return null;

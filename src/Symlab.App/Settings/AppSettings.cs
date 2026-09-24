@@ -30,7 +30,7 @@ public sealed record AppSettings
             if (!File.Exists(path)) return new AppSettings();
             return (JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path), Options) ?? new AppSettings()).Sanitized();
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
             return new AppSettings();
         }
