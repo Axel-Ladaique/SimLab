@@ -4,6 +4,10 @@ using SimLab.Flight.Terrain;
 
 namespace SimLab.Flight.Ground;
 
+/// <summary>Depth (m, positive = below ground) and normal speed (m/s, negative = moving into the ground) of a
+/// single wheel or hull point contact. Wheels carry Tag "wheel".</summary>
+public readonly record struct ContactSample(string Name, bool IsWheel, string Tag, double Depth, double NormalSpeed);
+
 /// <summary>Penalty-based contact for wheels (spring-damper + tire friction) and hull points.</summary>
 public sealed class GroundContactModel
 {
@@ -48,6 +52,24 @@ public sealed class GroundContactModel
         foreach (var w in _wheels)
             if (ProbePoint(w.Position, s, terrain).Depth > 0) count++;
         return count;
+    }
+
+    /// <summary>Depth (m, positive = below ground) and normal speed (m/s, negative = moving into the ground) of every
+    /// wheel, then every hull point. Read-only; used by the sound layer.</summary>
+    public IReadOnlyList<ContactSample> Contacts(in RigidBodyState s, ITerrain terrain)
+    {
+        var list = new List<ContactSample>(_wheels.Length + _hull.Length);
+        foreach (var w in _wheels)
+        {
+            var p = ProbePoint(w.Position, s, terrain);
+            list.Add(new ContactSample(w.Name, true, "wheel", p.Depth, p.NormalSpeed));
+        }
+        foreach (var h in _hull)
+        {
+            var p = ProbePoint(h.Position, s, terrain);
+            list.Add(new ContactSample(h.Name, false, h.Tag, p.Depth, p.NormalSpeed));
+        }
+        return list;
     }
 
     public CrashCause DetectCrash(in RigidBodyState s, ITerrain terrain, CrashLimits limits)

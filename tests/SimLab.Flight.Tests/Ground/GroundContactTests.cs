@@ -127,4 +127,25 @@ public class GroundContactTests
         Assert.True(s.Velocity.X > 0, $"forward speed {s.Velocity.X}");
         Assert.True(Math.Abs(s.Velocity.Y) < 1e-6, $"lateral speed {s.Velocity.Y}");
     }
+
+    [Fact]
+    public void Contacts_report_depth_and_normal_speed_for_every_wheel_and_hull_point()
+    {
+        var wheels = new[] { new WheelSpec("main", new Vec3(0, 0, -0.2), 2000, 50, 0.03, 0.8, 0, NoSteer) };
+        var hull = new[] { new HullPointSpec("nose", new Vec3(-0.5, 0, 0), "nose") };
+        var model = new GroundContactModel(wheels, hull, 2.0);
+        var state = new RigidBodyState(new Vec3(0, 0, 0.19), new Vec3(0, 0, -1.5), Quat.Identity, Vec3.Zero);
+
+        var contacts = model.Contacts(state, new FlatTerrain());
+
+        Assert.Equal(2, contacts.Count);
+        Assert.Equal("main", contacts[0].Name);
+        Assert.True(contacts[0].IsWheel);
+        Assert.Equal("wheel", contacts[0].Tag);
+        Assert.Equal(0.01, contacts[0].Depth, 6);
+        Assert.Equal(-1.5, contacts[0].NormalSpeed, 6);
+        Assert.Equal("nose", contacts[1].Name);
+        Assert.False(contacts[1].IsWheel);
+        Assert.True(contacts[1].Depth < 0);
+    }
 }
