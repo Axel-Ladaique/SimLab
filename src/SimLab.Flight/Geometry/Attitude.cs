@@ -14,6 +14,9 @@ public readonly record struct Attitude(double Roll, double Pitch, double Heading
         var pitch = Math.Asin(Math.Clamp(forward.Z, -1, 1));
         var heading = Math.Atan2(forward.X, forward.Y);
         if (heading < 0) heading += 2 * Math.PI;
+        // Rounding can push a heading that should be exactly 0 up to 2π itself (2π minus a sub-ULP
+        // remainder rounds to 2π at this magnitude); wrap it back down.
+        if (heading >= 2 * Math.PI - 1e-12) heading = 0;
         var roll = Math.Atan2(-right.Z, up.Z);
         return new Attitude(roll, pitch, heading);
     }

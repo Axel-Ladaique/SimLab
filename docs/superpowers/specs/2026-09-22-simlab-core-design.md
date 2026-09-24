@@ -69,12 +69,14 @@ bit-for-bit reproducible on the same machine.
 
 ### Coordinate conventions
 
-- World: right-handed, **y-up** (matches Godot), x east, z south. SI units, doubles.
-- Body: **x forward, y up, z right** (right-handed). Positive rotation about +x is roll right,
-  about +z is pitch up, about +y is yaw **left** (yaw-right rate = −ω_y). Aero forces are computed
-  per surface as vectors, so no stability-derivative sign conventions are needed. Mapping to a
-  Godot node basis (−Z forward, +X right) is a fixed rotation in the game layer.
-- Note: the Sightline mockup claimed "z left, right-handed", which is inconsistent; not reused.
+- World: right-handed **x east, y north, z up** (ENU). Heading clockwise from north. Gravity −z.
+- Body: right-handed **x back (toward the tail), y right (right wing), z up** — the OpenVSP convention.
+  Forward = −x. Pilot rates: roll right = −ω_x, pitch up = +ω_y, yaw right = −ω_z. Aero forces are
+  computed per surface as vectors, so no stability-derivative sign conventions are needed.
+- Control deflection: positive = trailing edge down relative to the surface normal.
+- Godot mapping (game layer only, `SimLab.App.Mapping.GodotBasis`): world ENU → Godot `(x, z, −y)`;
+  body → node local `(y, z, x)`.
+- SI units, doubles throughout.
 
 ## 4. Flight Model
 
@@ -160,7 +162,7 @@ One folder per aircraft, e.g. `aircraft/trainer/`:
 
 | File | Content |
 |------|---------|
-| `aircraft.json` | Metadata, mass, CG, inertia, surfaces (geometry, airfoil ref, segments), control surfaces (chord fraction, deflection limits, servo speed, channel mapping), gear, hull points, crash thresholds |
+| `aircraft.json` | Metadata, mass, inertia, surfaces (geometry, airfoil ref, segments), control surfaces (chord fraction, deflection limits, servo speed, channel mapping), gear, hull points, crash thresholds. All body positions are measured in body axes from a free datum (e.g. the nose tip); the required `"cg": [x, y, z]` field gives the centre of gravity in that same datum, and the loader subtracts it from every position so the CG becomes the origin. |
 | `airfoils/*.json` | Polars: Cl, Cd, Cm vs α for one or more Reynolds numbers |
 | `power.json` | Motor, propeller, battery, ESC, optional thrust-stand CSV reference |
 | `aero.json` | *(sub-project 2)* VSPAERO/CFD coefficient tables |

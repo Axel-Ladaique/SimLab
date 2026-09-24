@@ -120,6 +120,20 @@ public class AttitudeTests
     }
 
     [Fact]
+    public void Heading_wraps_to_zero_instead_of_two_pi()
+    {
+        // At this roll/pitch, atan2 on the rotated forward vector rounds to a heading of exactly 2π
+        // (a sub-ULP remainder below 2π rounds away at this magnitude) instead of 0; the nose is
+        // still exactly north, so FromOrientation must report Heading == 0, not 2π.
+        var q = Attitude.ToOrientation(Angle.Rad(-89), Angle.Rad(-64), Angle.Rad(0));
+        var forward = q.Rotate(BodyAxes.Forward);
+        Assert.Equal(0, forward.X, 9);
+        Assert.True(forward.Y > 0, "nose points north");
+        var a = Attitude.FromOrientation(q);
+        Assert.Equal(0, a.Heading);
+    }
+
+    [Fact]
     public void Heading_ninety_points_east_and_pitch_up_raises_the_nose()
     {
         Approx.Equal(new Vec3(1, 0, 0), Attitude.ToOrientation(0, 0, Math.PI / 2).Rotate(BodyAxes.Forward));

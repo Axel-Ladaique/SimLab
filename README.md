@@ -38,9 +38,12 @@ Requires the .NET 10 SDK (`brew install --cask dotnet-sdk`).
 
 ## Conventions
 
-- SI units, doubles. World: y-up, x east, z south. Body: x forward, y up, z right.
-- Body origin is the CG. `aircraft.json` may set an optional `"cg": [x, y, z]` datum (default `[0, 0, 0]`); the loader
-  subtracts it from every position in the file (surface roots, bodies, gear, hull points, power position), so
-  positions can be measured from any convenient reference such as the firewall or the wing leading edge.
-- Control deflection: positive = trailing edge down. Mixing (elevons, V-tail) is declared per control surface in
-  `aircraft.json`.
+- World: right-handed **x east, y north, z up** (ENU). Heading clockwise from north. Gravity −z.
+- Body: right-handed **x back (toward the tail), y right (right wing), z up** — the OpenVSP convention.
+  Forward = −x. Pilot rates: roll right = −ω_x, pitch up = +ω_y, yaw right = −ω_z.
+- Control deflection: positive = trailing edge down relative to the surface normal.
+- Godot mapping (game layer only, `SimLab.App.Mapping.GodotBasis`): world ENU → Godot `(x, z, −y)`; body → node
+  local `(y, z, x)`.
+- SI units, doubles. `aircraft.json` positions are in body axes from a free datum (e.g. the nose tip); the
+  required `"cg": [x, y, z]` field gives the CG in that datum, and the loader subtracts it from every position so
+  the CG becomes the origin. Mixing (elevons, V-tail) is declared per control surface in `aircraft.json`.
