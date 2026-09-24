@@ -114,6 +114,18 @@ About the **CG**, in body axes:
   - a **down** thrust offset adds a small **−z** component.
   - the trainer combines both: `[-0.9988, 0.0349, -0.0349]` (about 2° right, 2° down thrust).
 
+### Optional `sound` block (power.json)
+
+```json
+"sound": { "blades": 2, "polePairs": 7, "sample": "motor.ogg", "sampleRpm": 9000 }
+```
+
+| Field | Default | Meaning |
+|-------|---------|---------|
+| `blades` | 2 | Propeller blade count (1–6); sets the blade-pass frequency rpm × blades / 60 |
+| `polePairs` | 7 | Motor magnetic pole pairs (1–20); sets the motor whine frequency rpm × polePairs / 60 |
+| `sample`, `sampleRpm` | none | Recorded motor loop (relative to the aircraft folder) and the rpm it was recorded at; when given, the loop replaces the synthesized motor and propeller, pitched by rpm / sampleRpm. Give both or neither. |
+
 ## Controls
 
 ```json
