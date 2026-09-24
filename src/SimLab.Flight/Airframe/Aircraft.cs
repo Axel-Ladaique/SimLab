@@ -41,6 +41,9 @@ public sealed class Aircraft
     public AirData AirData { get; private set; }
     public IReadOnlyList<double> Deflections => _deflections;
 
+    /// <summary>Wheel steering angles (rad, positive = wheel points right), in <see cref="AircraftDefinition.Wheels"/> order.</summary>
+    public IReadOnlyList<double> SteerAngles => _steer;
+
     /// <summary>Wind (world frame, m/s, steady + turbulence) used in the last step.</summary>
     public Vec3 LastWind { get; private set; }
 
@@ -60,20 +63,35 @@ public sealed class Aircraft
     /// <summary>Replaces the rigid-body state only (for perturbation tests and editor tools).</summary>
     public void OverrideState(RigidBodyState state) => State = state;
 
+    /// <summary>Servo target (rad, positive = trailing edge down) for a control under these pilot commands.</summary>
+    public static double TargetDeflection(ControlSurfaceSpec control, in ControlInputs input) =>
+        ControlMapping.CommandToDeflection(ControlInputs.Mix(control.Mix, input), control.MaxPositiveDeg, control.MaxNegativeDeg);
+
+    /// <summary>Steering angle (rad, positive = wheel points right) of a wheel under these pilot commands.</summary>
+    public static double SteerAngle(WheelSpec wheel, in ControlInputs input) =>
+        ControlInputs.Mix(wheel.SteerMix, input) * Angle.Rad(wheel.MaxSteerDeg);
+
+    /// <summary>
+    /// Moves the servos and wheel steering toward the commands without touching the rigid body. <see cref="Step"/> calls
+    /// it first; the radio screen's control check calls it alone.
+    /// </summary>
+    public void StepControls(double dt, in ControlInputs input)
+    {
+        var controls = Definition.Controls;
+        for (int i = 0; i < _servos.Length; i++)
+        {
+            _servos[i].Step(TargetDeflection(controls[i], input), dt);
+            _deflections[i] = _servos[i].Position;
+        }
+        var wheels = Definition.Wheels;
+        for (int i = 0; i < _steer.Length; i++) _steer[i] = SteerAngle(wheels[i], input);
+    }
+
     public void Step(double dt, in ControlInputs input, FlightEnvironment env)
     {
         if (Crash != CrashCause.None) return;
 
-        var controls = Definition.Controls;
-        for (int i = 0; i < _servos.Length; i++)
-        {
-            var c = controls[i];
-            _servos[i].Step(ControlMapping.CommandToDeflection(ControlInputs.Mix(c.Mix, input), c.MaxPositiveDeg, c.MaxNegativeDeg), dt);
-            _deflections[i] = _servos[i].Position;
-        }
-        var wheels = Definition.Wheels;
-        for (int i = 0; i < _steer.Length; i++)
-            _steer[i] = ControlInputs.Mix(wheels[i].SteerMix, input) * Angle.Rad(wheels[i].MaxSteerDeg);
+        StepControls(dt, input);
 
         var start = State;
         double heightAgl = start.Position.Z - env.Terrain.Height(start.Position.X, start.Position.Y);
