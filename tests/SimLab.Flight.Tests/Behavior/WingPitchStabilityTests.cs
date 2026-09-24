@@ -14,6 +14,16 @@ public class WingPitchStabilityTests(ITestOutputHelper output)
     const double CruiseSpeed = 13;
 
     [Fact]
+    public void Wing_static_margin_is_realistic()
+    {
+        var def = Fleet.Load("wing");
+        var (alpha, _) = StaticStability.Trim(def, CruiseSpeed);
+        var (aft, margin) = StaticStability.StaticMargin(def, CruiseSpeed, alpha);
+        output.WriteLine($"neutral point {aft * 1000:F1} mm aft of the CG, static margin {margin * 100:F1}% MAC");
+        Assert.InRange(margin, 0.05, 0.10);
+    }
+
+    [Fact]
     public void Wing_trims_for_level_cruise_with_small_elevon_deflection()
     {
         var (alpha, elevator) = StaticStability.Trim(Fleet.Load("wing"), CruiseSpeed);
