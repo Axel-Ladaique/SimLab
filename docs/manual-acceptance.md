@@ -18,6 +18,7 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Take off (hand launch for the wing), fly a circuit, land; crash screen shows a cause after a crash; R/switch resets.
 - [ ] Wind 5 m/s + turbulence 1: the windsock points downwind and the aircraft is buffeted; V toggles the wind.
 - [ ] F3: estimated latency below 20 ms; with vsync off, frame rate at or above 120 fps on this Mac.
+  The F3 latency is an in-app estimate (input processing + frame time + interpolation delay); it excludes USB polling and the display/compositor queue, so the real input-to-photon latency is higher.
 
 ## Settings
 - [ ] FOV "compute from screen" gives a plausible value; auto-zoom off shows the true apparent size.

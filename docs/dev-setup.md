@@ -32,10 +32,12 @@ User data (settings, radio profiles, flight recordings): `~/Library/Application 
 |------|--------------|
 | `--smoke-boot` | Loads settings and translations, prints `SYMLAB_BOOT_OK`, exits |
 | `--smoke-radio` | Lists joypads with their raw axes, exits |
+| `--smoke-input-map` | Prints the events bound to `ui_left/right/up/down` (keyboard only, so the radio never moves UI focus), exits |
 | `--screen radio` | Opens the radio screen directly |
-| `--smoke-flight <id> <s>` | Headless scripted flight, prints `SYMLAB_SMOKE_OK ...` |
+| `--smoke-flight <id> <s>` | Headless scripted flight, prints `SYMLAB_SMOKE_OK ...` (or `SYMLAB_SMOKE_FAIL <message>` and exit code 1 if the flight cannot start) |
 | `--screenshot-field <png>` | Pilot's view of the empty field |
 | `--screenshot-aircraft <id> <png>` | Close-up of an aircraft with deflected controls |
 | `--screenshot-flight <id> <s> <png>` | Scripted takeoff seen from the pilot box |
+| `--screenshot-diagnostics <id> <s> <png>` | Same scripted takeoff with the F3 diagnostics overlay forced on |
 | `--screenshot-menu <png>` | Screenshot of the main menu |
 | `--screenshot-settings <png>` | Screenshot of the settings screen |

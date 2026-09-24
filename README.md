@@ -31,6 +31,7 @@ R reset · P pause · V wind on/off · F3 diagnostics · Esc menu.
 
 ```bash
 dotnet test
+dotnet build game/Symlab.Game.csproj
 ```
 
 Requires the .NET 10 SDK (`brew install --cask dotnet-sdk`).

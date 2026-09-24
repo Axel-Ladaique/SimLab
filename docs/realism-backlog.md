@@ -11,5 +11,9 @@ checked against real flight data (telemetry replay) before being "fixed".
 | 4 | Trainer resists spin entry (α ≈ 8.7°, yaw rate ≈ 1.1 rad/s under pro-spin inputs). | Plausible for a real trainer; may also reflect benign post-stall polars. | Real spin attempts at altitude. |
 | 5 | Sport recovers from a developed spin almost instantly, also hands-off (spec expects it not to recover hands-off). | Post-stall yaw damping too high; no fuselage side-area/strake modeling. | Real spin logs; tune post-stall polars. |
 | 6 | Controls: trim is applied before expo (spec order); EdgeTX applies trim after expo/rates. | Design choice. | Only matters if sim-side trims become non-zero. |
+| 7 | Trainer drifts ~12 m sideways during an 8 s full-throttle ground roll with no rudder input. | P-factor/slipstream swirl and motor torque on the gear not balanced by nose-wheel steering; tire side-force model. | Real takeoff roll hands-off on the rudder; compare lateral drift. |
+| 8 | Sport noses over in the scripted takeoff (full throttle, near-neutral elevator). | Taildragger ground attitude, CG vs main-gear position, prop-wash pitch-down on the stab. | Real takeoff with neutral elevator; check CG and main-gear position. |
+| 9 | Sport drifts off the runway during the takeoff roll without rudder. | Taildragger yaw instability on the ground, tail-wheel steering/friction model. | Real takeoff roll; measure the rudder needed to track straight. |
+| 10 | Flying wing rolls to knife-edge at full throttle hands-off. | Motor reaction torque with no fin/slipstream counter-moment; low roll damping. | Real full-throttle hands-off logs; check motor torque and roll damping. |
 
 Tuning history: `docs/tuning-log.md`.
