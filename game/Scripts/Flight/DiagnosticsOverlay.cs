@@ -1,8 +1,8 @@
 using System.Globalization;
 using Godot;
-using Symlab.App.Session;
+using SimLab.App.Session;
 
-namespace Symlab.Game.Flight;
+namespace SimLab.Game.Flight;
 
 /// <summary>F3: frame rate, estimated input-to-display latency, input source and physics steps.</summary>
 public partial class DiagnosticsOverlay : CanvasLayer

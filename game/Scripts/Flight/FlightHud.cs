@@ -1,9 +1,9 @@
 using System.Linq;
 using Godot;
-using Symlab.App.Session;
-using Symlab.App.Ui;
+using SimLab.App.Session;
+using SimLab.App.Ui;
 
-namespace Symlab.Game.Flight;
+namespace SimLab.Game.Flight;
 
 /// <summary>Minimal by default: input source line; optional flight data; PAUSE banner.</summary>
 public partial class FlightHud : CanvasLayer

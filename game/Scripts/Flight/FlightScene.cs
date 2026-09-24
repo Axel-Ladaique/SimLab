@@ -1,17 +1,17 @@
 using System.Linq;
 using Godot;
-using Symlab.App.Cameras;
-using Symlab.App.Field;
-using Symlab.App.Session;
-using Symlab.App.Visual;
-using Symlab.Flight.Airframe;
-using Symlab.Flight.Controls;
-using Symlab.Flight.Geometry;
-using Symlab.Flight.Recording;
-using Symlab.Game.Radio;
-using Symlab.Game.World;
+using SimLab.App.Cameras;
+using SimLab.App.Field;
+using SimLab.App.Session;
+using SimLab.App.Visual;
+using SimLab.Flight.Airframe;
+using SimLab.Flight.Controls;
+using SimLab.Flight.Geometry;
+using SimLab.Flight.Recording;
+using SimLab.Game.Radio;
+using SimLab.Game.World;
 
-namespace Symlab.Game.Flight;
+namespace SimLab.Game.Flight;
 
 /// <summary>One flight: polls input, advances the session, draws the aircraft from the pilot's eyes.</summary>
 public partial class FlightScene : Node3D

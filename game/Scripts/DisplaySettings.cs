@@ -1,7 +1,7 @@
 using Godot;
-using Symlab.App.Settings;
+using SimLab.App.Settings;
 
-namespace Symlab.Game;
+namespace SimLab.Game;
 
 public static class DisplaySettings
 {

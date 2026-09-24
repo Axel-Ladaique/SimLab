@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SimLab.App/SimLab.App.csproj" />
+    <Project Path="src/SimLab.Flight/SimLab.Flight.csproj" />
+    <Project Path="src/SimLab.Input/SimLab.Input.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SimLab.App.Tests/SimLab.App.Tests.csproj" />
+    <Project Path="tests/SimLab.Flight.Tests/SimLab.Flight.Tests.csproj" />
+    <Project Path="tests/SimLab.Input.Tests/SimLab.Input.Tests.csproj" />
+  </Folder>
+</Solution>

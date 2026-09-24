@@ -13,7 +13,7 @@ dotnet test
 ## Game
 
 ```bash
-dotnet build game/Symlab.Game.csproj
+dotnet build game/SimLab.Game.csproj
 "$GODOT" --headless --path game --import      # first time only (creates game/.godot)
 "$GODOT" --path game                          # run the simulator
 ```
@@ -24,17 +24,17 @@ Smoke checks (after `--`, arguments go to the game):
 "$GODOT" --headless --path game -- --smoke-boot
 ```
 
-User data (settings, radio profiles, flight recordings): `~/Library/Application Support/Godot/app_userdata/Symlab/`.
+User data (settings, radio profiles, flight recordings): `~/Library/Application Support/Godot/app_userdata/SimLab/`.
 
 ## Command-line modes (after `--`)
 
 | Flag | What it does |
 |------|--------------|
-| `--smoke-boot` | Loads settings and translations, prints `SYMLAB_BOOT_OK`, exits |
+| `--smoke-boot` | Loads settings and translations, prints `SIMLAB_BOOT_OK`, exits |
 | `--smoke-radio` | Lists joypads with their raw axes, exits |
 | `--smoke-input-map` | Prints the events bound to `ui_left/right/up/down` (keyboard only, so the radio never moves UI focus), exits |
 | `--screen radio` | Opens the radio screen directly |
-| `--smoke-flight <id> <s>` | Headless scripted flight, prints `SYMLAB_SMOKE_OK ...` (or `SYMLAB_SMOKE_FAIL <message>` and exit code 1 if the flight cannot start) |
+| `--smoke-flight <id> <s>` | Headless scripted flight, prints `SIMLAB_SMOKE_OK ...` (or `SIMLAB_SMOKE_FAIL <message>` and exit code 1 if the flight cannot start) |
 | `--screenshot-field <png>` | Pilot's view of the empty field |
 | `--screenshot-aircraft <id> <png>` | Close-up of an aircraft with deflected controls |
 | `--screenshot-flight <id> <s> <png>` | Scripted takeoff seen from the pilot box |

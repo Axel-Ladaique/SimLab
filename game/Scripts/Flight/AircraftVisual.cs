@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using Godot;
-using Symlab.App.Mapping;
-using Symlab.App.Visual;
-using Symlab.Flight.Airframe;
-using Symlab.Flight.Dynamics;
+using SimLab.App.Mapping;
+using SimLab.App.Visual;
+using SimLab.Flight.Airframe;
+using SimLab.Flight.Dynamics;
 
-namespace Symlab.Game.Flight;
+namespace SimLab.Game.Flight;
 
 /// <summary>Draws the procedural aircraft; control surfaces rotate about their hinges with the servo deflections.</summary>
 public partial class AircraftVisual : Node3D
@@ -47,7 +47,7 @@ public partial class AircraftVisual : Node3D
         foreach (var (pivot, axis, _) in _controls) pivot.Basis = new Basis(axis, (float)radians);
     }
 
-    static MeshInstance3D MeshFor(IReadOnlyList<Symlab.Flight.Geometry.Vec3> triangles, Rgb color, Vector3 origin, float alpha)
+    static MeshInstance3D MeshFor(IReadOnlyList<SimLab.Flight.Geometry.Vec3> triangles, Rgb color, Vector3 origin, float alpha)
     {
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);

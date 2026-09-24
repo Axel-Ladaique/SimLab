@@ -1,8 +1,8 @@
 using Godot;
-using Symlab.App.Session;
-using Symlab.Input;
+using SimLab.App.Session;
+using SimLab.Input;
 
-namespace Symlab.Game.Radio;
+namespace SimLab.Game.Radio;
 
 /// <summary>Reads every connected joypad (the radio in USB-joystick mode) through Godot's SDL input layer.</summary>
 public static class JoypadReader

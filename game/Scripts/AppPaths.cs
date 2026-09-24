@@ -1,12 +1,12 @@
 using Godot;
 
-namespace Symlab.Game;
+namespace SimLab.Game;
 
 public static class AppPaths
 {
     public static string GameRoot => ProjectSettings.GlobalizePath("res://");
     public static string RepoRoot => System.IO.Path.GetFullPath(System.IO.Path.Combine(GameRoot, ".."));
-    public static string AircraftRoot => System.Environment.GetEnvironmentVariable("SYMLAB_AIRCRAFT_DIR") ?? System.IO.Path.Combine(RepoRoot, "aircraft");
+    public static string AircraftRoot => System.Environment.GetEnvironmentVariable("SIMLAB_AIRCRAFT_DIR") ?? System.IO.Path.Combine(RepoRoot, "aircraft");
     public static string TranslationsCsv => System.IO.Path.Combine(GameRoot, "translations", "strings.csv");
     public static string UserDir => OS.GetUserDataDir();
     public static string SettingsFile => System.IO.Path.Combine(UserDir, "settings.json");

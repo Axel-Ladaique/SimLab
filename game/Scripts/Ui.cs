@@ -1,7 +1,7 @@
 using System.Globalization;
 using Godot;
 
-namespace Symlab.Game;
+namespace SimLab.Game;
 
 /// <summary>Small factory for the code-built UI, so every screen looks the same.</summary>
 public static class Ui

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using Godot;
-using Symlab.App.Field;
-using Symlab.App.Settings;
-using Symlab.Flight.Terrain;
+using SimLab.App.Field;
+using SimLab.App.Settings;
+using SimLab.Flight.Terrain;
 
-namespace Symlab.Game.World;
+namespace SimLab.Game.World;
 
 /// <summary>Builds the generic club field: sky, sun, rolling terrain, grass runway, pilot box, trees and windsock.</summary>
 public static class FieldBuilder

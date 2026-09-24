@@ -1,8 +1,8 @@
 using Godot;
-using Symlab.App.Ui;
-using Symlab.Flight.Ground;
+using SimLab.App.Ui;
+using SimLab.Flight.Ground;
 
-namespace Symlab.Game.Flight;
+namespace SimLab.Game.Flight;
 
 public partial class CrashOverlay : CanvasLayer
 {

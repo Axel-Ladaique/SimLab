@@ -1,12 +1,12 @@
 using System.Linq;
 using Godot;
-using Symlab.App.Session;
-using Symlab.App.Settings;
-using Symlab.App.Ui;
-using Symlab.Input;
-using Symlab.Game;
+using SimLab.App.Session;
+using SimLab.App.Settings;
+using SimLab.App.Ui;
+using SimLab.Input;
+using SimLab.Game;
 
-namespace Symlab.Game.Radio;
+namespace SimLab.Game.Radio;
 
 /// <summary>Radio setup: detected devices, live raw axes, calibration wizard, stick mode and switch assignment.</summary>
 public partial class RadioScreen : Control

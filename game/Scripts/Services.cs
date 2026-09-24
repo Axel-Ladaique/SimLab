@@ -1,7 +1,7 @@
-using Symlab.App.Session;
-using Symlab.App.Settings;
+using SimLab.App.Session;
+using SimLab.App.Settings;
 
-namespace Symlab.Game;
+namespace SimLab.Game;
 
 /// <summary>Application-wide objects shared by the screens.</summary>
 public sealed class Services

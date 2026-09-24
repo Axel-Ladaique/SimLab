@@ -1,20 +1,20 @@
 using System.Globalization;
 using System.Linq;
 using Godot;
-using Symlab.App.Field;
-using Symlab.App.Session;
-using Symlab.App.Settings;
-using Symlab.App.Visual;
-using Symlab.Flight.Airframe;
-using Symlab.Flight.Controls;
-using Symlab.Flight.Geometry;
-using Symlab.Flight.Ground;
-using Symlab.Game.Flight;
-using Symlab.Game.Menu;
-using Symlab.Game.Radio;
-using Symlab.Game.World;
+using SimLab.App.Field;
+using SimLab.App.Session;
+using SimLab.App.Settings;
+using SimLab.App.Visual;
+using SimLab.Flight.Airframe;
+using SimLab.Flight.Controls;
+using SimLab.Flight.Geometry;
+using SimLab.Flight.Ground;
+using SimLab.Game.Flight;
+using SimLab.Game.Menu;
+using SimLab.Game.Radio;
+using SimLab.Game.World;
 
-namespace Symlab.Game;
+namespace SimLab.Game;
 
 public partial class Main : Node
 {
@@ -71,7 +71,7 @@ public partial class Main : Node
             GD.PushError($"Flight start failed for '{aircraftId}': {ex}");
             if (_smokeAircraft.Length > 0)
             {
-                GD.Print($"SYMLAB_SMOKE_FAIL {ex.Message}");
+                GD.Print($"SIMLAB_SMOKE_FAIL {ex.Message}");
                 GetTree().Quit(1);
             }
             else ShowMenu($"{aircraftId}: {ex.Message}");
@@ -95,7 +95,7 @@ public partial class Main : Node
         }
         var inv = CultureInfo.InvariantCulture;
         var p = session.Aircraft.State.Position;
-        GD.Print($"SYMLAB_SMOKE_OK aircraft={_smokeAircraft} t={session.Simulation.Time.ToString("0.00", inv)} x={p.X.ToString("0.0", inv)} y={p.Y.ToString("0.00", inv)} z={p.Z.ToString("0.0", inv)} crash={session.Aircraft.Crash}");
+        GD.Print($"SIMLAB_SMOKE_OK aircraft={_smokeAircraft} t={session.Simulation.Time.ToString("0.00", inv)} x={p.X.ToString("0.0", inv)} y={p.Y.ToString("0.00", inv)} z={p.Z.ToString("0.0", inv)} crash={session.Aircraft.Crash}");
         GetTree().Quit(0);
     }
 
@@ -103,14 +103,14 @@ public partial class Main : Node
     {
         if (Has(args, "--smoke-boot"))
         {
-            GD.Print($"SYMLAB_BOOT_OK locale={TranslationServer.GetLocale()} title={Tr("APP_TITLE")}");
+            GD.Print($"SIMLAB_BOOT_OK locale={TranslationServer.GetLocale()} title={Tr("APP_TITLE")}");
             GetTree().Quit(0);
             return true;
         }
         if (Has(args, "--smoke-radio"))
         {
             var pads = JoypadReader.Poll();
-            GD.Print($"SYMLAB_RADIO_OK joypads={pads.Count}");
+            GD.Print($"SIMLAB_RADIO_OK joypads={pads.Count}");
             foreach (var pad in pads)
                 GD.Print($"JOYPAD guid={pad.Guid} name={pad.Name} axes={string.Join(";", pad.Frame.Axes.Select(a => a.ToString("0.00", CultureInfo.InvariantCulture)))}");
             GetTree().Quit(0);
@@ -216,7 +216,7 @@ public partial class Main : Node
     {
         for (int i = 0; i < frames; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         var error = GetViewport().GetTexture().GetImage().SavePng(path);
-        GD.Print($"SYMLAB_SCREENSHOT path={path} error={error}");
+        GD.Print($"SIMLAB_SCREENSHOT path={path} error={error}");
         GetTree().Quit(error == Error.Ok ? 0 : 1);
     }
 

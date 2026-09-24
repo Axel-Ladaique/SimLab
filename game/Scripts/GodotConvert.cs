@@ -1,9 +1,9 @@
 using Godot;
-using Symlab.App.Mapping;
-using Symlab.App.Visual;
-using Symlab.Flight.Geometry;
+using SimLab.App.Mapping;
+using SimLab.App.Visual;
+using SimLab.Flight.Geometry;
 
-namespace Symlab.Game;
+namespace SimLab.Game;
 
 public static class GodotConvert
 {
@@ -13,7 +13,7 @@ public static class GodotConvert
 
     public static Color ToGodot(this Rgb c, float alpha = 1f) => new(c.R, c.G, c.B, alpha);
 
-    /// <summary>Transform of a node that displays a body at this position and Symlab orientation.</summary>
+    /// <summary>Transform of a node that displays a body at this position and SimLab orientation.</summary>
     public static Transform3D BodyTransform(Vec3 position, Quat orientation) =>
         new(new Basis(GodotBasis.NodeRotation(orientation).ToGodot()), position.ToGodot());
 }

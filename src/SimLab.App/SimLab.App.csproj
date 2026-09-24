@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SimLab.App</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SimLab.Flight/SimLab.Flight.csproj" />
+    <ProjectReference Include="../SimLab.Input/SimLab.Input.csproj" />
+  </ItemGroup>
+</Project>

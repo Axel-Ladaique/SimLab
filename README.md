@@ -1,4 +1,4 @@
-# Symlab
+# SimLab
 
 Realistic RC airplane simulator. The goal is training transfer: practice in the sim, then fly the real aircraft.
 
@@ -6,14 +6,14 @@ Realistic RC airplane simulator. The goal is training transfer: practice in the 
 
 Sub-project 1 (core) — headless libraries:
 
-- `src/Symlab.Flight` — 6DOF flight model: strip-theory aerodynamics with ±180° airfoil polars, electric
+- `src/SimLab.Flight` — 6DOF flight model: strip-theory aerodynamics with ±180° airfoil polars, electric
   propulsion (battery, ESC, motor, propeller, thrust-stand calibration, APC import), wheels and hull contact,
   crash detection, ISA atmosphere, wind with Dryden turbulence, fixed-step (500 Hz) simulation, CSV recorder.
-- `src/Symlab.Input` — radio input: calibration wizard, channel pipeline (trim, expo, rates), switch actions,
+- `src/SimLab.Input` — radio input: calibration wizard, channel pipeline (trim, expo, rates), switch actions,
   keyboard fallback.
 - `aircraft/` — data-driven aircraft (trainer, sport, FPV wing). Values are estimates; see `docs/tuning-log.md`.
 
-- `src/Symlab.App` — testable game logic: club field and terrain, line-of-sight camera, procedural aircraft
+- `src/SimLab.App` — testable game logic: club field and terrain, line-of-sight camera, procedural aircraft
   meshes, input routing, flight session, settings, translations.
 - `game/` — Godot 4 (.NET) simulator: radio setup and calibration, club field, line-of-sight flying, HUD,
   crash screen, French/English menus. See `docs/dev-setup.md` to build and run, and
@@ -31,7 +31,7 @@ R reset · P pause · V wind on/off · F3 diagnostics · Esc menu.
 
 ```bash
 dotnet test
-dotnet build game/Symlab.Game.csproj
+dotnet build game/SimLab.Game.csproj
 ```
 
 Requires the .NET 10 SDK (`brew install --cask dotnet-sdk`).

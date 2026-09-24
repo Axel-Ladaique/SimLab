@@ -1,7 +1,7 @@
 using Godot;
-using Symlab.App.Field;
+using SimLab.App.Field;
 
-namespace Symlab.Game.World;
+namespace SimLab.Game.World;
 
 /// <summary>6 m pole with an orange sock that points downwind and droops in light air.</summary>
 public partial class WindsockNode : Node3D

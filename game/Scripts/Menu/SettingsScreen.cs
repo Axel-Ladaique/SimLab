@@ -1,8 +1,8 @@
 using Godot;
-using Symlab.App.Cameras;
-using Symlab.App.Settings;
+using SimLab.App.Cameras;
+using SimLab.App.Settings;
 
-namespace Symlab.Game.Menu;
+namespace SimLab.Game.Menu;
 
 public partial class SettingsScreen : Control
 {

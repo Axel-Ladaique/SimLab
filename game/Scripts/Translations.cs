@@ -1,7 +1,7 @@
 using Godot;
-using Symlab.App.Localization;
+using SimLab.App.Localization;
 
-namespace Symlab.Game;
+namespace SimLab.Game;
 
 /// <summary>Loads the translation CSV (ignored by Godot's importer via .gdignore) into Godot's TranslationServer.</summary>
 public static class Translations

@@ -1,8 +1,8 @@
 using Godot;
-using Symlab.App.Session;
-using Symlab.App.Settings;
+using SimLab.App.Session;
+using SimLab.App.Settings;
 
-namespace Symlab.Game.Menu;
+namespace SimLab.Game.Menu;
 
 public partial class MainMenu : Control
 {

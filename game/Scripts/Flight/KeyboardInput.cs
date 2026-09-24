@@ -1,8 +1,8 @@
 using Godot;
-using Symlab.App.Session;
-using Symlab.Input;
+using SimLab.App.Session;
+using SimLab.Input;
 
-namespace Symlab.Game.Flight;
+namespace SimLab.Game.Flight;
 
 /// <summary>Physical-key mapping, identical on AZERTY and QWERTY keyboards.</summary>
 public static class KeyboardInput
