@@ -41,3 +41,4 @@ User data (settings, radio profiles, flight recordings): `~/Library/Application 
 | `--screenshot-diagnostics <id> <s> <png>` | Same scripted takeoff with the F3 diagnostics overlay forced on |
 | `--screenshot-menu <png>` | Screenshot of the main menu |
 | `--screenshot-settings <png>` | Screenshot of the settings screen |
+| `--screenshot-radio-preview <id> <png>` | Radio screen with the control check showing aircraft `<id>`, driven by fixed commands (throttle 0.4, right aileron 0.8, up elevator 0.8, right rudder 0.8) instead of the radio |
