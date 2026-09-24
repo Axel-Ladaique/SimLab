@@ -151,6 +151,15 @@ public partial class Main : Node
             PreviewAircraft(args[aircraftShot + 1], args[aircraftShot + 2]);
             return true;
         }
+        int radioPreviewShot = System.Array.IndexOf(args, "--screenshot-radio-preview");
+        if (radioPreviewShot >= 0 && radioPreviewShot + 2 < args.Length)
+        {
+            ShowRadio();
+            // Fixed commands (right aileron, up elevator, right rudder) so every surface is visibly deflected.
+            ((RadioScreen)_current!).ForceControlCheck(args[radioPreviewShot + 1], new ControlInputs(0.4, 0.8, 0.8, 0.8));
+            CaptureAfterFrames(30, args[radioPreviewShot + 2]);
+            return true;
+        }
         int smoke = System.Array.IndexOf(args, "--smoke-flight");
         if (smoke >= 0 && smoke + 2 < args.Length)
         {
