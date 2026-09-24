@@ -98,5 +98,32 @@ public sealed class SettingsTests : IDisposable
         Assert.NotNull(error);
     }
 
+    [Fact]
+    public void Set_reversed_saves_the_flipped_channel()
+    {
+        var store = new RadioProfileStore(_dir);
+        store.Save(new RadioProfile
+        {
+            DeviceGuid = "tx16s",
+            Channels = { [StickFunction.Rudder] = new ChannelSettings(3, true, AxisCalibration.Identity) },
+            Switches = { new SwitchBinding(SwitchAction.Reset, ButtonIndex: 3) },
+        });
+
+        Assert.True(store.SetReversed("tx16s", StickFunction.Rudder, false));
+
+        var back = store.Load("tx16s", out _)!;
+        Assert.False(back.Channels[StickFunction.Rudder].Reversed);
+        Assert.Single(back.Switches);
+    }
+
+    [Fact]
+    public void Set_reversed_without_a_profile_or_channel_returns_false()
+    {
+        var store = new RadioProfileStore(_dir);
+        Assert.False(store.SetReversed("missing", StickFunction.Rudder, true));
+        store.Save(new RadioProfile { DeviceGuid = "g" });
+        Assert.False(store.SetReversed("g", StickFunction.Rudder, true));
+    }
+
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 }

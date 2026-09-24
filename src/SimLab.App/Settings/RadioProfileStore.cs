@@ -37,4 +37,13 @@ public sealed class RadioProfileStore
         Directory.CreateDirectory(_directory);
         File.WriteAllText(PathFor(profile.DeviceGuid), profile.ToJson());
     }
+
+    /// <summary>Loads the device's profile, sets one channel's direction and saves it; false if there is no such profile or channel.</summary>
+    public bool SetReversed(string guid, StickFunction function, bool reversed)
+    {
+        var profile = Load(guid, out _);
+        if (profile is null || !profile.SetReversed(function, reversed)) return false;
+        Save(profile);
+        return true;
+    }
 }

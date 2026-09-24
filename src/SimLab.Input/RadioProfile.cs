@@ -33,6 +33,14 @@ public sealed class RadioProfile
             Get(StickFunction.Rudder));
     }
 
+    /// <summary>Sets the channel's direction, keeping its other settings; false if the function has no channel.</summary>
+    public bool SetReversed(StickFunction function, bool reversed)
+    {
+        if (!Channels.TryGetValue(function, out var c)) return false;
+        Channels[function] = c with { Reversed = reversed };
+        return true;
+    }
+
     public string ToJson() => JsonSerializer.Serialize(this, Options);
 
     /// <summary>Parses and validates a profile; malformed or inconsistent data throws <see cref="InvalidDataException"/>.</summary>
