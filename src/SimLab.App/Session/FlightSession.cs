@@ -53,11 +53,11 @@ public sealed class FlightSession : IDisposable
         if (Definition.Wheels.Count > 0)
         {
             double heading = ClubField.TakeoffHeading(Conditions.WindFromDeg);
-            var (x, z) = ClubField.TakeoffPoint(heading);
-            return InitialConditions.OnGround(Definition, Terrain, x, z, heading);
+            var (x, y) = ClubField.TakeoffPoint(heading);
+            return InitialConditions.OnGround(Definition, Terrain, x, y, heading);
         }
-        var (lx, lz, launchHeading) = ClubField.HandLaunchPoint(Conditions.WindFromDeg);
-        return InitialConditions.InFlight(new Vec3(lx, Terrain.Height(lx, lz) + HandLaunchHeight, lz), launchHeading, HandLaunchSpeed, HandLaunchPitchDeg);
+        var (lx, ly, launchHeading) = ClubField.HandLaunchPoint(Conditions.WindFromDeg);
+        return InitialConditions.InFlight(new Vec3(lx, ly, Terrain.Height(lx, ly) + HandLaunchHeight), launchHeading, HandLaunchSpeed, HandLaunchPitchDeg);
     }
 
     public void Reset()
@@ -94,7 +94,7 @@ public sealed class FlightSession : IDisposable
         get
         {
             var p = Aircraft.State.Position;
-            return p.Y - Terrain.Height(p.X, p.Z);
+            return p.Z - Terrain.Height(p.X, p.Y);
         }
     }
 

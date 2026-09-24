@@ -16,22 +16,34 @@ public class MappingTests
     static readonly Quat Sample = Attitude.ToOrientation(Angle.Rad(20), Angle.Rad(-10), Angle.Rad(135));
 
     [Fact]
+    public void World_enu_maps_to_godot_east_up_south()
+    {
+        Near(new Vec3(1, 3, -2), GodotBasis.WorldToGodot(new Vec3(1, 2, 3)));
+        Near(new Vec3(0, 0, -1), GodotBasis.WorldToGodot(new Vec3(0, 1, 0)));
+        Near(new Vec3(0, 1, 0), GodotBasis.WorldToGodot(Vec3.UnitZ));
+    }
+
+    [Fact]
     public void Node_forward_is_body_forward()
-        => Near(Sample.Rotate(Vec3.UnitX), GodotBasis.NodeRotation(Sample).Rotate(new Vec3(0, 0, -1)));
+        => Near(GodotBasis.WorldToGodot(Sample.Rotate(BodyAxes.Forward)), GodotBasis.NodeRotation(Sample).Rotate(new Vec3(0, 0, -1)));
 
     [Fact]
     public void Node_right_is_body_right_and_up_is_up()
     {
         var node = GodotBasis.NodeRotation(Sample);
-        Near(Sample.Rotate(Vec3.UnitZ), node.Rotate(Vec3.UnitX));
-        Near(Sample.Rotate(Vec3.UnitY), node.Rotate(Vec3.UnitY));
+        Near(GodotBasis.WorldToGodot(Sample.Rotate(BodyAxes.Right)), node.Rotate(Vec3.UnitX));
+        Near(GodotBasis.WorldToGodot(Sample.Rotate(BodyAxes.Up)), node.Rotate(Vec3.UnitY));
     }
+
+    [Fact]
+    public void Level_north_heading_faces_godot_minus_z()
+        => Near(new Vec3(0, 0, -1), GodotBasis.NodeRotation(Attitude.ToOrientation(0, 0, 0)).Rotate(new Vec3(0, 0, -1)));
 
     [Fact]
     public void Body_points_map_to_the_same_world_points()
     {
         var p = new Vec3(0.4, -0.2, 0.75);
-        Near(Sample.Rotate(p), GodotBasis.NodeRotation(Sample).Rotate(GodotBasis.BodyToNodeLocal(p)));
+        Near(GodotBasis.WorldToGodot(Sample.Rotate(p)), GodotBasis.NodeRotation(Sample).Rotate(GodotBasis.BodyToNodeLocal(p)));
     }
 
     [Fact]

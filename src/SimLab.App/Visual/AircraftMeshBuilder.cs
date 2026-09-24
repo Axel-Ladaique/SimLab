@@ -56,17 +56,17 @@ public static class AircraftMeshBuilder
             }
         }
 
-        parts.Add(new MeshPart("airframe", -1, Vec3.Zero, Vec3.UnitZ, fixedTriangles, SurfaceColor));
+        parts.Add(new MeshPart("airframe", -1, Vec3.Zero, BodyAxes.Right, fixedTriangles, SurfaceColor));
         foreach (var (index, triangles) in controlTriangles)
             parts.Add(new MeshPart(definition.Controls[index].Name, index, hinges[index].Point, hinges[index].Axis, triangles, ControlColor));
 
-        parts.Add(new MeshPart("fuselage", -1, Vec3.Zero, Vec3.UnitZ, Fuselage(definition), FuselageColor));
+        parts.Add(new MeshPart("fuselage", -1, Vec3.Zero, BodyAxes.Right, Fuselage(definition), FuselageColor));
 
         if (definition.Wheels.Count > 0)
         {
             var gear = new List<Vec3>();
-            foreach (var w in definition.Wheels) AddBox(gear, w.Position, new Vec3(GearSize, GearSize, GearSize / 2));
-            parts.Add(new MeshPart("gear", -1, Vec3.Zero, Vec3.UnitZ, gear, DarkColor));
+            foreach (var w in definition.Wheels) AddBox(gear, w.Position, GearSize, GearSize, GearSize / 2);
+            parts.Add(new MeshPart("gear", -1, Vec3.Zero, BodyAxes.Right, gear, DarkColor));
         }
 
         if (definition.Power is { } power)
@@ -77,16 +77,16 @@ public static class AircraftMeshBuilder
 
     static List<Vec3> Fuselage(AircraftDefinition definition)
     {
-        double front = definition.Hull.Count > 0 ? definition.Hull.Max(h => h.Position.X) : 0.5;
-        double back = definition.Hull.Count > 0 ? definition.Hull.Min(h => h.Position.X) : -0.5;
+        double front = definition.Hull.Count > 0 ? definition.Hull.Max(h => Vec3.Dot(h.Position, BodyAxes.Forward)) : 0.5;
+        double back = definition.Hull.Count > 0 ? definition.Hull.Min(h => Vec3.Dot(h.Position, BodyAxes.Forward)) : -0.5;
         var triangles = new List<Vec3>();
-        AddBox(triangles, new Vec3((front + back) / 2, 0, 0), new Vec3((front - back) / 2, FuselageHeight / 2, FuselageWidth / 2));
+        AddBox(triangles, BodyAxes.Forward * ((front + back) / 2), (front - back) / 2, FuselageHeight / 2, FuselageWidth / 2);
         return triangles;
     }
 
     static List<Vec3> Disc(Vec3 center, Vec3 axis, double radius)
     {
-        var u = Vec3.Cross(axis, Math.Abs(axis.Y) < 0.9 ? Vec3.UnitY : Vec3.UnitZ).Normalized();
+        var u = Vec3.Cross(axis, Math.Abs(Vec3.Dot(axis, BodyAxes.Up)) < 0.9 ? BodyAxes.Up : BodyAxes.Right).Normalized();
         var v = Vec3.Cross(axis, u);
         var triangles = new List<Vec3>();
         for (int i = 0; i < PropSides; i++)
@@ -105,9 +105,11 @@ public static class AircraftMeshBuilder
         t.Add(a); t.Add(c); t.Add(d);
     }
 
-    static void AddBox(List<Vec3> t, Vec3 center, Vec3 half)
+    /// <summary>Body-aligned box with the given half-extents along body forward, up and right.</summary>
+    static void AddBox(List<Vec3> t, Vec3 center, double halfForward, double halfUp, double halfRight)
     {
-        Vec3 P(double sx, double sy, double sz) => center + new Vec3(sx * half.X, sy * half.Y, sz * half.Z);
+        Vec3 P(double sx, double sy, double sz) =>
+            center + BodyAxes.Forward * (sx * halfForward) + BodyAxes.Up * (sy * halfUp) + BodyAxes.Right * (sz * halfRight);
         AddQuad(t, P(-1, -1, 1), P(1, -1, 1), P(1, 1, 1), P(-1, 1, 1));
         AddQuad(t, P(1, -1, -1), P(-1, -1, -1), P(-1, 1, -1), P(1, 1, -1));
         AddQuad(t, P(-1, 1, 1), P(1, 1, 1), P(1, 1, -1), P(-1, 1, -1));

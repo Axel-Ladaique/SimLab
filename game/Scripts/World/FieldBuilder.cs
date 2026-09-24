@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Godot;
 using SimLab.App.Field;
 using SimLab.App.Settings;
+using SimLab.Flight.Geometry;
 using SimLab.Flight.Terrain;
 
 namespace SimLab.Game.World;
@@ -21,11 +22,11 @@ public static class FieldBuilder
         root.AddChild(Sun(conditions));
         root.AddChild(TerrainMesh(terrain));
         root.AddChild(FlatPatch(ClubField.RunwayLength, ClubField.RunwayWidth, new Vector3(0, 0.03f, 0), Mowed));
-        var pilot = ClubField.PilotPosition.ToGodot();
+        var pilot = ClubField.PilotPosition.WorldToGodot();
         root.AddChild(FlatPatch(8, 4, pilot + new Vector3(0, 0.03f, 0), Gravel));
         root.AddChild(Fence(pilot.Z - 4f));
         AddTrees(root, terrain.Trees);
-        var sock = new WindsockNode { Position = ClubField.WindsockPosition.ToGodot() };
+        var sock = new WindsockNode { Position = ClubField.WindsockPosition.WorldToGodot() };
         root.AddChild(sock);
         return sock;
     }
@@ -64,7 +65,7 @@ public static class FieldBuilder
 
     static DirectionalLight3D Sun(FlightConditions conditions)
     {
-        var toSun = SunMath.Direction(conditions.SunAzimuthDeg, conditions.SunElevationDeg).ToGodot();
+        var toSun = SunMath.Direction(conditions.SunAzimuthDeg, conditions.SunElevationDeg).WorldToGodot();
         var up = Mathf.Abs(toSun.Y) > 0.99f ? Vector3.Back : Vector3.Up;
         return new DirectionalLight3D
         {
@@ -83,9 +84,10 @@ public static class FieldBuilder
 
         void Vertex(int i, int j)
         {
-            double x = -half + i * GridStep, z = -half + j * GridStep;
-            st.SetNormal(terrain.Normal(x, z).ToGodot());
-            st.AddVertex(new Vector3((float)x, (float)ClubFieldTerrain.GroundHeight(x, z), (float)z));
+            // Grid rows run along Godot z (south); the terrain is sampled in world ENU (y north = −z).
+            double x = -half + i * GridStep, y = -(-half + j * GridStep);
+            st.SetNormal(terrain.Normal(x, y).WorldToGodot());
+            st.AddVertex(new Vec3(x, y, ClubFieldTerrain.GroundHeight(x, y)).WorldToGodot());
         }
 
         for (int i = 0; i < cells; i++)
@@ -141,8 +143,8 @@ public static class FieldBuilder
         for (int i = 0; i < trees.Count; i++)
         {
             var t = trees[i];
-            float h = (float)t.Height, r = (float)t.Radius, y = (float)t.BaseY;
-            var basePoint = new Vector3((float)t.X, y, (float)t.Z);
+            float h = (float)t.Height, r = (float)t.Radius;
+            var basePoint = new Vec3(t.X, t.Y, t.BaseZ).WorldToGodot();
             trunks.SetInstanceTransform(i, new Transform3D(Basis.Identity.Scaled(new Vector3(1, 0.35f * h, 1)), basePoint + new Vector3(0, 0.175f * h, 0)));
             crowns.SetInstanceTransform(i, new Transform3D(Basis.Identity.Scaled(new Vector3(r, 0.75f * h, r)), basePoint + new Vector3(0, 0.625f * h, 0)));
         }

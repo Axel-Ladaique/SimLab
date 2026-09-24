@@ -29,7 +29,7 @@ public class WindFieldTests
 
     [Fact]
     public void Wind_from_north_blows_toward_south()
-        => Assert.Equal(4, new WindField(new WindSettings(4, 0), 1).SteadyAt(10).Z, 9);
+        => Assert.Equal(-4, new WindField(new WindSettings(4, 0), 1).SteadyAt(10).Y, 9);
 
     [Fact]
     public void Log_profile_is_weaker_near_the_ground()
@@ -57,7 +57,7 @@ public class WindFieldTests
         for (int i = 0; i < 100_000; i++)
         {
             wind.Advance(0.002, 50, 15);
-            double w = wind.Turbulence.Y;
+            double w = wind.Turbulence.Z;
             sum += w; sumSq += w * w; n++;
         }
         double mean = sum / n;

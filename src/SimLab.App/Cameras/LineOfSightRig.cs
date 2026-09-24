@@ -9,7 +9,7 @@ public sealed class LineOfSightRig : ICameraRig
     public const double TargetScreenFraction = 0.08;
     public const double MaxZoomFactor = 3.0;
 
-    Vec3 _look = new(0, 0, -1);
+    Vec3 _look = new(0, 1, 0); // north
     bool _initialized;
 
     public LineOfSightRig(Vec3 eye, double baseFovDeg, bool autoZoom)

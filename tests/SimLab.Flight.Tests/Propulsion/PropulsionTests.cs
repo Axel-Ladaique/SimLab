@@ -11,7 +11,7 @@ public class PropulsionTests
         EscSpec.Linear(),
         PropellerSpec.Generic(diameterIn: 12, pitchIn: 6),
         Position: new Vec3(0.45, 0, 0),
-        ThrustAxis: Vec3.UnitX,
+        ThrustAxis: BodyAxes.Forward,
         SpinDirection: 1,
         PFactor: 0.1);
 

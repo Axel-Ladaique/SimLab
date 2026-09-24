@@ -43,7 +43,7 @@ public sealed class Simulation
     {
         Previous = Aircraft.State;
         var s = Aircraft.State;
-        double heightAgl = s.Position.Y - Environment.Terrain.Height(s.Position.X, s.Position.Z);
+        double heightAgl = s.Position.Z - Environment.Terrain.Height(s.Position.X, s.Position.Y);
         Environment.Wind.Advance(FixedStep, heightAgl, Aircraft.AirData.Airspeed);
         Aircraft.Step(FixedStep, input, Environment);
         Time += FixedStep;

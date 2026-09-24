@@ -9,8 +9,8 @@ namespace SimLab.Flight.Tests.Behavior;
 internal static class PilotFrame
 {
     public static double East(Vec3 p) => p.X;
-    public static double North(Vec3 p) => -p.Z;
-    public static double Up(Vec3 p) => p.Y;
+    public static double North(Vec3 p) => p.Y;
+    public static double Up(Vec3 p) => p.Z;
     public static double RollRightRate(Vec3 omega) => omega.X;
     public static double PitchUpRate(Vec3 omega) => omega.Z;
     public static double YawRightRate(Vec3 omega) => -omega.Y;

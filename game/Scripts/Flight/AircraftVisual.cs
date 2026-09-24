@@ -24,8 +24,8 @@ public partial class AircraftVisual : Node3D
                 if (part.Name == "propeller") _propeller = mesh;
                 continue;
             }
-            var hinge = GodotBasis.BodyToNodeLocal(part.HingePoint).ToGodot();
-            var axis = GodotBasis.BodyToNodeLocal(part.HingeAxis).ToGodot().Normalized();
+            var hinge = GodotBasis.BodyToNodeLocal(part.HingePoint).ToVector3();
+            var axis = GodotBasis.BodyToNodeLocal(part.HingeAxis).ToVector3().Normalized();
             var pivot = new Node3D { Position = hinge };
             pivot.AddChild(MeshFor(part.Triangles, part.Color, hinge, 1f));
             AddChild(pivot);
@@ -52,7 +52,7 @@ public partial class AircraftVisual : Node3D
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
         st.SetColor(color.ToGodot(alpha));
-        foreach (var v in triangles) st.AddVertex(GodotBasis.BodyToNodeLocal(v).ToGodot() - origin);
+        foreach (var v in triangles) st.AddVertex(GodotBasis.BodyToNodeLocal(v).ToVector3() - origin);
         st.GenerateNormals();
         return new MeshInstance3D
         {

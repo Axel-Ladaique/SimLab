@@ -14,6 +14,8 @@ public class GroundContactTests
         new("left", new Vec3(-0.1, -0.1, -0.15), 1000, 20, 0.03, 0.8, 0, NoSteer),
         new("right", new Vec3(-0.1, -0.1, 0.15), 1000, 20, 0.03, 0.8, 0, NoSteer),
     ];
+    /// <summary>Level attitude heading east (body forward = world +x).</summary>
+    static readonly Quat Level = Attitude.ToOrientation(0, 0, Math.PI / 2);
     static readonly MassProperties Cart = MassProperties.FromPrincipal(1.0, 0.05, 0.08, 0.05);
     static readonly CrashLimits Limits = new(MaxGearSinkRate: 3, MaxHullImpactSpeed: 1.5, MaxBellyImpactSpeed: 3);
 
@@ -23,7 +25,7 @@ public class GroundContactTests
         WrenchFunction f = (in RigidBodyState st) =>
         {
             var load = model.Evaluate(st, terrain, []);
-            return new Wrench(st.Orientation.Rotate(load.Force) + new Vec3(0, -9.81 * Cart.Mass, 0), load.Moment);
+            return new Wrench(st.Orientation.Rotate(load.Force) + new Vec3(0, 0, -9.81 * Cart.Mass), load.Moment);
         };
         for (int i = 0; i < (int)(seconds / 0.002); i++) s = Rk4Integrator.Step(s, 0.002, Cart, f);
         return s;
@@ -33,10 +35,10 @@ public class GroundContactTests
     public void Aircraft_settles_on_its_gear_without_drifting()
     {
         var model = new GroundContactModel(Tricycle, [], Cart.Mass);
-        var s = Simulate(model, new RigidBodyState(new Vec3(0, 0.1, 0), Vec3.Zero, Quat.Identity, Vec3.Zero), 5);
-        Assert.InRange(s.Position.Y, 0.1 - 9.81 / 3000 - 0.002, 0.1 - 9.81 / 3000 + 0.002);
+        var s = Simulate(model, new RigidBodyState(new Vec3(0, 0, 0.1), Vec3.Zero, Level, Vec3.Zero), 5);
+        Assert.InRange(s.Position.Z, 0.1 - 9.81 / 3000 - 0.002, 0.1 - 9.81 / 3000 + 0.002);
         Assert.True(s.Velocity.Length < 1e-3, $"velocity {s.Velocity}");
-        Assert.True(Math.Abs(s.Position.X) < 1e-3 && Math.Abs(s.Position.Z) < 1e-3);
+        Assert.True(Math.Abs(s.Position.X) < 1e-3 && Math.Abs(s.Position.Y) < 1e-3);
         Assert.Equal(3, model.WheelsInContact(s, new FlatTerrain()));
     }
 
@@ -44,16 +46,16 @@ public class GroundContactTests
     public void Tires_resist_sideways_sliding()
     {
         var model = new GroundContactModel(Tricycle, [], Cart.Mass);
-        var start = new RigidBodyState(new Vec3(0, 0.0967, 0), new Vec3(0, 0, 1), Quat.Identity, Vec3.Zero);
+        var start = new RigidBodyState(new Vec3(0, 0, 0.0967), new Vec3(0, -1, 0), Level, Vec3.Zero);
         var s = Simulate(model, start, 2);
-        Assert.True(Math.Abs(s.Velocity.Z) < 0.05, $"lateral speed {s.Velocity.Z}");
+        Assert.True(Math.Abs(s.Velocity.Y) < 0.05, $"lateral speed {s.Velocity.Y}");
     }
 
     [Fact]
     public void Tires_roll_forward_freely()
     {
         var model = new GroundContactModel(Tricycle, [], Cart.Mass);
-        var start = new RigidBodyState(new Vec3(0, 0.0967, 0), new Vec3(3, 0, 0), Quat.Identity, Vec3.Zero);
+        var start = new RigidBodyState(new Vec3(0, 0, 0.0967), new Vec3(3, 0, 0), Level, Vec3.Zero);
         var s = Simulate(model, start, 1);
         Assert.InRange(s.Velocity.X, 2.5, 3.0);
     }
@@ -65,7 +67,7 @@ public class GroundContactTests
     public void Fast_hull_impact_is_a_crash(string tag, CrashCause expected)
     {
         var model = new GroundContactModel([], [new HullPointSpec("p", Vec3.Zero, tag)], 1.0);
-        var s = new RigidBodyState(new Vec3(0, -0.001, 0), new Vec3(0, -2, 0), Quat.Identity, Vec3.Zero);
+        var s = new RigidBodyState(new Vec3(0, 0, -0.001), new Vec3(0, 0, -2), Level, Vec3.Zero);
         Assert.Equal(expected, model.DetectCrash(s, new FlatTerrain(), Limits));
     }
 
@@ -73,7 +75,7 @@ public class GroundContactTests
     public void Gentle_belly_landing_is_not_a_crash()
     {
         var model = new GroundContactModel([], [new HullPointSpec("belly", Vec3.Zero, "belly")], 1.0);
-        var s = new RigidBodyState(new Vec3(0, -0.001, 0), new Vec3(8, -2, 0), Quat.Identity, Vec3.Zero);
+        var s = new RigidBodyState(new Vec3(0, 0, -0.001), new Vec3(8, 0, -2), Level, Vec3.Zero);
         Assert.Equal(CrashCause.None, model.DetectCrash(s, new FlatTerrain(), Limits));
     }
 
@@ -81,7 +83,7 @@ public class GroundContactTests
     public void Hard_gear_landing_is_a_crash()
     {
         var model = new GroundContactModel(Tricycle, [], 1.0);
-        var s = new RigidBodyState(new Vec3(0, 0.099, 0), new Vec3(0, -4, 0), Quat.Identity, Vec3.Zero);
+        var s = new RigidBodyState(new Vec3(0, 0, 0.099), new Vec3(0, 0, -4), Level, Vec3.Zero);
         Assert.Equal(CrashCause.HardLanding, model.DetectCrash(s, new FlatTerrain(), Limits));
     }
 
@@ -90,7 +92,7 @@ public class GroundContactTests
     {
         var model = new GroundContactModel([], [new HullPointSpec("nose", new Vec3(0.3, 0, 0), "nose")], 1.0);
         var terrain = new FlatTerrain(0, [new CylinderObstacle(10.3, 0, 1, 10)]);
-        var s = new RigidBodyState(new Vec3(10, 5, 0), new Vec3(10, 0, 0), Quat.Identity, Vec3.Zero);
+        var s = new RigidBodyState(new Vec3(10, 0, 5), new Vec3(10, 0, 0), Level, Vec3.Zero);
         Assert.Equal(CrashCause.TreeStrike, model.DetectCrash(s, terrain, Limits));
     }
 
@@ -110,8 +112,8 @@ public class GroundContactTests
     public void Hull_points_support_the_aircraft_on_its_belly()
     {
         var model = new GroundContactModel([], BellyHull, Cart.Mass);
-        var s = Simulate(model, new RigidBodyState(new Vec3(0, 0.05, 0), Vec3.Zero, Quat.Identity, Vec3.Zero), 3);
-        Assert.InRange(s.Position.Y, 0.05 - HullSettleDepth - 0.002, 0.05 - HullSettleDepth + 0.002);
+        var s = Simulate(model, new RigidBodyState(new Vec3(0, 0, 0.05), Vec3.Zero, Level, Vec3.Zero), 3);
+        Assert.InRange(s.Position.Z, 0.05 - HullSettleDepth - 0.002, 0.05 - HullSettleDepth + 0.002);
         Assert.True(s.Velocity.Length < 1e-3, $"velocity {s.Velocity}");
     }
 
@@ -119,10 +121,10 @@ public class GroundContactTests
     public void Belly_slide_decelerates_by_friction()
     {
         var model = new GroundContactModel([], BellyHull, Cart.Mass);
-        var start = new RigidBodyState(new Vec3(0, 0.05 - HullSettleDepth, 0), new Vec3(5, 0, 0), Quat.Identity, Vec3.Zero);
+        var start = new RigidBodyState(new Vec3(0, 0, 0.05 - HullSettleDepth), new Vec3(5, 0, 0), Level, Vec3.Zero);
         var s = Simulate(model, start, 0.5);
         Assert.InRange(s.Velocity.X, 1.5, 2.6);
         Assert.True(s.Velocity.X > 0, $"forward speed {s.Velocity.X}");
-        Assert.True(Math.Abs(s.Velocity.Z) < 1e-6, $"lateral speed {s.Velocity.Z}");
+        Assert.True(Math.Abs(s.Velocity.Y) < 1e-6, $"lateral speed {s.Velocity.Y}");
     }
 }

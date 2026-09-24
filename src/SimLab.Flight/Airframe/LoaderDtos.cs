@@ -112,7 +112,7 @@ internal sealed class AirfoilTableDto
 internal sealed class PowerDto
 {
     public Vec3 Position { get; set; }
-    public Vec3 ThrustAxis { get; set; } = Vec3.UnitX;
+    public Vec3 ThrustAxis { get; set; } = BodyAxes.Forward;
     public int SpinDirection { get; set; } = 1;
     public double PFactor { get; set; } = 0.1;
     public MotorDto? Motor { get; set; }

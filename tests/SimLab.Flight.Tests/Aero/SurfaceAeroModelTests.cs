@@ -17,7 +17,7 @@ public class SurfaceAeroModelTests
         new Dictionary<string, double> { ["flap"] = 1 });
 
     static AeroContext Context(Vec3 air, Vec3 omega = default, double[]? deflections = null, PropWash wash = default) =>
-        new(air, omega, 1.225, 100, Vec3.UnitY, deflections ?? [0, 0, 0], wash);
+        new(air, omega, 1.225, 100, BodyAxes.Up, deflections ?? [0, 0, 0], wash);
 
     static Vec3 Flow(double speed, double alphaDeg) =>
         new(speed * Math.Cos(Angle.Rad(alphaDeg)), -speed * Math.Sin(Angle.Rad(alphaDeg)), 0);
@@ -88,7 +88,7 @@ public class SurfaceAeroModelTests
     public void Prop_wash_blows_over_a_stationary_tail()
     {
         var model = new SurfaceAeroModel([Stab], TestAirfoils.Map(), [Elevator], []);
-        var wash = new PropWash(new Vec3(0, 0, 0), Vec3.UnitX, 0.5, 10);
+        var wash = new PropWash(new Vec3(0, 0, 0), BodyAxes.Forward, 0.5, 10);
         var still = model.Evaluate(Context(Vec3.Zero, deflections: [-0.3]));
         var blown = model.Evaluate(Context(Vec3.Zero, deflections: [-0.3], wash: wash));
         Assert.Equal(Vec3.Zero, still.Force);

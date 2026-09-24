@@ -5,7 +5,7 @@ namespace SimLab.App.Tests.Cameras;
 
 public class LineOfSightRigTests
 {
-    static readonly Vec3 Eye = new(0, 1.7, 25);
+    static readonly Vec3 Eye = new(0, -25, 1.7);
 
     static CameraContext At(Vec3 p) => new(p, Quat.Identity, 1.5);
 
@@ -15,7 +15,7 @@ public class LineOfSightRigTests
     public void Camera_sits_at_the_eye_and_converges_on_the_aircraft()
     {
         var rig = new LineOfSightRig(Eye, 50, autoZoom: false);
-        var target = new Vec3(40, 20, -30);
+        var target = new Vec3(40, 30, 20);
         rig.Reset(At(target));
         CameraPose pose = default;
         for (int i = 0; i < 60; i++) pose = rig.Update(1.0 / 60, At(target));
@@ -29,9 +29,9 @@ public class LineOfSightRigTests
     public void Head_lags_behind_a_sudden_jump()
     {
         var rig = new LineOfSightRig(Eye, 50, autoZoom: false);
-        rig.Reset(At(new Vec3(0, 20, -50)));
-        var pose = rig.Update(0.016, At(new Vec3(80, 20, 25)));
-        var toNew = (new Vec3(80, 20, 25) - Eye).Normalized();
+        rig.Reset(At(new Vec3(0, 50, 20)));
+        var pose = rig.Update(0.016, At(new Vec3(80, -25, 20)));
+        var toNew = (new Vec3(80, -25, 20) - Eye).Normalized();
         double dot = Vec3.Dot(LookDirection(pose), toNew);
         Assert.True(dot < 0.99, $"no lag: {dot}");
     }
@@ -50,8 +50,8 @@ public class LineOfSightRigTests
     public void Auto_zoom_off_keeps_the_true_apparent_size()
     {
         var rig = new LineOfSightRig(Eye, 45, autoZoom: false);
-        rig.Reset(At(new Vec3(0, 50, -300)));
-        Assert.Equal(45, rig.Update(0.016, At(new Vec3(0, 50, -300))).VerticalFovDeg);
+        rig.Reset(At(new Vec3(0, 300, 50)));
+        Assert.Equal(45, rig.Update(0.016, At(new Vec3(0, 300, 50))).VerticalFovDeg);
     }
 
     [Fact]

@@ -81,7 +81,7 @@ public sealed class GroundContactModel
     {
         var p = s.Position + s.Orientation.Rotate(bodyPoint);
         var v = s.Velocity + s.Orientation.Rotate(Vec3.Cross(s.AngularVelocity, bodyPoint));
-        return new Probe(p, terrain.Height(p.X, p.Z) - p.Y, terrain.Normal(p.X, p.Z), v);
+        return new Probe(p, terrain.Height(p.X, p.Y) - p.Z, terrain.Normal(p.X, p.Y), v);
     }
 
     static BodyLoad WheelLoad(WheelSpec w, in RigidBodyState s, ITerrain terrain, double steer)
@@ -91,7 +91,7 @@ public sealed class GroundContactModel
         double vn = c.NormalSpeed;
         double normal = Math.Max(0, w.Stiffness * c.Depth - w.Damping * vn);
 
-        var roll = s.Orientation.Rotate(new Vec3(Math.Cos(steer), 0, Math.Sin(steer)));
+        var roll = s.Orientation.Rotate(BodyAxes.Forward * Math.Cos(steer) + BodyAxes.Right * Math.Sin(steer));
         roll = (roll - c.Normal * Vec3.Dot(roll, c.Normal)).Normalized();
         var lateral = Vec3.Cross(c.Normal, roll);
         var vt = c.Velocity - c.Normal * vn;

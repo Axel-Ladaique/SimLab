@@ -39,4 +39,37 @@ public readonly record struct Quat(double X, double Y, double Z, double W)
     }
 
     public Vec3 InverseRotate(Vec3 v) => Conjugate().Rotate(v);
+
+    /// <summary>Rotation taking the orthonormal right-handed basis (a1, a2, a3) onto (b1, b2, b3).</summary>
+    public static Quat FromBasis(Vec3 a1, Vec3 a2, Vec3 a3, Vec3 b1, Vec3 b2, Vec3 b3)
+    {
+        // R = Σ b_i a_iᵀ, converted to a quaternion (Shepperd's method).
+        double M(int r, int c) => Row(b1, r) * Row(a1, c) + Row(b2, r) * Row(a2, c) + Row(b3, r) * Row(a3, c);
+        double m00 = M(0, 0), m11 = M(1, 1), m22 = M(2, 2);
+        double trace = m00 + m11 + m22;
+        Quat q;
+        if (trace > 0)
+        {
+            double s = 2 * Math.Sqrt(1 + trace);
+            q = new Quat((M(2, 1) - M(1, 2)) / s, (M(0, 2) - M(2, 0)) / s, (M(1, 0) - M(0, 1)) / s, s / 4);
+        }
+        else if (m00 > m11 && m00 > m22)
+        {
+            double s = 2 * Math.Sqrt(1 + m00 - m11 - m22);
+            q = new Quat(s / 4, (M(0, 1) + M(1, 0)) / s, (M(0, 2) + M(2, 0)) / s, (M(2, 1) - M(1, 2)) / s);
+        }
+        else if (m11 > m22)
+        {
+            double s = 2 * Math.Sqrt(1 + m11 - m00 - m22);
+            q = new Quat((M(0, 1) + M(1, 0)) / s, s / 4, (M(1, 2) + M(2, 1)) / s, (M(0, 2) - M(2, 0)) / s);
+        }
+        else
+        {
+            double s = 2 * Math.Sqrt(1 + m22 - m00 - m11);
+            q = new Quat((M(0, 2) + M(2, 0)) / s, (M(1, 2) + M(2, 1)) / s, s / 4, (M(1, 0) - M(0, 1)) / s);
+        }
+        return q.Normalized();
+    }
+
+    static double Row(Vec3 v, int i) => i switch { 0 => v.X, 1 => v.Y, _ => v.Z };
 }

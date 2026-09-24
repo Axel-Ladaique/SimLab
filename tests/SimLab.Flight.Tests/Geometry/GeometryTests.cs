@@ -54,6 +54,18 @@ public class QuatTests
         var v = new Vec3(1, 2, 3);
         Approx.Equal(a.Rotate(b.Rotate(v)), (a * b).Rotate(v));
     }
+
+    [Theory]
+    [InlineData(0.7)]
+    [InlineData(2.9)]
+    [InlineData(-3.1)]
+    public void FromBasis_recovers_the_rotation(double angle)
+    {
+        var q = Quat.FromAxisAngle(new Vec3(1, -2, 0.5), angle);
+        var fromBasis = Quat.FromBasis(Vec3.UnitX, Vec3.UnitY, Vec3.UnitZ, q.Rotate(Vec3.UnitX), q.Rotate(Vec3.UnitY), q.Rotate(Vec3.UnitZ));
+        var v = new Vec3(0.3, -1.2, 2.5);
+        Approx.Equal(q.Rotate(v), fromBasis.Rotate(v));
+    }
 }
 
 public class Mat3Tests
@@ -87,10 +99,18 @@ public class AttitudeTests
     }
 
     [Fact]
-    public void Heading_zero_points_north()
-        => Approx.Equal(new Vec3(0, 0, -1), Attitude.ToOrientation(0, 0, 0).Rotate(Vec3.UnitX));
+    public void Heading_zero_points_north_in_enu()
+    {
+        var q = Attitude.ToOrientation(0, 0, 0);
+        var forwardWorld = q.Rotate(BodyAxes.Forward);
+        Approx.Equal(new Vec3(0, 1, 0), forwardWorld);
+    }
 
     [Fact]
-    public void Heading_ninety_points_east()
-        => Approx.Equal(Vec3.UnitX, Attitude.ToOrientation(0, 0, Math.PI / 2).Rotate(Vec3.UnitX));
+    public void Heading_ninety_points_east_and_pitch_up_raises_the_nose()
+    {
+        Approx.Equal(new Vec3(1, 0, 0), Attitude.ToOrientation(0, 0, Math.PI / 2).Rotate(BodyAxes.Forward));
+        Assert.True(Attitude.ToOrientation(0, 0.3, 0).Rotate(BodyAxes.Forward).Z > 0);
+        Assert.True(Attitude.ToOrientation(0.3, 0, 0).Rotate(BodyAxes.Right).Z < 0, "roll right lowers the right wing");
+    }
 }

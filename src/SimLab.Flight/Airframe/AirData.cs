@@ -9,6 +9,9 @@ public readonly record struct AirData(double Airspeed, double Alpha, double Beta
     {
         double v = airVelocityBody.Length;
         if (v < 1e-6) return default;
-        return new AirData(v, Math.Atan2(-airVelocityBody.Y, airVelocityBody.X), Math.Asin(Math.Clamp(airVelocityBody.Z / v, -1, 1)));
+        double forward = Vec3.Dot(airVelocityBody, BodyAxes.Forward);
+        double up = Vec3.Dot(airVelocityBody, BodyAxes.Up);
+        double right = Vec3.Dot(airVelocityBody, BodyAxes.Right);
+        return new AirData(v, Math.Atan2(-up, forward), Math.Asin(Math.Clamp(right / v, -1, 1)));
     }
 }

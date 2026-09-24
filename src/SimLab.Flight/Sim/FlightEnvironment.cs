@@ -18,8 +18,8 @@ public sealed class FlightEnvironment
     public double FieldElevationM { get; }
     public double TemperatureOffsetK { get; }
 
-    /// <summary>Air density at a world height (world y = height above the field datum).</summary>
-    public double Density(double worldY) => Isa.Density(FieldElevationM + worldY, TemperatureOffsetK);
+    /// <summary>Air density at a world height (world z = height above the field datum).</summary>
+    public double Density(double worldZ) => Isa.Density(FieldElevationM + worldZ, TemperatureOffsetK);
 
     public static FlightEnvironment Calm(ITerrain? terrain = null) =>
         new(terrain ?? new FlatTerrain(), new WindField(new WindSettings(), seed: 1));

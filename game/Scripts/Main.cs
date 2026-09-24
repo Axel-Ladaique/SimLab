@@ -95,7 +95,7 @@ public partial class Main : Node
         }
         var inv = CultureInfo.InvariantCulture;
         var p = session.Aircraft.State.Position;
-        GD.Print($"SIMLAB_SMOKE_OK aircraft={_smokeAircraft} t={session.Simulation.Time.ToString("0.00", inv)} x={p.X.ToString("0.0", inv)} y={p.Y.ToString("0.00", inv)} z={p.Z.ToString("0.0", inv)} crash={session.Aircraft.Crash}");
+        GD.Print($"SIMLAB_SMOKE_OK aircraft={_smokeAircraft} t={session.Simulation.Time.ToString("0.00", inv)} x={p.X.ToString("0.0", inv)} y={p.Y.ToString("0.0", inv)} z={p.Z.ToString("0.00", inv)} crash={session.Aircraft.Crash}");
         GetTree().Quit(0);
     }
 
@@ -179,13 +179,13 @@ public partial class Main : Node
         Switch(preview);
         var terrain = new ClubFieldTerrain(TreePlanter.Plant(FlightSession.TreeSeed));
         FieldBuilder.Build(preview, terrain, _services.Settings.Conditions);
-        var eye = ClubField.PilotPosition.ToGodot() + new Vector3(0, (float)ClubField.EyeHeight, 0);
+        var eye = ClubField.PilotPosition.WorldToGodot() + new Vector3(0, (float)ClubField.EyeHeight, 0);
         var camera = new Camera3D { Current = true, Fov = (float)_services.Settings.FovDeg, Far = 4000f };
         preview.AddChild(camera);
         // Aim between the runway's east half and the windsock so the screenshot keeps both in frame
         // (the windsock sits close to the pilot, well off the runway's own axis).
         var runwayEastQuarter = new Vector3((float)(ClubField.RunwayLength / 4), 4f, 0f);
-        var windsockAim = ClubField.WindsockPosition.ToGodot() + new Vector3(0, 3f, 0);
+        var windsockAim = ClubField.WindsockPosition.WorldToGodot() + new Vector3(0, 3f, 0);
         camera.LookAtFromPosition(eye, (runwayEastQuarter + windsockAim) / 2f, Vector3.Up);
         CaptureAfterFrames(20, path);
     }
@@ -203,9 +203,9 @@ public partial class Main : Node
         var start = session.StartState();
         visual.UpdateFrom(session.Aircraft, start);
         visual.SetAllDeflections(0.35);
-        var p = start.Position.ToGodot();
-        var forward = start.Orientation.Rotate(Vec3.UnitX).ToGodot();
-        var left = -start.Orientation.Rotate(Vec3.UnitZ).ToGodot();
+        var p = start.Position.WorldToGodot();
+        var forward = start.Orientation.Rotate(BodyAxes.Forward).WorldToGodot();
+        var left = -start.Orientation.Rotate(BodyAxes.Right).WorldToGodot();
         var camera = new Camera3D { Current = true, Fov = 50f, Near = 0.05f, Far = 4000f };
         preview.AddChild(camera);
         camera.LookAtFromPosition(p + forward * 2.5f + left * 3f + Vector3.Up * 1.2f, p, Vector3.Up);

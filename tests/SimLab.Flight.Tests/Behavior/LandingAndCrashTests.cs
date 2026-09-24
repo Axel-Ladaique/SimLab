@@ -20,7 +20,7 @@ public class LandingAndCrashTests
         Fleet.Fly(sim, 10, _ => new ControlInputs(0, 0, 0.2, 0));
         Assert.Equal(CrashCause.None, sim.Aircraft.Crash);
         Assert.True(sim.Aircraft.State.Velocity.Length < 1.0, $"speed {sim.Aircraft.State.Velocity.Length:F2}");
-        Assert.True(sim.Aircraft.State.Position.Y < 0.2);
+        Assert.True(sim.Aircraft.State.Position.Z < 0.2);
     }
 
     [Fact]
@@ -29,6 +29,6 @@ public class LandingAndCrashTests
         var sim = Fleet.InFlight("wing", 1.8, 10, pitchDeg: 10);
         Fleet.Fly(sim, 6, _ => new ControlInputs(1, 0, 0.1, 0));
         Assert.Equal(CrashCause.None, sim.Aircraft.Crash);
-        Assert.True(sim.Aircraft.State.Position.Y > 5, $"altitude {sim.Aircraft.State.Position.Y:F1} m");
+        Assert.True(sim.Aircraft.State.Position.Z > 5, $"altitude {sim.Aircraft.State.Position.Z:F1} m");
     }
 }

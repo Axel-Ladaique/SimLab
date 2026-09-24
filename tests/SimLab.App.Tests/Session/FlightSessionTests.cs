@@ -27,7 +27,7 @@ public class FlightSessionTests
     {
         using var session = Session("trainer");
         var s = session.Aircraft.State;
-        Assert.True(ClubField.OnRunway(s.Position.X, s.Position.Z));
+        Assert.True(ClubField.OnRunway(s.Position.X, s.Position.Y));
         Assert.True(s.Position.X < 0);
         Assert.Equal(90, Angle.Deg(Attitude.FromOrientation(s.Orientation).Heading), 6);
         Assert.Equal(0, s.Velocity.Length);
@@ -38,7 +38,7 @@ public class FlightSessionTests
     {
         using var session = Session("wing");
         var s = session.Aircraft.State;
-        Assert.InRange(s.Position.Y, 1.5, 2.5);
+        Assert.InRange(s.Position.Z, 1.5, 2.5);
         Assert.Equal(10, s.Velocity.Length, 6);
     }
 
@@ -85,7 +85,7 @@ public class FlightSessionTests
     public void Flight_timer_stops_after_a_crash()
     {
         using var session = Session("trainer");
-        session.Aircraft.OverrideState(session.Aircraft.State with { Position = new Vec3(0, 3, 0), Velocity = new Vec3(0, -15, 0) });
+        session.Aircraft.OverrideState(session.Aircraft.State with { Position = new Vec3(0, 0, 3), Velocity = new Vec3(0, 0, -15) });
         for (int i = 0; i < 100 && session.Aircraft.Crash == CrashCause.None; i++) session.Tick(0.01, ControlInputs.Neutral);
         Assert.NotEqual(CrashCause.None, session.Aircraft.Crash);
         double t = session.FlightTime;

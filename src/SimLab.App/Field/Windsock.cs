@@ -11,10 +11,11 @@ public static class Windsock
     /// <summary>Wind speed at which a standard sock is fully extended (15 kt).</summary>
     public const double FullExtensionSpeed = 7.7;
 
+    /// <summary>Pose for a world (ENU) wind vector.</summary>
     public static WindsockPose Pose(Vec3 wind)
     {
-        double horizontal = Math.Sqrt(wind.X * wind.X + wind.Z * wind.Z);
-        double heading = horizontal > 1e-6 ? Angle.Deg(Math.Atan2(wind.X, -wind.Z)) : 0;
+        double horizontal = Math.Sqrt(wind.X * wind.X + wind.Y * wind.Y);
+        double heading = horizontal > 1e-6 ? Angle.Deg(Math.Atan2(wind.X, wind.Y)) : 0;
         if (heading < 0) heading += 360;
         double droop = 90 * (1 - Math.Clamp(horizontal / FullExtensionSpeed, 0, 1));
         return new WindsockPose(heading, droop);

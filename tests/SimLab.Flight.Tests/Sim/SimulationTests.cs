@@ -14,7 +14,7 @@ public class SimulationTests
     static Simulation Glider(double altitude = 50, double speed = 12, double pitchDeg = 0)
     {
         var sim = new Simulation(new Aircraft(TestDefinitions.Glider()), FlightEnvironment.Calm());
-        sim.Reset(InitialConditions.InFlight(new Vec3(0, altitude, 0), headingDeg: 0, airspeed: speed, pitchDeg: pitchDeg));
+        sim.Reset(InitialConditions.InFlight(new Vec3(0, 0, altitude), headingDeg: 0, airspeed: speed, pitchDeg: pitchDeg));
         return sim;
     }
 
@@ -25,8 +25,8 @@ public class SimulationTests
         for (int i = 0; i < 2500; i++) sim.StepOnce(ControlInputs.Neutral);
         var s = sim.Aircraft.State;
         Assert.Equal(CrashCause.None, sim.Aircraft.Crash);
-        Assert.InRange(s.Position.Y, 30, 50);
-        Assert.True(s.Position.Z < -30, $"north distance {-s.Position.Z}");
+        Assert.InRange(s.Position.Z, 30, 50);
+        Assert.True(s.Position.Y > 30, $"north distance {s.Position.Y}");
         Assert.InRange(sim.Aircraft.AirData.Airspeed, 6, 25);
         Assert.Equal(5.0, sim.Time, 9);
     }
@@ -87,15 +87,15 @@ public class SimulationTests
     {
         var def = TestDefinitions.Glider();
         var s = InitialConditions.OnGround(def, new FlatTerrain(10), 0, 0, 90);
-        Assert.Equal(10.051, s.Position.Y, 6);
-        Assert.Equal(1.0, s.Orientation.Rotate(Vec3.UnitX).X, 9);
+        Assert.Equal(10.051, s.Position.Z, 6);
+        Assert.Equal(1.0, s.Orientation.Rotate(BodyAxes.Forward).X, 9);
     }
 
     static Simulation GliderInWind(WindSettings wind, double altitude = 50, double speed = 12)
     {
         var env = new FlightEnvironment(new FlatTerrain(), new WindField(wind, seed: 3));
         var sim = new Simulation(new Aircraft(TestDefinitions.Glider()), env);
-        var start = InitialConditions.InFlight(new Vec3(0, altitude, 0), headingDeg: 0, airspeed: speed);
+        var start = InitialConditions.InFlight(new Vec3(0, 0, altitude), headingDeg: 0, airspeed: speed);
         sim.Reset(start with { Velocity = start.Velocity + env.Wind.SteadyAt(altitude) }); // start at the given airspeed
         return sim;
     }
@@ -122,7 +122,7 @@ public class SimulationTests
         var sim = GliderInWind(new WindSettings(SpeedAt10m: 4, FromDirectionDeg: fromDeg));
         for (int i = 0; i < 1500; i++) sim.StepOnce(ControlInputs.Neutral);
         var s = sim.Aircraft.State;
-        var wind = sim.Environment.Wind.At(s.Position.Y);
+        var wind = sim.Environment.Wind.At(s.Position.Z);
         double airspeed = sim.Aircraft.AirData.Airspeed;
         double groundSpeed = s.Velocity.Length;
 

@@ -30,7 +30,7 @@ internal static class Fleet
     public static Simulation InFlight(string id, double altitude, double airspeed, double pitchDeg = 0, double rollDeg = 0)
     {
         var sim = new Simulation(new Aircraft(Load(id)), FlightEnvironment.Calm());
-        sim.Reset(InitialConditions.InFlight(new Vec3(0, altitude, 0), 0, airspeed, pitchDeg, rollDeg));
+        sim.Reset(InitialConditions.InFlight(new Vec3(0, 0, altitude), 0, airspeed, pitchDeg, rollDeg));
         return sim;
     }
 
@@ -57,6 +57,6 @@ internal static class Fleet
     public static double WorldYawRightRate(Simulation sim)
     {
         var s = sim.Aircraft.State;
-        return -s.Orientation.Rotate(s.AngularVelocity).Y;
+        return -s.Orientation.Rotate(s.AngularVelocity).Z;
     }
 }

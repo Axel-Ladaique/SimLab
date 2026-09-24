@@ -26,12 +26,13 @@ public sealed class WindField
     public WindSettings Settings { get; }
     public Vec3 Turbulence { get; private set; }
 
+    /// <summary>World (ENU) unit vector the wind blows toward: from D means toward (−sin D, −cos D, 0).</summary>
     Vec3 Downwind
     {
         get
         {
             var from = Angle.Rad(Settings.FromDirectionDeg);
-            return new Vec3(-Math.Sin(from), 0, Math.Cos(from));
+            return new Vec3(-Math.Sin(from), -Math.Cos(from), 0);
         }
     }
 
@@ -76,8 +77,8 @@ public sealed class WindField
         _w = Filter(_w, sigmaW, lengthW, speed, dt);
 
         var along = Downwind;
-        var across = Vec3.Cross(Vec3.UnitY, along);
-        Turbulence = along * _u + across * _v + Vec3.UnitY * _w;
+        var across = Vec3.Cross(Vec3.UnitZ, along);
+        Turbulence = along * _u + across * _v + Vec3.UnitZ * _w;
     }
 
     double Filter(double x, double sigma, double length, double speed, double dt)

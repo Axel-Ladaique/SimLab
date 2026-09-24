@@ -76,10 +76,10 @@ public sealed class Aircraft
             _steer[i] = ControlInputs.Mix(wheels[i].SteerMix, input) * Angle.Rad(wheels[i].MaxSteerDeg);
 
         var start = State;
-        double heightAgl = start.Position.Y - env.Terrain.Height(start.Position.X, start.Position.Z);
+        double heightAgl = start.Position.Z - env.Terrain.Height(start.Position.X, start.Position.Y);
         var wind = env.Wind.At(heightAgl);
         LastWind = wind;
-        double density = env.Density(start.Position.Y);
+        double density = env.Density(start.Position.Z);
 
         PowerTelemetry telemetry = default;
         PropWash wash = default;
@@ -97,12 +97,12 @@ public sealed class Aircraft
         WrenchFunction forces = (in RigidBodyState s) =>
         {
             var air = s.Orientation.InverseRotate(s.Velocity - wind);
-            double height = s.Position.Y - env.Terrain.Height(s.Position.X, s.Position.Z);
-            var up = s.Orientation.InverseRotate(Vec3.UnitY);
+            double height = s.Position.Z - env.Terrain.Height(s.Position.X, s.Position.Y);
+            var up = s.Orientation.InverseRotate(Vec3.UnitZ);
             var load = Aero.Evaluate(new AeroContext(air, s.AngularVelocity, density, height, up, _deflections, wash));
             if (Power is not null) load += PowerPlantLoads.Compute(Power.Spec, telemetry, propOmega, air, s.AngularVelocity);
             load += Ground.Evaluate(s, env.Terrain, _steer);
-            return new Wrench(s.Orientation.Rotate(load.Force) + new Vec3(0, -weight, 0), load.Moment);
+            return new Wrench(s.Orientation.Rotate(load.Force) + new Vec3(0, 0, -weight), load.Moment);
         };
 
         State = Rk4Integrator.Step(start, dt, Definition.Mass, forces);

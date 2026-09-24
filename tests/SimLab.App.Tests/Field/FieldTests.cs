@@ -9,10 +9,10 @@ public class FieldTests
     public void Terrain_is_flat_around_the_runway_and_hilly_far_away()
     {
         Assert.Equal(0, ClubFieldTerrain.GroundHeight(0, 0));
-        Assert.Equal(0, ClubFieldTerrain.GroundHeight(250, -150));
+        Assert.Equal(0, ClubFieldTerrain.GroundHeight(250, 150));
         double maxFar = 0;
         for (double x = -900; x <= 900; x += 50)
-            maxFar = Math.Max(maxFar, ClubFieldTerrain.GroundHeight(x, 800));
+            maxFar = Math.Max(maxFar, ClubFieldTerrain.GroundHeight(x, -800));
         Assert.InRange(maxFar, 1, ClubField.HillAmplitude);
     }
 
@@ -21,12 +21,12 @@ public class FieldTests
     {
         var terrain = new ClubFieldTerrain([]);
         for (double x = -1000; x <= 1000; x += 97)
-        for (double z = -1000; z <= 1000; z += 89)
+        for (double y = -1000; y <= 1000; y += 89)
         {
-            Assert.True(terrain.Height(x, z) >= 0);
-            var n = terrain.Normal(x, z);
+            Assert.True(terrain.Height(x, y) >= 0);
+            var n = terrain.Normal(x, y);
             Assert.Equal(1.0, n.Length, 9);
-            Assert.True(n.Y > 0.9);
+            Assert.True(n.Z > 0.9);
         }
     }
 
@@ -39,11 +39,11 @@ public class FieldTests
         Assert.True(a.Count > 100, $"only {a.Count} trees");
         Assert.All(a, t =>
         {
-            Assert.False(TreePlanter.Excluded(t.X, t.Z));
+            Assert.False(TreePlanter.Excluded(t.X, t.Y));
             Assert.InRange(t.Height, 8, 18);
-            Assert.Equal(ClubFieldTerrain.GroundHeight(t.X, t.Z), t.BaseY, 9);
+            Assert.Equal(ClubFieldTerrain.GroundHeight(t.X, t.Y), t.BaseZ, 9);
         });
-        Assert.True(TreePlanter.Excluded(ClubField.PilotPosition.X, ClubField.PilotPosition.Z));
+        Assert.True(TreePlanter.Excluded(ClubField.PilotPosition.X, ClubField.PilotPosition.Y));
         Assert.True(TreePlanter.Excluded(45, 0));
     }
 
@@ -52,8 +52,8 @@ public class FieldTests
     {
         var tree = TreePlanter.Plant(7)[0];
         var terrain = new ClubFieldTerrain([tree]);
-        Assert.True(terrain.HitsObstacle(new Vec3(tree.X, tree.BaseY + 1, tree.Z)));
-        Assert.False(terrain.HitsObstacle(new Vec3(0, 5, 0)));
+        Assert.True(terrain.HitsObstacle(new Vec3(tree.X, tree.Y, tree.BaseZ + 1)));
+        Assert.False(terrain.HitsObstacle(new Vec3(0, 0, 5)));
     }
 
     [Theory]
@@ -67,17 +67,17 @@ public class FieldTests
     [Fact]
     public void Takeoff_point_is_at_the_downwind_end_of_the_runway()
     {
-        var (x, z) = ClubField.TakeoffPoint(90);
-        Assert.True(x < 0 && ClubField.OnRunway(x, z));
+        var (x, y) = ClubField.TakeoffPoint(90);
+        Assert.True(x < 0 && ClubField.OnRunway(x, y));
         Assert.True(ClubField.TakeoffPoint(270).X > 0);
     }
 
     [Fact]
     public void Hand_launch_is_in_front_of_the_pilot()
     {
-        var (x, z, heading) = ClubField.HandLaunchPoint(270);
+        var (x, y, heading) = ClubField.HandLaunchPoint(270);
         Assert.Equal(ClubField.PilotPosition.X, x, 9);
-        Assert.True(z < ClubField.PilotPosition.Z);
+        Assert.True(y > ClubField.PilotPosition.Y);
         Assert.Equal(270, heading);
     }
 
@@ -86,8 +86,8 @@ public class FieldTests
     {
         var south = SunMath.Direction(180, 0);
         Assert.Equal(0, south.X, 9);
-        Assert.Equal(1, south.Z, 9);
-        Assert.Equal(1, SunMath.Direction(0, 90).Y, 9);
+        Assert.Equal(-1, south.Y, 9);
+        Assert.Equal(1, SunMath.Direction(0, 90).Z, 9);
         Assert.Equal(1, SunMath.Direction(90, 0).X, 9);
     }
 
@@ -98,7 +98,7 @@ public class FieldTests
         Assert.Equal(90, fromWest.HeadingDeg, 6);
         Assert.Equal(0, fromWest.DroopDeg, 6);
         Assert.Equal(90, Windsock.Pose(Vec3.Zero).DroopDeg, 6);
-        Assert.InRange(Windsock.Pose(new Vec3(0, 0, 3)).DroopDeg, 40, 70);
-        Assert.Equal(180, Windsock.Pose(new Vec3(0, 0, 3)).HeadingDeg, 6);
+        Assert.InRange(Windsock.Pose(new Vec3(0, -3, 0)).DroopDeg, 40, 70);
+        Assert.Equal(180, Windsock.Pose(new Vec3(0, -3, 0)).HeadingDeg, 6);
     }
 }

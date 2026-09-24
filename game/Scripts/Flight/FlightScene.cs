@@ -50,7 +50,7 @@ public partial class FlightScene : Node3D
         _visual.Build(AircraftMeshBuilder.Build(definition, _session.Aircraft.Aero.Segments));
 
         var pilot = ClubField.PilotPosition;
-        var eye = new Vec3(pilot.X, _session.Terrain.Height(pilot.X, pilot.Z) + ClubField.EyeHeight, pilot.Z);
+        var eye = new Vec3(pilot.X, pilot.Y, _session.Terrain.Height(pilot.X, pilot.Y) + ClubField.EyeHeight);
         _rig = new LineOfSightRig(eye, services.Settings.FovDeg, services.Settings.AutoZoom);
         _rig.Reset(Context());
         _camera = new Camera3D { Current = true, Near = 0.1f, Far = 4000f, Fov = (float)services.Settings.FovDeg };
@@ -77,8 +77,8 @@ public partial class FlightScene : Node3D
 
         _visual.UpdateFrom(_session.Aircraft, _session.DisplayState);
         var pose = _rig.Update(delta, Context());
-        var from = pose.Position.ToGodot();
-        var to = pose.LookAt.ToGodot();
+        var from = pose.Position.WorldToGodot();
+        var to = pose.LookAt.WorldToGodot();
         var up = Mathf.Abs((to - from).Normalized().Y) > 0.999f ? Vector3.Back : Vector3.Up;
         _camera.Fov = (float)pose.VerticalFovDeg;
         _camera.LookAtFromPosition(from, to, up);

@@ -20,9 +20,9 @@ public class Rk4IntegratorTests
     public void Free_fall_matches_analytic_solution()
     {
         var m = MassProperties.FromPrincipal(2, 1, 1, 1);
-        var s = Run(AtRest, m, (in RigidBodyState _) => new Wrench(new Vec3(0, -2 * 9.81, 0), Vec3.Zero), 2.0);
-        Assert.Equal(-0.5 * 9.81 * 4, s.Position.Y, 9);
-        Assert.Equal(-9.81 * 2, s.Velocity.Y, 9);
+        var s = Run(AtRest, m, (in RigidBodyState _) => new Wrench(new Vec3(0, 0, -2 * 9.81), Vec3.Zero), 2.0);
+        Assert.Equal(-0.5 * 9.81 * 4, s.Position.Z, 9);
+        Assert.Equal(-9.81 * 2, s.Velocity.Z, 9);
     }
 
     [Fact]

@@ -4,7 +4,7 @@ namespace SimLab.App.Cameras;
 
 public readonly record struct CameraPose(Vec3 Position, Vec3 LookAt, double VerticalFovDeg);
 
-/// <param name="AircraftPosition">Interpolated aircraft CG position, world axes.</param>
+/// <param name="AircraftPosition">Interpolated aircraft CG position, world ENU axes.</param>
 /// <param name="AircraftSpan">Largest dimension of the aircraft (wingspan), m.</param>
 public readonly record struct CameraContext(Vec3 AircraftPosition, Quat AircraftOrientation, double AircraftSpan);
 

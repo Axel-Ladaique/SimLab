@@ -33,26 +33,26 @@ public class FrameInvarianceGoldenTests
             {
                 var def = Fleet.Load("trainer");
                 var sim = new Simulation(new Aircraft(def), FlightEnvironment.Calm());
-                sim.Reset(InitialConditions.OnGround(def, sim.Environment.Terrain, 12, -7, 130));
+                sim.Reset(InitialConditions.OnGround(def, sim.Environment.Terrain, 12, 7, 130));
                 return (sim, 8, t => new ControlInputs(1, 0, t > 3 ? 0.3 : 0, 0.1));
             }
             case "sport_rolls":
             {
                 var sim = new Simulation(new Aircraft(Fleet.Load("sport")), FlightEnvironment.Calm());
-                sim.Reset(InitialConditions.InFlight(new Vec3(5, 80, -3), 30, 18, pitchDeg: 3, rollDeg: -10));
+                sim.Reset(InitialConditions.InFlight(new Vec3(5, 3, 80), 30, 18, pitchDeg: 3, rollDeg: -10));
                 return (sim, 5, t => new ControlInputs(0.6, t is > 1 and < 2 ? 0.5 : 0, t is > 2.5 and < 3 ? 0.3 : 0, t is > 3 and < 4 ? 0.4 : 0));
             }
             case "wing_launch":
             {
                 var sim = new Simulation(new Aircraft(Fleet.Load("wing")), FlightEnvironment.Calm());
-                sim.Reset(InitialConditions.InFlight(new Vec3(0, 1.8, 22), 250, 10, pitchDeg: 10));
+                sim.Reset(InitialConditions.InFlight(new Vec3(0, -22, 1.8), 250, 10, pitchDeg: 10));
                 return (sim, 5, _ => new ControlInputs(1, 0, 0.1, 0));
             }
             case "trainer_wind":
             {
                 var env = new FlightEnvironment(new FlatTerrain(), new WindField(new WindSettings(SpeedAt10m: 5, FromDirectionDeg: 60, Turbulence: 1), seed: 3));
                 var sim = new Simulation(new Aircraft(Fleet.Load("trainer")), env);
-                sim.Reset(InitialConditions.InFlight(new Vec3(-20, 60, 10), 200, 16));
+                sim.Reset(InitialConditions.InFlight(new Vec3(-20, -10, 60), 200, 16));
                 return (sim, 6, t => new ControlInputs(0.65, t is > 2 and < 2.5 ? -0.4 : 0, 0.05, 0));
             }
             default: throw new ArgumentException(scenario);

@@ -24,8 +24,8 @@ public class FlightQualityTests
         double minAltitude = double.MaxValue, maxAltitude = double.MinValue, maxBank = 0;
         Fleet.Fly(sim, 30, _ => Cruise("trainer"), s =>
         {
-            minAltitude = Math.Min(minAltitude, s.Aircraft.State.Position.Y);
-            maxAltitude = Math.Max(maxAltitude, s.Aircraft.State.Position.Y);
+            minAltitude = Math.Min(minAltitude, s.Aircraft.State.Position.Z);
+            maxAltitude = Math.Max(maxAltitude, s.Aircraft.State.Position.Z);
             maxBank = Math.Max(maxBank, Math.Abs(Fleet.Roll(s)));
         });
         Assert.Equal(CrashCause.None, sim.Aircraft.Crash);
@@ -103,7 +103,7 @@ public class FlightQualityTests
     {
         var sim = Trimmed("trainer");
         var s0 = sim.Aircraft.State;
-        var banked = s0.Orientation * Quat.FromAxisAngle(Vec3.UnitX, Angle.Rad(20));
+        var banked = s0.Orientation * Quat.FromAxisAngle(BodyAxes.Forward, Angle.Rad(20));
         sim.Aircraft.OverrideState(s0 with { Orientation = banked });
         Fleet.Fly(sim, 10, _ => Cruise("trainer"));
         Assert.True(Math.Abs(Fleet.Roll(sim)) < Angle.Rad(60), $"bank {Angle.Deg(Fleet.Roll(sim)):F0} deg");

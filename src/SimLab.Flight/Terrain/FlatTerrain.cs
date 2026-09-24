@@ -13,9 +13,9 @@ public sealed class FlatTerrain : ITerrain
         _obstacles = obstacles?.ToArray() ?? [];
     }
 
-    public double Height(double x, double z) => _elevation;
+    public double Height(double x, double y) => _elevation;
 
-    public Vec3 Normal(double x, double z) => Vec3.UnitY;
+    public Vec3 Normal(double x, double y) => Vec3.UnitZ;
 
     public bool HitsObstacle(Vec3 p)
     {

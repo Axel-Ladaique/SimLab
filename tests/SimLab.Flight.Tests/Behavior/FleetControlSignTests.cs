@@ -17,7 +17,7 @@ public class FleetControlSignTests
         var deflections = def.Controls
             .Select(c => ControlMapping.CommandToDeflection(ControlInputs.Mix(c.Mix, input), c.MaxPositiveDeg, c.MaxNegativeDeg))
             .ToArray();
-        var ctx = new AeroContext(new Vec3(Fleet.Cruise(id).Airspeed, 0, 0), Vec3.Zero, 1.225, 100, Vec3.UnitY, deflections, default);
+        var ctx = new AeroContext(new Vec3(Fleet.Cruise(id).Airspeed, 0, 0), Vec3.Zero, 1.225, 100, BodyAxes.Up, deflections, default);
         return aero.Evaluate(ctx).Moment;
     }
 
@@ -60,9 +60,9 @@ public class FleetControlSignTests
         var steered = def.Wheels.First(w => w.SteerMix.Count > 0).Position;
         var fixedWheel = def.Wheels.First(w => w.SteerMix.Count == 0).Position;
         double pitch = Math.Atan((fixedWheel.Y - steered.Y) / (steered.X - fixedWheel.X));
-        var q = Quat.FromAxisAngle(Vec3.UnitZ, pitch);
-        double lowest = def.Wheels.Min(w => q.Rotate(w.Position).Y);
-        var rolling = new RigidBodyState(new Vec3(0, -lowest - 0.01, 0), q.Rotate(new Vec3(3, 0, 0)), q, Vec3.Zero);
+        var q = Attitude.ToOrientation(0, pitch, Math.PI / 2);
+        double lowest = def.Wheels.Min(w => q.Rotate(w.Position).Z);
+        var rolling = new RigidBodyState(new Vec3(0, 0, -lowest - 0.01), q.Rotate(BodyAxes.Forward * 3), q, Vec3.Zero);
         Assert.Equal(def.Wheels.Count, ground.WheelsInContact(rolling, new FlatTerrain()));
         var m = ground.Evaluate(rolling, new FlatTerrain(), steer).Moment;
         Assert.True(m.Y < 0, $"{id}: yaw moment {m.Y:F4} N·m (+y is yaw left)");

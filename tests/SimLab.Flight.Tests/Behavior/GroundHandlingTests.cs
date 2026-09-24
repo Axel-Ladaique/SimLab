@@ -27,7 +27,7 @@ public class GroundHandlingTests
     {
         var sim = Fleet.OnGround("trainer");
         Fleet.Fly(sim, 1, _ => ControlInputs.Neutral);
-        double startNorth = -sim.Aircraft.State.Position.Z;
+        double startNorth = sim.Aircraft.State.Position.Y;
         double? liftOff = null;
         // Pitch-attitude pilot: hold 15 deg nose-up after t = 4 s (Kp = 2.0 per rad, Kd = 0.3 per rad/s).
         double targetPitch = Angle.Rad(15);
@@ -43,11 +43,11 @@ public class GroundHandlingTests
         Fleet.Fly(sim, 14, Pilot, s =>
         {
             if (liftOff is null && s.Aircraft.Ground.WheelsInContact(s.Aircraft.State, s.Environment.Terrain) == 0)
-                liftOff = -s.Aircraft.State.Position.Z - startNorth;
+                liftOff = s.Aircraft.State.Position.Y - startNorth;
         });
         Assert.Equal(CrashCause.None, sim.Aircraft.Crash);
         Assert.NotNull(liftOff);
         Assert.InRange(liftOff!.Value, 5, 80);
-        Assert.True(sim.Aircraft.State.Position.Y > 10, $"altitude {sim.Aircraft.State.Position.Y:F1} m");
+        Assert.True(sim.Aircraft.State.Position.Z > 10, $"altitude {sim.Aircraft.State.Position.Z:F1} m");
     }
 }

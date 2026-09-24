@@ -12,11 +12,13 @@ public static class TreePlanter
 
         double Jitter(double amplitude) => (rng.NextDouble() * 2 - 1) * amplitude;
 
+        // Positions are generated as (x, z = south) exactly as before the ENU switch, then mapped to y = −z.
         void Add(double x, double z)
         {
             double height = 8 + rng.NextDouble() * 10;
-            if (Excluded(x, z)) return;
-            trees.Add(new CylinderObstacle(x, z, 0.25 * height, height, ClubFieldTerrain.GroundHeight(x, z)));
+            double y = -z;
+            if (Excluded(x, y)) return;
+            trees.Add(new CylinderObstacle(x, y, 0.25 * height, height, ClubFieldTerrain.GroundHeight(x, y)));
         }
 
         for (double x = -400; x <= 400; x += 9) Add(x + Jitter(2), -140 + Jitter(6));
@@ -30,5 +32,5 @@ public static class TreePlanter
     }
 
     /// <summary>Keep-out area: runway with safety margins and the pilot box.</summary>
-    public static bool Excluded(double x, double z) => Math.Abs(x) < 110 && Math.Abs(z) < 60;
+    public static bool Excluded(double x, double y) => Math.Abs(x) < 110 && Math.Abs(y) < 60;
 }

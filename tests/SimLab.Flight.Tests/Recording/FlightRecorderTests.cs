@@ -54,7 +54,7 @@ public class FlightRecorderTests
         var def = Fleet.Load("trainer");
         var env = new FlightEnvironment(new FlatTerrain(), new WindField(new WindSettings(SpeedAt10m: 5, FromDirectionDeg: 270), 1));
         var sim = new Simulation(new Aircraft(def), env);
-        sim.Reset(InitialConditions.InFlight(new Vec3(0, 50, 0), 0, 15));
+        sim.Reset(InitialConditions.InFlight(new Vec3(0, 0, 50), 0, 15));
         var writer = new StringWriter();
         sim.Recorder = new FlightRecorder(writer, def, decimation: 1);
         Fleet.Fly(sim, 0.1, _ => new ControlInputs(0.7, 0, 0.5, 0, Flap: 0.25));
@@ -71,6 +71,7 @@ public class FlightRecorderTests
         var wind = sim.Aircraft.LastWind;
         Assert.True(wind.X > 4, $"wind x {wind.X:F2}");
         Assert.Equal(wind.X, Value(header, last, "wind_x"), 6);
+        Assert.Equal(wind.Y, Value(header, last, "wind_y"), 6);
         Assert.Equal(wind.Z, Value(header, last, "wind_z"), 6);
         double motor = Value(header, last, "motor_a");
         Assert.True(motor > 0, $"motor current {motor:F2} A");
