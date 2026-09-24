@@ -2,6 +2,8 @@ using SimLab.App.Audio;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 using SimLab.Flight.Controls;
+using SimLab.Flight.Geometry;
+using SimLab.Flight.Ground;
 
 namespace SimLab.App.Tests.Audio;
 
@@ -44,8 +46,23 @@ public class AircraftSoundTests
         Assert.True(f.Synth.WindGain > 0);
     }
 
+    /// <summary>Drops the aircraft from 3 m at 15 m/s and returns the impact kinds heard over one second of frames.</summary>
+    static List<ImpactKind> ImpactsAfterDrop(FlightSession session, AircraftSound sound)
+    {
+        sound.Update(1.0 / 60);
+        session.Aircraft.OverrideState(session.Aircraft.State with { Position = new Vec3(0, 0, 3), Velocity = new Vec3(0, 0, -15) });
+        var kinds = new List<ImpactKind>();
+        for (int i = 0; i < 60; i++)
+        {
+            session.Tick(1.0 / 60, ControlInputs.Neutral);
+            kinds.AddRange(sound.Update(1.0 / 60).Impacts.Select(e => e.Kind));
+        }
+        Assert.NotEqual(CrashCause.None, session.Aircraft.Crash);
+        return kinds;
+    }
+
     [Fact]
-    public void Reset_clears_smoothing_and_rearms_the_crash_event()
+    public void Reset_clears_smoothing_and_rearms_the_impact_events()
     {
         using var session = Session("trainer");
         var sound = new AircraftSound(session, SoundSpec.Default);
@@ -54,5 +71,14 @@ public class AircraftSoundTests
         session.Tick(1.0 / 60, ControlInputs.Neutral);
         var f = sound.Update(1.0 / 60);
         Assert.True(f.Synth.PropGain < 0.05, $"{f.Synth.PropGain}");
+
+        var first = ImpactsAfterDrop(session, sound);
+        Assert.Equal(1, first.Count(k => k == ImpactKind.Crash));
+        Assert.Contains(first, k => k != ImpactKind.Crash);
+        // The same drop after a reset (sim time jumps back) must sound the same: one crash again, and the
+        // touchdown events must not be held back by the refractory time of the first drop.
+        session.Reset();
+        session.Tick(1.0 / 60, ControlInputs.Neutral);
+        Assert.Equal(first, ImpactsAfterDrop(session, sound));
     }
 }
