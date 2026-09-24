@@ -2,11 +2,11 @@
   "name": "FPV Wing 1.1 m",
   "description": "Swept foam flying wing with elevons and a pusher prop. Hand launch, belly landing.",
   "mass": 1.1,
-  "cg": [0.32, 0, 0],
+  "cg": [0.31, 0, 0],
   "inertia": { "roll": 0.05, "yaw": 0.08, "pitch": 0.03 },
   "surfaces": [
     { "name": "wing", "role": "wing", "root": [0.213, 0, 0], "span": 0.55, "rootChord": 0.30, "tipChord": 0.15,
-      "sweepDeg": 25, "incidenceDeg": 2.0, "twistDeg": -2.0, "airfoil": "reflex-mh45", "segments": 8, "mirror": true },
+      "sweepDeg": 25, "incidenceDeg": 2.0, "twistDeg": -5.0, "airfoil": "reflex-mh45", "segments": 8, "mirror": true },
     { "name": "winglets", "role": "verticalTail", "root": [0.45, 0.55, 0], "span": 0.12, "rootChord": 0.12, "tipChord": 0.08,
       "sweepDeg": 30, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 2, "mirror": true }
   ],
