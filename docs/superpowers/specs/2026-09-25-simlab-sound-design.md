@@ -1,7 +1,7 @@
 # SimLab — Sound and Ground Check Design
 
 Date: 2026-09-25
-Status: Draft (awaiting user review)
+Status: Implemented (2026-09-25)
 
 ## 1. Purpose
 
@@ -123,3 +123,35 @@ power → idle sweep, a wind pass, a rolling pass and one impact, so the mix can
 The radio-screen preview and reverse toggles (in progress separately) land first, since ground check reuses the
 preview readout. Then: `src` audio models and synth → loader `sound` block → Godot audio nodes and buses →
 settings → assets and credits → ground check → offline render and docs.
+
+## 8. Deviations from this design
+
+Verified against the code on `feat/godot-game` during final verification (Task 12):
+
+- **No separate rolling player.** §2.2 describes a dedicated `AudioStreamPlayer3D` for rolling. In
+  `game/Scripts/Audio/AircraftAudio.cs`, rolling noise is synthesized inside `EngineSynth` and mixed into the
+  single aircraft voice player (`_voice`), alongside motor, propeller and wind; there is no separate rolling node.
+- **Doppler tracking is `IdleStep`, not the physics step.** `AircraftAudio.Player` sets
+  `DopplerTracking = AudioStreamPlayer3D.DopplerTrackingEnum.IdleStep`, because the aircraft visual (and this
+  node) is moved in `_Process`, not the physics step; `PhysicsStep` would sample a stale transform at render
+  rates above the physics rate and undershoot/jitter the Doppler estimate.
+- **Headless runs skip playback.** Under `--headless`, Godot forces its dummy audio driver, which never runs the
+  mix thread. `AircraftAudio._Ready` and `PlayImpact` both check `AudioBuses.Headless` and skip starting/playing
+  audio streams in that case (nothing would be heard anyway, and a playback started there can't be finalized
+  cleanly).
+- **`SoundFrame.Reset` propagates session resets to the synth.** `AircraftSound` emits `SoundFrame.Reset = true`
+  after a session reset; both the offline renderer (`OfflineAudio.Render`) and `AircraftAudio._Process` call
+  `synth.Reset()` (and `AircraftAudio` also clears the queued generator buffer) when this flag is set, so phase
+  and smoothers don't carry stale state across a reset.
+- **§5 volumes are superseded by §5b `AudioSettings`.** The three flat `AppSettings` fields described in §5
+  (`MasterVolume`, `AircraftVolume`, `AmbienceVolume`) were replaced by the single `AudioSettings` block
+  (`Audio` property on `AppSettings`) described in §5b, which also holds the four voice volumes and impacts.
+  §5 should be read as historical; §5b is what shipped.
+- **Ground check exits via the same Esc-only path as a normal flight, back to the main menu.** §4 says "leaving
+  ground check (menu or a key) returns to the normal pilot-box start". In the code, `FlightScene._UnhandledInput`
+  has a single exit path bound to `ui_cancel` (Esc) that calls the shared `_exit` callback for both `StartMode`
+  values; there is no separate in-scene menu control, and leaving goes to the main menu (from which the pilot
+  can start a normal flight), not straight back into a pilot-box flight.
+- **Two extra headless screenshot flags exist for verification.** `game/Scripts/Main.cs` also implements
+  `--screenshot-ground-check` and `--screenshot-sound`, used to capture the ground-check view and the sound
+  screen headlessly; these aren't mentioned elsewhere in this spec.
