@@ -104,11 +104,9 @@ public partial class AircraftAudio : Node3D
         if (_session.Paused) return;
         _synth.Mix = VoiceMix.From(_audio());
         var frame = _sound.Update(delta);
-        if (frame.Reset)
-        {
-            _synth.Reset();
-            _playback?.ClearBuffer(); // drop whatever pre-reset audio was already queued
-        }
+        // Only the synth is reset: AudioStreamGeneratorPlayback.ClearBuffer() refuses to run on an active playback
+        // (Godot 4.7 logs `Condition "active" is true` and flushes nothing), and the queue is short anyway.
+        if (frame.Reset) _synth.Reset();
 
         // _playback is null under a driver with no real audio output (headless smoke tests use the dummy driver).
         _feeder.Push(_playback, frame.Synth);

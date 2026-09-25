@@ -143,8 +143,9 @@ Verified against the code on `feat/godot-game` during final verification (Task 1
   after a session reset (detected through `FlightSession.ResetCount`, so a wind toggle, which also restarts the
   simulation clock, is not mistaken for one; impact refractory times use an audio clock advanced by the frame
   dt for the same reason); both the offline renderer (`OfflineAudio.Render`) and `AircraftAudio._Process` call
-  `synth.Reset()` (and `AircraftAudio` also clears the queued generator buffer) when this flag is set, so phase
-  and smoothers don't carry stale state across a reset.
+  `synth.Reset()` when this flag is set, so phase and smoothers don't carry stale state across a reset. The
+  generator's already-queued audio (a few tens of ms) is left to play out: `AudioStreamGeneratorPlayback.ClearBuffer()`
+  cannot be used on an active playback (Godot 4.7 logs `Condition "active" is true` and flushes nothing).
 - **§5 volumes are superseded by §5b `AudioSettings`.** The three flat `AppSettings` fields described in §5
   (`MasterVolume`, `AircraftVolume`, `AmbienceVolume`) were replaced by the single `AudioSettings` block
   (`Audio` property on `AppSettings`) described in §5b, which also holds the four voice volumes and impacts.
