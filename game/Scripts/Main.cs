@@ -43,7 +43,7 @@ public partial class Main : Node
     public void ShowMenu(string? error)
     {
         var menu = new MainMenu();
-        menu.Init(_services, id => StartFlight(id), ShowRadio, ShowSettings, () => GetTree().Quit(), error);
+        menu.Init(_services, id => StartFlight(id), id => StartFlight(id, null, StartMode.GroundCheck), ShowRadio, ShowSettings, () => GetTree().Quit(), error);
         Switch(menu);
     }
 
@@ -61,12 +61,12 @@ public partial class Main : Node
         Switch(screen);
     }
 
-    public bool StartFlight(string aircraftId, System.Func<double, ControlInputs>? script = null)
+    public bool StartFlight(string aircraftId, System.Func<double, ControlInputs>? script = null, StartMode mode = StartMode.Normal)
     {
         var scene = new FlightScene();
         try
         {
-            scene.Init(_services, aircraftId, ShowMenu, script);
+            scene.Init(_services, aircraftId, ShowMenu, script, mode);
         }
         catch (System.Exception ex)
         {
@@ -204,6 +204,17 @@ public partial class Main : Node
             _smokeScreenshot = args[shot + 3];
             if (StartFlight(_smokeAircraft, t => new ControlInputs(1, 0, t > 3.5 && t < 5 ? 0.25 : 0.05, 0)) && diagnostics)
                 ((FlightScene)_current!).Diagnostics.Shown = true;
+            return true;
+        }
+        int groundCheckShot = System.Array.IndexOf(args, "--screenshot-ground-check");
+        if (groundCheckShot >= 0 && groundCheckShot + 2 < args.Length)
+        {
+            // Fixed commands (right aileron, up elevator, right rudder) so every surface is visibly deflected,
+            // and long enough for the orbit camera to have turned by the time the screenshot is taken.
+            _smokeAircraft = args[groundCheckShot + 1];
+            _smokeSeconds = 2;
+            _smokeScreenshot = args[groundCheckShot + 2];
+            StartFlight(_smokeAircraft, _ => new ControlInputs(0.4, 0.8, 0.8, 0.8), StartMode.GroundCheck);
             return true;
         }
         return false;

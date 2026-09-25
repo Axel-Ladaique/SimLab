@@ -6,7 +6,7 @@ namespace SimLab.Game.Menu;
 
 public partial class MainMenu : Control
 {
-    public void Init(Services services, System.Action<string> fly, System.Action radio, System.Action settings, System.Action quit, string? flightError = null)
+    public void Init(Services services, System.Action<string> fly, System.Action<string> groundCheck, System.Action radio, System.Action settings, System.Action quit, string? flightError = null)
     {
         var column = Ui.Screen(this, Ui.T("APP_TITLE"));
         if (flightError is not null)
@@ -50,14 +50,25 @@ public partial class MainMenu : Control
 
         foreach (var error in errors) column.AddChild(Ui.Text(error, 14));
 
+        void SelectAndSave(out string id)
+        {
+            id = aircraft[picker.Selected].Id;
+            services.Settings = services.Settings with { LastAircraft = id };
+            services.SaveSettings();
+        }
+
         column.AddChild(Ui.Row(
             Ui.Button(Ui.T("MENU_FLY"), () =>
             {
                 if (aircraft.Count == 0) return;
-                var id = aircraft[picker.Selected].Id;
-                services.Settings = services.Settings with { LastAircraft = id };
-                services.SaveSettings();
+                SelectAndSave(out var id);
                 fly(id);
+            }),
+            Ui.Button(Ui.T("MENU_GROUND_CHECK"), () =>
+            {
+                if (aircraft.Count == 0) return;
+                SelectAndSave(out var id);
+                groundCheck(id);
             }),
             Ui.Button(Ui.T("MENU_RADIO"), radio),
             Ui.Button(Ui.T("MENU_SETTINGS"), settings),

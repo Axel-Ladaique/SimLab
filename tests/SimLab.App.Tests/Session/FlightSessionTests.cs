@@ -110,4 +110,22 @@ public class FlightSessionTests
         Assert.True(session.Terrain.Trees.Count > 100);
         Assert.InRange(session.Span, 1.1, 1.3);
     }
+
+    [Theory]
+    [InlineData("trainer")]
+    [InlineData("sport")]
+    [InlineData("wing")]
+    public void Ground_check_starts_at_rest_on_the_runway_and_stays_intact(string id)
+    {
+        using var session = new FlightSession(TestData.Aircraft(id), new FlightConditions(WindSpeed: 0), StartMode.GroundCheck);
+        var s = session.Aircraft.State;
+        Assert.Equal(StartMode.GroundCheck, session.Mode);
+        Assert.True(ClubField.OnRunway(s.Position.X, s.Position.Y));
+        Assert.Equal(0, s.Velocity.Length);
+        for (int i = 0; i < 180; i++) session.Tick(1.0 / 60, ControlInputs.Neutral);
+        Assert.Equal(CrashCause.None, session.Aircraft.Crash);
+        Assert.True(session.HeightAgl < 0.5, $"{session.HeightAgl}");
+        session.Reset();
+        Assert.True(ClubField.OnRunway(session.Aircraft.State.Position.X, session.Aircraft.State.Position.Y));
+    }
 }

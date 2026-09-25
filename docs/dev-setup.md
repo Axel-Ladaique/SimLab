@@ -43,3 +43,4 @@ User data (settings, radio profiles, flight recordings): `~/Library/Application 
 | `--screenshot-settings <png>` | Screenshot of the settings screen |
 | `--screenshot-radio-preview <id> <png>` | Radio screen with the control check showing aircraft `<id>`, driven by fixed commands (throttle 0.4, right aileron 0.8, up elevator 0.8, right rudder 0.8) instead of the radio |
 | `--render-audio <id> <wav>` | Headless scripted takeoff (idle, throttle ramp, climb, motor-off glide from 14 s), writes the synthesized aircraft voice to a 20 s mono WAV |
+| `--screenshot-ground-check <id> <png>` | Ground check start for aircraft `<id>`, orbiting camera, fixed commands (throttle 0.4, right aileron 0.8, up elevator 0.8, right rudder 0.8) so the HUD control readout shows deflected surfaces |

@@ -39,3 +39,10 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Taxi on the grass: rolling noise follows ground speed. A firm landing gives a thump; a crash gives a louder hit.
 - [ ] Pause: aircraft sound stops; the ambience continues. Resume and reset behave.
 - [ ] Settings: the three volume sliders act immediately and persist after a restart.
+
+## Ground check
+- [ ] Main menu → pick the trainer → Ground check: the aircraft sits on the runway, the camera circles it.
+- [ ] Move each stick: the matching surfaces move the right way (rudder right → trailing edge right seen from behind)
+  and the on-screen readout agrees.
+- [ ] Advance the throttle: the motor spins up and is heard; the aircraft may creep forward.
+- [ ] Repeat with the sport and the wing (the wing rests on its belly and stays intact).
