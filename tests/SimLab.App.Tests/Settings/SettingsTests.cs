@@ -72,19 +72,24 @@ public sealed class SettingsTests : IDisposable
     }
 
     [Fact]
-    public void Volumes_default_round_trip_and_clamp()
+    public void Audio_settings_default_round_trip_and_clamp()
     {
         var path = Path.Combine(_dir, "settings.json");
         File.WriteAllText(path, """{ "FovDeg": 50 }""");
         var loaded = AppSettings.Load(path);
-        Assert.Equal((0.8, 1.0, 0.5), (loaded.MasterVolume, loaded.AircraftVolume, loaded.AmbienceVolume));
+        Assert.Equal(new AudioSettings(), loaded.Audio);
 
-        (loaded with { MasterVolume = 0.3, AircraftVolume = 0.6, AmbienceVolume = 0 }).Save(path);
+        var edited = new AudioSettings(Master: 0.3, Aircraft: 0.6, Ambience: 0, Propeller: 0.4, Motor: 0.7, Wind: 0.2, Rolling: 0.9, Impacts: 0.1);
+        (loaded with { Audio = edited }).Save(path);
         var again = AppSettings.Load(path);
-        Assert.Equal((0.3, 0.6, 0.0), (again.MasterVolume, again.AircraftVolume, again.AmbienceVolume));
+        Assert.Equal(edited, again.Audio);
 
-        var clamped = (new AppSettings() with { MasterVolume = 3, AmbienceVolume = -1 }).Sanitized();
-        Assert.Equal((1.0, 0.0), (clamped.MasterVolume, clamped.AmbienceVolume));
+        // Old settings files without an Audio block still load with the defaults.
+        File.WriteAllText(path, """{ "FovDeg": 50 }""");
+        Assert.Equal(new AudioSettings(), AppSettings.Load(path).Audio);
+
+        var clamped = (new AppSettings() with { Audio = new AudioSettings(Master: 3, Ambience: -1, Wind: 2, Rolling: -5) }).Sanitized();
+        Assert.Equal((1.0, 0.0, 1.0, 0.0), (clamped.Audio.Master, clamped.Audio.Ambience, clamped.Audio.Wind, clamped.Audio.Rolling));
     }
 
     [Fact]

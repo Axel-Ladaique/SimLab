@@ -15,6 +15,7 @@ public sealed class EngineSynth
 
     readonly int _seed;
     SynthParams _last = SynthParams.Silent;
+    VoiceMix _lastMix = VoiceMix.Full;
     double _bladePhase, _shaftPhase, _elecPhase;
     double _windState, _rollLow, _rollBand, _grain;
     uint _rng;
@@ -29,9 +30,14 @@ public sealed class EngineSynth
     public int SampleRate { get; }
     public bool EngineMuted { get; set; }
 
+    /// <summary>Per-voice level multipliers, applied on top of the physics-driven gains. A change ramps across the
+    /// next <see cref="Render"/> buffer like every other parameter, so it never clicks.</summary>
+    public VoiceMix Mix { get; set; } = VoiceMix.Full;
+
     public void Reset()
     {
         _last = SynthParams.Silent;
+        _lastMix = Mix;
         _bladePhase = _shaftPhase = _elecPhase = 0;
         _windState = _rollLow = _rollBand = _grain = 0;
         _rng = (uint)_seed * 2654435761u | 1u;
@@ -40,6 +46,8 @@ public sealed class EngineSynth
     public void Render(Span<float> buffer, in SynthParams target)
     {
         var from = _last;
+        var fromMix = _lastMix;
+        var toMix = Mix;
         int n = buffer.Length;
         double dt = 1.0 / SampleRate;
         for (int i = 0; i < n; i++)
@@ -53,6 +61,10 @@ public sealed class EngineSynth
             double wind = Lerp(from.WindGain, target.WindGain, t);
             double cutoff = Lerp(from.WindCutoffHz, target.WindCutoffHz, t);
             double roll = Lerp(from.RollGain, target.RollGain, t);
+            double propMix = Lerp(fromMix.Propeller, toMix.Propeller, t);
+            double motorMix = Lerp(fromMix.Motor, toMix.Motor, t);
+            double windMix = Lerp(fromMix.Wind, toMix.Wind, t);
+            double rollMix = Lerp(fromMix.Rolling, toMix.Rolling, t);
 
             _bladePhase = Wrap(_bladePhase + 2 * Math.PI * blade * dt);
             _shaftPhase = Wrap(_shaftPhase + 2 * Math.PI * shaft * dt);
@@ -63,26 +75,27 @@ public sealed class EngineSynth
             {
                 double harmonics = 0;
                 for (int k = 1; k <= PropHarmonics; k++) harmonics += Math.Sin(k * _bladePhase) / Math.Pow(k, 1.2);
-                sample += PropLevel * prop * harmonics * (1 + ShaftModulation * Math.Sin(_shaftPhase));
+                sample += PropLevel * prop * harmonics * (1 + ShaftModulation * Math.Sin(_shaftPhase)) * propMix;
             }
             if (whine > 0)
-                sample += WhineLevel * whine * (Math.Sin(_elecPhase) + 0.3 * Math.Sin(2 * _elecPhase));
+                sample += WhineLevel * whine * (Math.Sin(_elecPhase) + 0.3 * Math.Sin(2 * _elecPhase)) * motorMix;
             if (wind > 0 || roll > 0)
             {
                 double noise = Noise();
                 double a = 1 - Math.Exp(-2 * Math.PI * cutoff * dt);
                 _windState += a * (noise - _windState);
-                sample += WindLevel * wind * _windState * 2;
+                sample += WindLevel * wind * _windState * 2 * windMix;
 
                 _rollLow += 0.02 * (noise - _rollLow);
                 _rollBand += 0.3 * ((noise - _rollLow) - _rollBand);
                 if (((_rng >> 8) & 0x3FF) == 0) _grain = 0.5 + 0.5 * Noise();
                 _grain *= 0.9995;
-                sample += RollLevel * roll * _rollBand * (0.6 + _grain);
+                sample += RollLevel * roll * _rollBand * (0.6 + _grain) * rollMix;
             }
             buffer[i] = (float)Math.Tanh(sample);
         }
         _last = EngineMuted ? target with { PropGain = 0, WhineGain = 0 } : target;
+        _lastMix = toMix;
     }
 
     double Noise()

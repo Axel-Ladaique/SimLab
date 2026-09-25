@@ -22,9 +22,7 @@ public sealed record AppSettings
     public StickMode StickMode { get; init; } = StickMode.Mode2;
     public string LastAircraft { get; init; } = "trainer";
     public FlightConditions Conditions { get; init; } = new();
-    public double MasterVolume { get; init; } = 0.8;
-    public double AircraftVolume { get; init; } = 1.0;
-    public double AmbienceVolume { get; init; } = 0.5;
+    public AudioSettings Audio { get; init; } = new();
 
     public static AppSettings Load(string path)
     {
@@ -50,8 +48,6 @@ public sealed record AppSettings
         FovDeg = Math.Clamp(FovDeg, 10, 100),
         Language = Language is "fr" or "en" ? Language : "fr",
         Conditions = Conditions ?? new FlightConditions(),
-        MasterVolume = Math.Clamp(MasterVolume, 0, 1),
-        AircraftVolume = Math.Clamp(AircraftVolume, 0, 1),
-        AmbienceVolume = Math.Clamp(AmbienceVolume, 0, 1),
+        Audio = (Audio ?? new AudioSettings()).Sanitized(),
     };
 }

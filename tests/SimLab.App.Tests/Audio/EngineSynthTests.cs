@@ -1,4 +1,5 @@
 using SimLab.App.Audio;
+using SimLab.App.Settings;
 
 namespace SimLab.App.Tests.Audio;
 
@@ -8,6 +9,13 @@ public class EngineSynthTests
 
     static SynthParams Prop(double bladeHz) =>
         SynthParams.Silent with { BladePassHz = bladeHz, ShaftHz = bladeHz / 2, ElectricalHz = bladeHz * 3.5, PropGain = 1 };
+
+    static double Rms(ReadOnlySpan<float> x)
+    {
+        double sum = 0;
+        foreach (var v in x) sum += (double)v * v;
+        return Math.Sqrt(sum / x.Length);
+    }
 
     /// <summary>Goertzel power of one frequency in a signal.</summary>
     static double Power(ReadOnlySpan<float> x, double hz)
@@ -85,4 +93,66 @@ public class EngineSynthTests
         s.Update(SynthParams.Silent, 0.03);
         Assert.True(1 - s.Current.PropGain < afterAttack);
     }
+
+    [Fact]
+    public void Wind_only_params_are_silent_when_the_wind_voice_is_muted()
+    {
+        var synth = new EngineSynth(Rate) { Mix = VoiceMix.Full with { Wind = 0 } };
+        var buffer = new float[Rate / 2];
+        // Warm up so _lastMix already equals the muted target before the assertion buffer.
+        synth.Render(buffer, SynthParams.Silent with { WindGain = 1, WindCutoffHz = 1500 });
+        synth.Render(buffer, SynthParams.Silent with { WindGain = 1, WindCutoffHz = 1500 });
+        Assert.All(buffer, v => Assert.Equal(0f, v));
+    }
+
+    [Fact]
+    public void Halving_the_propeller_mix_halves_the_rms_within_ten_percent()
+    {
+        var full = new EngineSynth(Rate);
+        var half = new EngineSynth(Rate) { Mix = VoiceMix.Full with { Propeller = 0.5 } };
+        var bufferFull = new float[Rate];
+        var bufferHalf = new float[Rate];
+        // Two renders each: the first settles the ramp from the initial silent/full mix state.
+        full.Render(bufferFull, Prop(200));
+        half.Render(bufferHalf, Prop(200));
+        full.Render(bufferFull, Prop(200));
+        half.Render(bufferHalf, Prop(200));
+        double rmsFull = Rms(bufferFull);
+        double rmsHalf = Rms(bufferHalf);
+        Assert.InRange(rmsHalf, rmsFull * 0.45, rmsFull * 0.55);
+    }
+
+    [Fact]
+    public void A_mid_stream_mix_change_keeps_the_max_sample_step_bounded()
+    {
+        var synth = new EngineSynth(Rate);
+        var loud = Prop(300) with { WhineGain = 1, WindGain = 1, WindCutoffHz = 2000, RollGain = 1 };
+        var all = new List<float>();
+        var buffer = new float[735];
+        for (int i = 0; i < 40; i++)
+        {
+            synth.Mix = i % 2 == 0 ? VoiceMix.Full : new VoiceMix(0.1, 0.1, 0.1, 0.1);
+            synth.Render(buffer, loud);
+            all.AddRange(buffer);
+        }
+        Assert.All(all, v => Assert.InRange(v, -1f, 1f));
+        double maxStep = all.Zip(all.Skip(1), (a, b) => Math.Abs(b - a)).Max();
+        Assert.True(maxStep < 0.35, $"max sample step {maxStep:F3}");
+    }
+
+    [Fact]
+    public void Voice_mix_from_audio_settings_copies_and_clamps_the_four_voices()
+    {
+        var mix = VoiceMix.From(new AudioSettings(Propeller: 0.4, Motor: 2, Wind: -1, Rolling: 0.9));
+        Assert.Equal(new VoiceMix(0.4, 1, 0, 0.9), mix);
+        Assert.Equal(new VoiceMix(1, 1, 1, 1), VoiceMix.From(new AudioSettings()));
+    }
+
+    [Theory]
+    [InlineData(0, 1, 0.25)]
+    [InlineData(1, 1, 1.0)]
+    [InlineData(1, 0, 0.0)]
+    [InlineData(0.5, 0.5, 0.3125)]
+    public void Impact_mix_scales_intensity_by_the_impacts_volume(double intensity, double impactsVolume, double expected) =>
+        Assert.Equal(expected, ImpactMix.Linear(intensity, impactsVolume), 6);
 }
