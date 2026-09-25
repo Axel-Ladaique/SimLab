@@ -77,7 +77,7 @@ public class PropulsionTests
     public void Loads_contain_thrust_and_a_roll_left_reaction_for_a_clockwise_prop()
     {
         var t = default(PowerTelemetry) with { Thrust = 20, MotorTorque = 0.52, ReactionTorque = 0.5 };
-        var load = PowerPlantLoads.Compute(TrainerLike(), t, 0, Vec3.Zero, Vec3.Zero);
+        var load = PowerPlantLoads.Compute(TrainerLike(), t, 0, Vec3.Zero, Vec3.Zero, inducedVelocity: 11);
         Assert.Equal(-20, load.Force.X, 12);
         Assert.Equal(0.5, load.Moment.X, 12);
         Assert.Equal(0, load.Moment.Z, 12);
@@ -96,8 +96,8 @@ public class PropulsionTests
     public void P_factor_yaws_left_at_positive_angle_of_attack()
     {
         var t = default(PowerTelemetry) with { Thrust = 20 };
-        var level = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(-15, 0, 0), Vec3.Zero);
-        var noseUp = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(-15, 0, -3), Vec3.Zero);
+        var level = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(-15, 0, 0), Vec3.Zero, inducedVelocity: 2);
+        var noseUp = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(-15, 0, -3), Vec3.Zero, inducedVelocity: 2);
         Assert.True(noseUp.Moment.Z > level.Moment.Z);
     }
 
@@ -119,7 +119,7 @@ public class PropulsionTests
     [Fact]
     public void Pitching_up_with_a_clockwise_prop_yaws_right()
     {
-        var load = PowerPlantLoads.Compute(TrainerLike(), default, 1000, Vec3.Zero, new Vec3(0, 1, 0));
+        var load = PowerPlantLoads.Compute(TrainerLike(), default, 1000, Vec3.Zero, new Vec3(0, 1, 0), inducedVelocity: 0);
         Assert.True(load.Moment.Z < 0, $"gyroscopic yaw moment {load.Moment.Z}");
     }
 }

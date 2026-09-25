@@ -12,7 +12,7 @@ public static class PowerPlantLoads
     /// flow dominates, so a slow sideways drift is a small inflow angle, not 90°.
     /// </param>
     public static BodyLoad Compute(PowerPlantSpec spec, in PowerTelemetry telemetry, double propOmega, Vec3 airVelocityBody, Vec3 angularVelocityBody,
-        double inducedVelocity = 0)
+        double inducedVelocity)
     {
         var axis = spec.ThrustAxis;
         var thrust = axis * telemetry.Thrust;

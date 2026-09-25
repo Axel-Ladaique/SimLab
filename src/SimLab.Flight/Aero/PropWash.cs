@@ -115,7 +115,7 @@ public readonly record struct PropWash
     /// <summary>Distance behind the disk where the potential core ends, m.</summary>
     public double CoreLength { get; init; }
 
-    public bool IsActive => InducedVelocity > 0;
+    public bool IsActive => InducedVelocity > 1e-6;
 
     public static PropWash Create(Vec3 positionBody, Vec3 axisBody, double radius, double thrust, double torque, double axialSpeed,
         double density, int spinDirection)
