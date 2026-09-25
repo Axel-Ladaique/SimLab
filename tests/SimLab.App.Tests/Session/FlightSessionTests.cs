@@ -18,7 +18,7 @@ public class FlightSessionTests
     {
         var list = AircraftCatalog.List(Path.Combine(TestData.RepoRoot, "aircraft"), out var errors);
         Assert.Empty(errors);
-        Assert.Equal(new[] { "sport", "trainer", "wing" }, list.Select(a => a.Id));
+        Assert.Equal(new[] { "3d", "sport", "trainer", "wing" }, list.Select(a => a.Id));
         Assert.All(list, a => Assert.False(string.IsNullOrWhiteSpace(a.Name)));
     }
 
@@ -128,6 +128,7 @@ public class FlightSessionTests
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("wing")]
+    [InlineData("3d")]
     public void Ground_check_starts_at_rest_on_the_runway_and_stays_intact(string id)
     {
         using var session = new FlightSession(TestData.Aircraft(id), new FlightConditions(WindSpeed: 0), StartMode.GroundCheck);

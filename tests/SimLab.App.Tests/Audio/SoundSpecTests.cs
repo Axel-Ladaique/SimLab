@@ -31,7 +31,7 @@ public sealed class SoundSpecTests : IDisposable
     [Fact]
     public void Shipped_aircraft_load_with_defaults()
     {
-        foreach (var id in new[] { "trainer", "sport", "wing" })
+        foreach (var id in new[] { "trainer", "sport", "wing", "3d" })
             Assert.Equal(SoundSpec.Default, SoundSpecLoader.Load(Path.Combine(TestData.RepoRoot, "aircraft", id)));
     }
 

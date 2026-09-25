@@ -27,6 +27,7 @@ public class FleetControlSignTests
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("wing")]
+    [InlineData("3d")]
     public void Right_aileron_gives_a_right_roll_moment(string id) =>
         Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Aileron = 0.5 }).X < 0, "roll right is -x");
 
@@ -34,12 +35,14 @@ public class FleetControlSignTests
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("wing")]
+    [InlineData("3d")]
     public void Up_elevator_gives_a_nose_up_moment(string id) =>
         Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Elevator = 0.5 }).Y > 0);
 
     [Theory]
     [InlineData("trainer")]
     [InlineData("sport")]
+    [InlineData("3d")]
     public void Right_rudder_gives_a_nose_right_yaw_moment(string id)
     {
         var m = MomentDueTo(id, ControlInputs.Neutral with { Rudder = 0.5 });
@@ -49,6 +52,7 @@ public class FleetControlSignTests
     [Theory]
     [InlineData("trainer")]
     [InlineData("sport")]
+    [InlineData("3d")]
     public void Right_rudder_steers_the_rolling_aircraft_to_the_right(string id)
     {
         var def = Fleet.Load(id);

@@ -35,6 +35,7 @@ public class RollRateTests(ITestOutputHelper output)
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("wing")]
+    [InlineData("3d")]
     public void Report_full_throw_rates(string id)
     {
         double p = FullAileronRollRate(id);

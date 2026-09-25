@@ -32,6 +32,7 @@ public class ControlResponseTests
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("wing")]
+    [InlineData("3d")]
     public void Right_aileron_rolls_right(string id) =>
         AssertResponse(id, u => u with { Aileron = 0.5 }, s => PilotFrame.RollRightRate(s.Aircraft.State.AngularVelocity), 0.3);
 
@@ -39,12 +40,14 @@ public class ControlResponseTests
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("wing")]
+    [InlineData("3d")]
     public void Up_elevator_pitches_up(string id) =>
         AssertResponse(id, u => u with { Elevator = 0.5 }, s => PilotFrame.PitchUpRate(s.Aircraft.State.AngularVelocity), 0.2);
 
     [Theory]
     [InlineData("trainer")]
     [InlineData("sport")]
+    [InlineData("3d")]
     public void Right_rudder_yaws_right(string id) =>
         AssertResponse(id, u => u with { Rudder = 0.5 }, Heading, 5 * Math.PI / 180, inputSeconds: 1.0, difference: HeadingDifference);
 }

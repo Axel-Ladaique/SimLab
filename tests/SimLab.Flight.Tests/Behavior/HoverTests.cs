@@ -64,10 +64,24 @@ public class HoverTests(ITestOutputHelper output)
         Assert.True(r.MaxTiltDeg <= 15 && r.MaxRollDeg <= 15, r.ToString());
     }
 
+    [Fact]
+    public void ThreeD_hangs_on_the_prop_without_saturating_the_ailerons()
+    {
+        var def = Fleet.Load("3d");
+        var a = Hover.StaticAuthority(def);
+        var r = Hover.Fly(def, 10);
+        output.WriteLine($"throttle {a.Throttle:F3}, bias {a.Bias}, aileron {a.Aileron.X:F3}, margin {a.RollMargin:F2}, recovered {RecoveredTorqueFraction(def):P1}");
+        output.WriteLine(r.ToString());
+        Assert.True(a.RollMargin >= 1.5, $"margin {a.RollMargin:F2}");
+        Assert.True(r.Lost.Length == 0 && r.MaxTiltDeg <= 15 && r.MaxRollDeg <= 15, r.ToString());
+        Assert.Equal(0, r.AileronSaturation);
+    }
+
     /// <summary>Numbers quoted in the slipstream implementation report (before/after); asserts only that they are finite.</summary>
     [Theory]
     [InlineData("sport")]
     [InlineData("trainer")]
+    [InlineData("3d")]
     public void Report_slipstream_effects(string id)
     {
         var def = Fleet.Load(id);

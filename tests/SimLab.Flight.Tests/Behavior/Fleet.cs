@@ -24,6 +24,9 @@ internal static class Fleet
         "trainer" => (15, 0.65),
         "sport" => (18, 0.6),
         "wing" => (14, 0.6),
+        // 0/0 incidences and symmetrical sections: with neutral elevator it trims at zero lift and descends, so the
+        // response tests measure it against a no-input baseline (a pilot holds some up elevator in level flight).
+        "3d" => (14, 0.45),
         _ => throw new ArgumentException(id),
     };
 
