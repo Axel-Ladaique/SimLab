@@ -155,6 +155,7 @@ Verified against the code on `feat/godot-game` during final verification (Task 1
   has a single exit path bound to `ui_cancel` (Esc) that calls the shared `_exit` callback for both `StartMode`
   values; there is no separate in-scene menu control, and leaving goes to the main menu (from which the pilot
   can start a normal flight), not straight back into a pilot-box flight.
-- **Two extra headless screenshot flags exist for verification.** `game/Scripts/Main.cs` also implements
+- **Two extra screenshot flags exist for verification.** `game/Scripts/Main.cs` also implements
   `--screenshot-ground-check` and `--screenshot-sound`, used to capture the ground-check view and the sound
-  screen headlessly; these aren't mentioned elsewhere in this spec.
+  screen; like the other screenshot flags they need a windowed run (the headless display server renders
+  nothing to capture). These aren't mentioned elsewhere in this spec.
