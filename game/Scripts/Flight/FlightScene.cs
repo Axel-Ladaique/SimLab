@@ -4,6 +4,7 @@ using SimLab.App.Audio;
 using SimLab.App.Cameras;
 using SimLab.App.Field;
 using SimLab.App.Session;
+using SimLab.App.Ui;
 using SimLab.App.Visual;
 using SimLab.Flight.Airframe;
 using SimLab.Flight.Controls;
@@ -43,6 +44,9 @@ public partial class FlightScene : Node3D
     public RouterOutput LastInput { get; private set; }
     public int LastSteps { get; private set; }
     public CameraView CameraView => _cameras.Current;
+
+    /// <summary>Whether the OSD is on: the pilot's choice, always on in scripted runs (screenshots, smoke tests).</summary>
+    public bool HudShown => _script is not null || _services.Settings.ShowFlightData;
 
     public void Init(Services services, string aircraftId, System.Action exit, System.Func<double, ControlInputs>? script = null)
     {
@@ -159,7 +163,9 @@ public partial class FlightScene : Node3D
             _retrackDoppler = false;
         }
         _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
-        _hud.UpdateHud(_session, LastInput, _services.Settings.ShowFlightData);
+        var osd = OsdData.From(_session.Aircraft, _session.DisplayState, _session.HeightAgl, _session.FlightTime,
+            LastInput.Controls.Throttle, ClubField.PilotPosition);
+        _hud.UpdateHud(_session, LastInput, osd, HudShown, _cameras.Current);
         _crash.UpdateCrash(_session.Aircraft.Crash);
         _diagnostics.UpdateDiagnostics(this);
     }
