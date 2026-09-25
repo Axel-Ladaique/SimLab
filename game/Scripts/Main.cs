@@ -33,6 +33,7 @@ public partial class Main : Node
         Translations.Register(AppPaths.TranslationsCsv, settings.Language);
         var store = new RadioProfileStore(AppPaths.RadioDir);
         _services = new Services { Settings = settings, Radios = store, Router = new InputRouter(guid => store.Load(guid, out _)) };
+        DisplaySettings.ForceWindowed = OS.GetCmdlineUserArgs().Length > 0;
         DisplaySettings.Apply(settings);
         AudioBuses.Apply(settings);
         // Closing the window (or Cmd+Q) goes through the same clean Quit as the menu button.

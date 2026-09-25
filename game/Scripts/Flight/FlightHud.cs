@@ -21,12 +21,19 @@ public partial class FlightHud : CanvasLayer
         _data.Size = new Vector2(360, 200);
         AddChild(_data);
         _input = Ui.Text("", 14);
-        _input.Position = new Vector2(24, 862);
-        _input.Size = new Vector2(1550, 30);
+        _input.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+        _input.OffsetLeft = 24;
+        _input.OffsetRight = -24;
+        _input.OffsetTop = -38;
+        _input.OffsetBottom = -8;
         AddChild(_input);
         _banner = Ui.Text("", 44);
-        _banner.Position = new Vector2(700, 380);
-        _banner.Size = new Vector2(300, 60);
+        _banner.SetAnchorsPreset(Control.LayoutPreset.Center);
+        _banner.OffsetLeft = -150;
+        _banner.OffsetRight = 150;
+        _banner.OffsetTop = -70;
+        _banner.OffsetBottom = -10;
+        _banner.HorizontalAlignment = HorizontalAlignment.Center;
         AddChild(_banner);
     }
 

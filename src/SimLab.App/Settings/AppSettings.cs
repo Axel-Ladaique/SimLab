@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SimLab.App.Field;
 
 namespace SimLab.App.Settings;
 
@@ -18,9 +19,11 @@ public sealed record AppSettings
     public bool ShowFlightData { get; init; }
     public bool RecordFlights { get; init; } = true;
     public bool VSync { get; init; } = true;
+    public bool Fullscreen { get; init; } = true;
     public string Language { get; init; } = "fr";
     public StickMode StickMode { get; init; } = StickMode.Mode2;
     public string LastAircraft { get; init; } = "trainer";
+    public string LastField { get; init; } = "club";
     public FlightConditions Conditions { get; init; } = new();
     public AudioSettings Audio { get; init; } = new();
 
@@ -49,5 +52,6 @@ public sealed record AppSettings
         Language = Language is "fr" or "en" ? Language : "fr",
         Conditions = Conditions ?? new FlightConditions(),
         Audio = (Audio ?? new AudioSettings()).Sanitized(),
+        LastField = FieldCatalog.Find(LastField ?? "").Id,
     };
 }

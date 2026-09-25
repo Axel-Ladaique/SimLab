@@ -50,6 +50,8 @@ SET_FLIGHT_DATA,Afficher les données de vol,Show flight data
 SET_RECORD,Enregistrer les vols (CSV),Record flights (CSV)
 SET_LANGUAGE,Langue,Language
 SET_VSYNC,Synchronisation verticale,Vertical sync
+SET_FULLSCREEN,Plein écran,Full screen
+FIELD_CLUB,Terrain du club,Club field
 SND_TITLE,Son,Sound
 SND_MASTER,Volume général,Master volume
 SND_AIRCRAFT,Volume avion,Aircraft volume

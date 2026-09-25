@@ -36,6 +36,11 @@ public partial class SettingsScreen : Control
             Change(x => x with { VSync = v });
             DisplaySettings.Apply(services.Settings);
         }));
+        column.AddChild(Ui.Check(Ui.T("SET_FULLSCREEN"), s.Fullscreen, v =>
+        {
+            Change(x => x with { Fullscreen = v });
+            DisplaySettings.Apply(services.Settings);
+        }));
 
         var language = new OptionButton();
         language.AddItem("Français", 0);

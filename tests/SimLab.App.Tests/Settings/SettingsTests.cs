@@ -152,5 +152,20 @@ public sealed class SettingsTests : IDisposable
         Assert.False(store.SetReversed("g", StickFunction.Rudder, true));
     }
 
+    [Fact]
+    public void Fullscreen_and_field_default_round_trip_and_sanitize()
+    {
+        var defaults = new AppSettings();
+        Assert.True(defaults.Fullscreen);
+        Assert.Equal("club", defaults.LastField);
+
+        var path = Path.Combine(_dir, "settings.json");
+        (defaults with { Fullscreen = false }).Save(path);
+        Assert.False(AppSettings.Load(path).Fullscreen);
+
+        File.WriteAllText(path, """{ "LastField": "moon" }""");
+        Assert.Equal("club", AppSettings.Load(path).LastField);
+    }
+
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 }
