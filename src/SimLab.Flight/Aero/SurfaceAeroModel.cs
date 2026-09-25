@@ -18,6 +18,10 @@ public sealed class SurfaceAeroModel : IAeroModel
     const int WashSamples = 8;
 
     readonly SurfaceSegment[] _segments;
+    readonly bool[] _inWash;
+    readonly Vec3[] _washAir;
+    PropWash _cachedWash;
+    bool _washValid;
     readonly BodySpec[] _bodies;
     readonly double _wingAspectRatio;
     readonly double _tailArm;
@@ -32,6 +36,8 @@ public sealed class SurfaceAeroModel : IAeroModel
     {
         var specs = surfaces.ToArray();
         _segments = specs.SelectMany(s => SurfaceGeometry.Build(s, Lookup(airfoils, s))).ToArray();
+        _inWash = new bool[_segments.Length];
+        _washAir = new Vec3[_segments.Length * WashSamples];
         _bodies = bodies.ToArray();
 
         var wings = specs.Where(s => s.Role == SurfaceRole.Wing).ToArray();
@@ -59,14 +65,18 @@ public sealed class SurfaceAeroModel : IAeroModel
         var moment = Vec3.Zero;
         double wingLift = 0, wingQa = 0;
 
-        foreach (var seg in _segments)
+        bool blown = ctx.Wash.IsActive;
+        if (blown) UpdateWashSamples(ctx.Wash);
+
+        for (int i = 0; i < _segments.Length; i++)
         {
+            var seg = _segments[i];
             var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, seg.Position);
             var c = seg.FlowChordAxis;
             var n = seg.FlowNormalAxis;
             // Mean in-plane speed squared over the strip; differs from v² only where the prop wash varies across it.
             double meanSquare = -1;
-            if (ctx.Wash.IsActive) u = Blow(ctx.Wash, seg, u, c, n, out meanSquare);
+            if (blown) u = Blow(i, u, c, n, out meanSquare);
             double uc = Vec3.Dot(u, c);
             double un = Vec3.Dot(u, n);
             double v = Math.Sqrt(uc * uc + un * un);
@@ -139,31 +149,53 @@ public sealed class SurfaceAeroModel : IAeroModel
     /// <see cref="WashSamples"/> points spread evenly along the strip's quarter-chord line, so a strip partly inside the
     /// slipstream is weighted by its actual overlap. Returns the mean relative velocity (it sets the angle of attack) and,
     /// in <paramref name="meanSquare"/>, the mean of the squared in-plane speed (it sets the dynamic pressure); −1 if the
-    /// strip is outside the slipstream. The station (distance behind the disk) is taken at the strip's centre.
+    /// strip is outside the slipstream.
     /// </summary>
-    static Vec3 Blow(in PropWash wash, SurfaceSegment seg, Vec3 u, Vec3 c, Vec3 n, out double meanSquare)
+    Vec3 Blow(int index, Vec3 u, Vec3 c, Vec3 n, out double meanSquare)
     {
         meanSquare = -1;
-        var rel = seg.Position - wash.PositionBody;
-        double along = Vec3.Dot(rel, wash.AxisBody);
-        if (along >= 0) return u;
-        var station = wash.At(-along);
-        var radial = rel - wash.AxisBody * along;
-        var halfSpan = seg.HalfSpan - wash.AxisBody * Vec3.Dot(seg.HalfSpan, wash.AxisBody);
-        if (radial.Length - halfSpan.Length >= station.OuterRadius) return u;
-
+        if (!_inWash[index]) return u;
         var sum = Vec3.Zero;
         double squares = 0;
         for (int k = 0; k < WashSamples; k++)
         {
-            double t = (2.0 * k + 1) / WashSamples - 1;
-            var uk = u - wash.AirVelocity(station, radial + halfSpan * t);
+            var uk = u - _washAir[index * WashSamples + k];
             double ukc = Vec3.Dot(uk, c), ukn = Vec3.Dot(uk, n);
             sum += uk;
             squares += ukc * ukc + ukn * ukn;
         }
         meanSquare = squares / WashSamples;
         return sum / WashSamples;
+    }
+
+    /// <summary>
+    /// Air velocity induced by the wash at each strip's sample points. It depends only on the wash and the geometry, so it
+    /// is kept while the wash is unchanged (the four evaluations of an RK4 step share one wash). The station (distance
+    /// behind the disk) is taken at the strip's centre.
+    /// </summary>
+    void UpdateWashSamples(in PropWash wash)
+    {
+        if (_washValid && wash == _cachedWash) return;
+        _cachedWash = wash;
+        _washValid = true;
+        for (int i = 0; i < _segments.Length; i++)
+        {
+            var seg = _segments[i];
+            _inWash[i] = false;
+            var rel = seg.Position - wash.PositionBody;
+            double along = Vec3.Dot(rel, wash.AxisBody);
+            if (along >= 0) continue;
+            var station = wash.At(-along);
+            var radial = rel - wash.AxisBody * along;
+            var halfSpan = seg.HalfSpan - wash.AxisBody * Vec3.Dot(seg.HalfSpan, wash.AxisBody);
+            if (radial.Length - halfSpan.Length >= station.OuterRadius) continue;
+            _inWash[i] = true;
+            for (int k = 0; k < WashSamples; k++)
+            {
+                double t = (2.0 * k + 1) / WashSamples - 1;
+                _washAir[i * WashSamples + k] = wash.AirVelocity(station, radial + halfSpan * t);
+            }
+        }
     }
 
     void AssignControl(ControlSurfaceSpec control, int index)
