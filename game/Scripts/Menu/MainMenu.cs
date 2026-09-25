@@ -193,7 +193,7 @@ public partial class MainMenu : Control
         System.Func<FlightConditions, double> read, System.Func<FlightConditions, double, FlightConditions> write, string format)
     {
         var row = Ui.Slider(Ui.T(key), min, max, step, read(_services.Settings.Conditions),
-            v => SetConditions(write(_services.Settings.Conditions, v)), format, nameWidth: 200, sliderWidth: 220);
+            v => SetConditions(write(_services.Settings.Conditions, v)), format, nameWidth: 190, sliderWidth: 220);
         _sliders.Add((row.GetChild<HSlider>(1), read));
         parent.AddChild(row);
     }
@@ -285,6 +285,8 @@ public partial class MainMenu : Control
             ShowSheet(null);
             _viewError.Text = $"{id}: {ex.Message}";
         }
+        // A non-wrapping empty Label still reserves a line of height, leaving a blank gap under the hint text.
+        _viewError.Visible = _viewError.Text != "";
     }
 
     void ShowSheet(AircraftSheet? sheet)
@@ -304,7 +306,6 @@ public partial class MainMenu : Control
             key.CustomMinimumSize = new Vector2(130, 0);
             _sheet.AddChild(key);
             var value = Ui.Text(line.Value, 15);
-            value.AutowrapMode = TextServer.AutowrapMode.Off;
             value.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             _sheet.AddChild(value);
         }
