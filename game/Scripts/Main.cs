@@ -254,8 +254,13 @@ public partial class Main : Node
             {
                 var scene = (FlightScene)_current!;
                 if (diagnostics) scene.Diagnostics.Shown = true;
-                if (ArgValue(args, "--view") is { } view && System.Enum.TryParse<CameraView>(view, true, out var parsed))
-                    scene.ShowCamera(parsed);
+                if (ArgValue(args, "--view") is { } view)
+                {
+                    if (System.Enum.TryParse<CameraView>(view, true, out var parsed) && System.Enum.IsDefined(parsed))
+                        scene.ShowCamera(parsed);
+                    else
+                        GD.PushWarning($"Unknown --view value: {view}");
+                }
             }
             return true;
         }

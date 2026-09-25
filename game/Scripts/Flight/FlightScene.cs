@@ -25,6 +25,10 @@ public partial class FlightScene : Node3D
     Camera3D _camera = null!;
     CameraDirector _cameras = null!;
     int _resetCount;
+    System.Func<double, double, double> _terrainHeight = null!;
+    // True right after the camera has just been teleported to a new position (a view change or a flight reset):
+    // consumed after the next placement to re-track Doppler without reading the teleport as a velocity spike.
+    bool _retrackDoppler;
     WindsockNode _windsock = null!;
     FlightHud _hud = null!;
     CrashOverlay _crash = null!;
@@ -63,12 +67,17 @@ public partial class FlightScene : Node3D
         audio.Init(_session, SoundSpecLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId)), () => services.Settings.Audio);
         AddChild(new FieldAmbience());
 
+        _terrainHeight = _session.Terrain.Height;
         var pilot = ClubField.PilotPosition;
-        var eye = new Vec3(pilot.X, pilot.Y, _session.Terrain.Height(pilot.X, pilot.Y) + ClubField.EyeHeight);
+        var eye = new Vec3(pilot.X, pilot.Y, _terrainHeight(pilot.X, pilot.Y) + ClubField.EyeHeight);
         var ground = new LineOfSightRig(eye, services.Settings.FovDeg, services.Settings.AutoZoom);
-        _cameras = new CameraDirector(ground, new FpvRig(FpvCameraSpec.For(definition)), new ChaseRig(), services.Settings.CameraView);
+        // Scripted runs (smoke tests, screenshots) always start in the pilot-box ground view, never the user's
+        // saved view, so the shown frame doesn't depend on whoever last played; --view then switches it.
+        var initialView = script is null ? services.Settings.CameraView : CameraView.Ground;
+        _cameras = new CameraDirector(ground, new FpvRig(FpvCameraSpec.For(definition)), new ChaseRig(), initialView);
         _cameras.Reset(Context());
         _resetCount = _session.ResetCount;
+        _retrackDoppler = true;
         _camera = new Camera3D { Current = true, Near = 0.1f, Far = 4000f, Fov = (float)services.Settings.FovDeg };
         AddChild(_camera);
         _hud = new FlightHud();
@@ -84,6 +93,7 @@ public partial class FlightScene : Node3D
     public void NextCamera()
     {
         _cameras.Next(Context());
+        _retrackDoppler = true;
         RememberCamera();
     }
 
@@ -91,11 +101,16 @@ public partial class FlightScene : Node3D
     public void SelectCamera(CameraView view)
     {
         _cameras.Select(view, Context());
+        _retrackDoppler = true;
         RememberCamera();
     }
 
     /// <summary>Switches the view without remembering it (command-line screenshots).</summary>
-    public void ShowCamera(CameraView view) => _cameras.Select(view, Context());
+    public void ShowCamera(CameraView view)
+    {
+        _cameras.Select(view, Context());
+        _retrackDoppler = true;
+    }
 
     void RememberCamera()
     {
@@ -124,6 +139,7 @@ public partial class FlightScene : Node3D
         {
             _resetCount = _session.ResetCount;
             _cameras.Reset(Context());
+            _retrackDoppler = true;
         }
         var pose = _cameras.Update(delta, Context());
         _camera.SetCullMaskValue(AircraftVisual.Layer, _cameras.Current != CameraView.Fpv);
@@ -133,6 +149,15 @@ public partial class FlightScene : Node3D
         if (Mathf.Abs((to - from).Normalized().Dot(up.Normalized())) > 0.999f) up = Vector3.Back;
         _camera.Fov = (float)pose.VerticalFovDeg;
         _camera.LookAtFromPosition(from, to, up);
+        if (_retrackDoppler)
+        {
+            // Setting DopplerTracking resets Godot's internal velocity tracker to the camera's current position,
+            // so doing this right after the placement above means the next frame's velocity estimate starts from
+            // here rather than from wherever the camera used to be — the teleport never reads as a spike.
+            _camera.DopplerTracking = Camera3D.DopplerTrackingEnum.Disabled;
+            _camera.DopplerTracking = Camera3D.DopplerTrackingEnum.IdleStep;
+            _retrackDoppler = false;
+        }
         _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
         _hud.UpdateHud(_session, LastInput, _services.Settings.ShowFlightData);
         _crash.UpdateCrash(_session.Aircraft.Crash);
@@ -154,7 +179,7 @@ public partial class FlightScene : Node3D
         // Init runs before the scene enters the tree (Main.StartFlight), when there is no viewport yet.
         var size = IsInsideTree() ? GetViewport().GetVisibleRect().Size : Vector2.Zero;
         double aspect = size.Y > 0 ? size.X / size.Y : 16.0 / 9.0;
-        return new CameraContext(display.Position, display.Orientation, _session.Span, _session.Terrain.Height, aspect);
+        return new CameraContext(display.Position, display.Orientation, _session.Span, _terrainHeight, aspect);
     }
 
     /// <summary>Raw radio axes recorded next to the processed controls (columns raw_axis0…).</summary>

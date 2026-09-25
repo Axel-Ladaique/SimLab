@@ -44,4 +44,14 @@ public class CameraDirectorTests
         Assert.Equal(0, ground.Resets);
         Assert.Equal(0, fpv.Resets);
     }
+
+    [Fact]
+    public void Select_ignores_an_undefined_view_and_keeps_the_current_one()
+    {
+        FakeRig ground = new(1), fpv = new(2), chase = new(3);
+        var director = new CameraDirector(ground, fpv, chase, CameraView.Fpv);
+        director.Select((CameraView)7, Ctx);
+        Assert.Equal(CameraView.Fpv, director.Current);
+        Assert.Equal(0, fpv.Resets);
+    }
 }
