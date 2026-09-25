@@ -25,7 +25,7 @@ VTOL/drones (sub-project 4).
 ## Keyboard (without a radio)
 
 W/S (Z/S on AZERTY) throttle · arrows aileron/elevator (↓ = pull) · A/D (Q/D on AZERTY) rudder ·
-R reset · P pause · V wind on/off · F3 diagnostics · Esc menu.
+R reset · P pause · V wind on/off · C camera view · F3 diagnostics · Esc menu.
 
 ## Build and test
 

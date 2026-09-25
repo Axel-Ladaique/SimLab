@@ -7,7 +7,7 @@ public enum InputSource { Keyboard, Radio }
 
 public readonly record struct JoypadSnapshot(string Guid, string Name, RawInputFrame Frame);
 
-public readonly record struct KeyboardCommands(bool Reset, bool Pause, bool ToggleWind);
+public readonly record struct KeyboardCommands(bool Reset, bool Pause, bool ToggleWind, bool NextCamera = false);
 
 /// <param name="RawFrame">Raw poll of the radio that produced <paramref name="Controls"/>; null on the keyboard.</param>
 public readonly record struct RouterOutput(ControlInputs Controls, IReadOnlyList<SwitchAction> Actions, InputSource Source, string DeviceName, RawInputFrame? RawFrame = null);
@@ -45,6 +45,7 @@ public sealed class InputRouter
         if (commands.Reset && !_previousCommands.Reset) actions.Add(SwitchAction.Reset);
         if (commands.Pause && !_previousCommands.Pause) actions.Add(SwitchAction.Pause);
         if (commands.ToggleWind && !_previousCommands.ToggleWind) actions.Add(SwitchAction.ToggleWind);
+        if (commands.NextCamera && !_previousCommands.NextCamera) actions.Add(SwitchAction.NextCamera);
         _previousCommands = commands;
 
         var keyboardSticks = _keyboard.Update(dt, keys);
