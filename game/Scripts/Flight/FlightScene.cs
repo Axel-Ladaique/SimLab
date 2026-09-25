@@ -1,5 +1,6 @@
 using System.Linq;
 using Godot;
+using SimLab.App.Audio;
 using SimLab.App.Cameras;
 using SimLab.App.Field;
 using SimLab.App.Session;
@@ -8,6 +9,7 @@ using SimLab.Flight.Airframe;
 using SimLab.Flight.Controls;
 using SimLab.Flight.Geometry;
 using SimLab.Flight.Recording;
+using SimLab.Game.Audio;
 using SimLab.Game.Radio;
 using SimLab.Game.World;
 
@@ -48,6 +50,12 @@ public partial class FlightScene : Node3D
         _visual = new AircraftVisual();
         AddChild(_visual);
         _visual.Build(AircraftMeshBuilder.Build(definition, _session.Aircraft.Aero.Segments));
+
+        AudioBuses.Apply(services.Settings);
+        var audio = new AircraftAudio();
+        _visual.AddChild(audio);
+        audio.Init(_session, SoundSpecLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId)));
+        AddChild(new FieldAmbience());
 
         var pilot = ClubField.PilotPosition;
         var eye = new Vec3(pilot.X, pilot.Y, _session.Terrain.Height(pilot.X, pilot.Y) + ClubField.EyeHeight);

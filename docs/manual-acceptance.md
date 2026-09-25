@@ -29,3 +29,13 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] FOV "compute from screen" gives a plausible value; auto-zoom off shows the true apparent size.
 - [ ] Language switch fr ↔ en works immediately.
 - [ ] A CSV appears in the recordings folder after a flight (Settings → record flights).
+
+## Sound
+- [ ] Trainer on the runway, throttle at zero: only the field ambience is heard.
+- [ ] Sweep the throttle slowly to full and back: motor pitch rises and falls smoothly, no clicks or dropouts.
+- [ ] Take off and make a low pass along the runway: the sound gets louder as the aircraft approaches, pitch drops as
+  it passes the pilot box (Doppler), and fades with distance.
+- [ ] Cut the motor at altitude and glide: wind noise remains and rises when diving.
+- [ ] Taxi on the grass: rolling noise follows ground speed. A firm landing gives a thump; a crash gives a louder hit.
+- [ ] Pause: aircraft sound stops; the ambience continues. Resume and reset behave.
+- [ ] Settings: the three volume sliders act immediately and persist after a restart.

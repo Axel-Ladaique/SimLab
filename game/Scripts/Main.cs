@@ -10,6 +10,7 @@ using SimLab.Flight.Airframe;
 using SimLab.Flight.Controls;
 using SimLab.Flight.Geometry;
 using SimLab.Flight.Ground;
+using SimLab.Game.Audio;
 using SimLab.Game.Flight;
 using SimLab.Game.Menu;
 using SimLab.Game.Radio;
@@ -32,6 +33,7 @@ public partial class Main : Node
         var store = new RadioProfileStore(AppPaths.RadioDir);
         _services = new Services { Settings = settings, Radios = store, Router = new InputRouter(guid => store.Load(guid, out _)) };
         DisplaySettings.Apply(settings);
+        AudioBuses.Apply(settings);
         if (!RunCommandLine(OS.GetCmdlineUserArgs())) ShowMenu();
     }
 
@@ -97,6 +99,10 @@ public partial class Main : Node
         var inv = CultureInfo.InvariantCulture;
         var p = session.Aircraft.State.Position;
         GD.Print($"SIMLAB_SMOKE_OK aircraft={_smokeAircraft} t={session.Simulation.Time.ToString("0.00", inv)} x={p.X.ToString("0.0", inv)} y={p.Y.ToString("0.0", inv)} z={p.Z.ToString("0.00", inv)} crash={session.Aircraft.Crash}");
+        // Free the scene (rather than relying on the engine's own teardown order) so its still-playing
+        // AudioStreamPlayers are stopped before Quit(); otherwise Godot reports their playback objects as leaked.
+        _current?.Free();
+        _current = null;
         GetTree().Quit(0);
     }
 
@@ -247,6 +253,10 @@ public partial class Main : Node
         for (int i = 0; i < frames; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         var error = GetViewport().GetTexture().GetImage().SavePng(path);
         GD.Print($"SIMLAB_SCREENSHOT path={path} error={error}");
+        // Free the current scene (rather than relying on the engine's own teardown order) so any AudioStreamPlayer
+        // that is still playing is stopped before Quit(); otherwise Godot reports its playback objects as leaked.
+        _current?.Free();
+        _current = null;
         GetTree().Quit(error == Error.Ok ? 0 : 1);
     }
 
