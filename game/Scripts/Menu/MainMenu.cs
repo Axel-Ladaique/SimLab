@@ -76,7 +76,7 @@ public partial class MainMenu : Control
         if (flightError is not null) content.AddChild(Colored(Ui.Text(flightError, 16), ErrorColor));
         BuildCarousel(content);
         BuildField(content);
-        BuildConditions(content);
+        BuildConditions(content, scroll);
         foreach (var error in errors) content.AddChild(Colored(Ui.Text(error, 14), ErrorColor));
 
         layout.AddChild(Ui.PrimaryButton(Ui.T("MENU_FLY"), () =>
@@ -146,7 +146,7 @@ public partial class MainMenu : Control
         content.AddChild(row);
     }
 
-    void BuildConditions(VBoxContainer content)
+    void BuildConditions(VBoxContainer content, ScrollContainer scroll)
     {
         content.AddChild(Section(Ui.T("MENU_WIND")));
         var windGroup = new ButtonGroup();
@@ -185,6 +185,8 @@ public partial class MainMenu : Control
         {
             fine.Visible = !fine.Visible;
             toggle.Text = Ui.T(fine.Visible ? "MENU_CUSTOMIZE_HIDE" : "MENU_CUSTOMIZE");
+            // The sliders open below the fold: bring them into view once the layout has made room for them.
+            if (fine.Visible) scroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, fine);
         };
         content.AddChild(toggle);
         content.AddChild(fine);
