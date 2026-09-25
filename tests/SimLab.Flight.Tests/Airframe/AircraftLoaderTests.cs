@@ -193,5 +193,52 @@ public sealed class AircraftLoaderTests : IDisposable
         Assert.Equal(expected.Z, actual.Z, 12);
     }
 
+    [Fact]
+    public void Fpv_camera_block_is_shifted_by_the_cg()
+    {
+        var json = Edit(Aircraft(), "\"cg\": [0, 0, 0],", """
+            "cg": [0.1, 0, 0], "fpvCamera": { "position": [-0.2, 0, 0.05], "uptiltDeg": 25, "fovDeg": 120 },
+            """);
+        var mount = AircraftLoader.Load(Write(json)).FpvCamera;
+        Assert.NotNull(mount);
+        Assert.Equal(-0.3, mount!.Position.X, 12);
+        Assert.Equal(0.05, mount.Position.Z, 12);
+        Assert.Equal(25, mount.UptiltDeg);
+        Assert.Equal(120, mount.HorizontalFovDeg);
+    }
+
+    [Fact]
+    public void Without_a_block_the_fpv_camera_sits_on_the_nose_hull_point()
+    {
+        var def = AircraftLoader.Load(Write(Aircraft()));
+        Assert.Null(def.FpvCamera);
+        var mount = FpvCameraSpec.For(def);
+        Assert.Equal(new Vec3(-0.3, 0, 0), mount.Position);
+        Assert.Equal(FpvCameraSpec.DefaultUptiltDeg, mount.UptiltDeg);
+        Assert.Equal(FpvCameraSpec.DefaultHorizontalFovDeg, mount.HorizontalFovDeg);
+    }
+
+    [Fact]
+    public void Without_a_nose_tag_the_fpv_camera_sits_on_the_most_forward_hull_point()
+    {
+        var json = Edit(Aircraft(), """
+            "hull": [ { "name": "nose", "position": [-0.3, 0, 0], "tag": "nose" } ],
+            """, """
+            "hull": [ { "name": "a", "position": [0.2, 0, 0], "tag": "belly" }, { "name": "b", "position": [-0.25, 0, 0.1], "tag": "canopy" } ],
+            """);
+        Assert.Equal(new Vec3(-0.25, 0, 0.1), FpvCameraSpec.For(AircraftLoader.Load(Write(json))).Position);
+    }
+
+    [Theory]
+    [InlineData(-1, 110)]
+    [InlineData(61, 110)]
+    [InlineData(20, 59)]
+    [InlineData(20, 151)]
+    public void Out_of_range_fpv_camera_is_rejected(double uptilt, double fov)
+        => AssertRejected(Edit(Aircraft(), "\"cg\": [0, 0, 0],",
+            $$"""
+            "cg": [0, 0, 0], "fpvCamera": { "position": [0, 0, 0], "uptiltDeg": {{uptilt}}, "fovDeg": {{fov}} },
+            """));
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }

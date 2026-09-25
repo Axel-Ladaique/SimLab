@@ -64,6 +64,11 @@ public static class AircraftLoader
             c.MaxPositiveDeg, c.MaxNegativeDeg, c.ServoSecondsPer60Deg, c.Mix)).ToList();
         var bodies = dto.Bodies.Select(b => new BodySpec(b.Name, b.Position - cg, b.CdA)).ToList();
 
+        if (dto.FpvCamera is { } fpv
+            && (fpv.UptiltDeg is < FpvCameraSpec.MinUptiltDeg or > FpvCameraSpec.MaxUptiltDeg
+                || fpv.FovDeg is < FpvCameraSpec.MinFovDeg or > FpvCameraSpec.MaxFovDeg))
+            throw Invalid(path, $"fpvCamera uptiltDeg must be {FpvCameraSpec.MinUptiltDeg}–{FpvCameraSpec.MaxUptiltDeg} and fovDeg {FpvCameraSpec.MinFovDeg}–{FpvCameraSpec.MaxFovDeg}.");
+
         // Build the parts an Aircraft builds, so geometry and control-layout errors surface here with the file name.
         try
         {
@@ -89,7 +94,8 @@ public static class AircraftLoader
                 w.LateralFriction, w.MaxSteerDeg, w.SteerMix)).ToList(),
             dto.Hull.Select(h => new HullPointSpec(h.Name, h.Position - cg, h.Tag)).ToList(),
             new CrashLimits(dto.Crash.MaxGearSinkRate, dto.Crash.MaxHullImpactSpeed, dto.Crash.MaxBellyImpactSpeed),
-            dto.Provenance);
+            dto.Provenance,
+            dto.FpvCamera is { } camera ? new FpvCameraSpec(camera.Position - cg, camera.UptiltDeg, camera.FovDeg) : null);
     }
 
     static PowerPlantSpec Shift(PowerPlantSpec power, Vec3 cg) => power with { Position = power.Position - cg };

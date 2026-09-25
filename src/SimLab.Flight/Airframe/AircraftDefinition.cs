@@ -13,6 +13,7 @@ namespace SimLab.Flight.Airframe;
 /// </summary>
 /// <param name="Folder">Folder the definition was loaded from (holds model.glb for the game layer).</param>
 /// <param name="Provenance">Parameter path → source (estimated, measured, xfoil, vspaero, cfd).</param>
+/// <param name="FpvCamera">Onboard FPV camera from aircraft.json, or null for the default mount: see <see cref="FpvCameraSpec.For"/>.</param>
 public sealed record AircraftDefinition(
     string Name,
     string Description,
@@ -26,4 +27,5 @@ public sealed record AircraftDefinition(
     IReadOnlyList<WheelSpec> Wheels,
     IReadOnlyList<HullPointSpec> Hull,
     CrashLimits Crash,
-    IReadOnlyDictionary<string, string> Provenance);
+    IReadOnlyDictionary<string, string> Provenance,
+    FpvCameraSpec? FpvCamera = null);

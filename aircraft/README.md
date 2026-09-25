@@ -85,6 +85,16 @@ Hull points are collision/crash-detection points (nose, wingtips, tail, belly, c
 with a `tag` used by the crash logic (`nose`, `wingtip`, `tail`, `belly`, `canopy`, …). Same
 datum and axes as everything else — a left wingtip has negative y, a belly point has negative z.
 
+## FPV camera (optional)
+
+```json
+"fpvCamera": { "position": [x, y, z], "uptiltDeg": 25, "fovDeg": 120 }
+```
+
+`position` from the datum in body axes like every other position, `uptiltDeg` (0–60) tilts it up from the body
+forward axis, `fovDeg` (60–150) is its **horizontal** field of view, as FPV camera specs give it. Without the block,
+the camera sits on the hull point tagged `nose` (else the most forward hull point) with 10° uptilt and 110°.
+
 ## Inertia
 
 ```json
