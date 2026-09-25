@@ -20,6 +20,9 @@ public partial class OsdHorizon : Control
     float _pitchDeg;
     Font _font = null!;
 
+    /// <summary>The OSD's shared monospace font, set once by the HUD before this control is added to the tree.</summary>
+    public void Init(Font font) => _font = font;
+
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
@@ -29,7 +32,6 @@ public partial class OsdHorizon : Control
         OffsetRight = BoxSize.X / 2;
         OffsetTop = -BoxSize.Y / 2;
         OffsetBottom = BoxSize.Y / 2;
-        _font = FlightHud.MonoFont();
     }
 
     public void SetAttitude(double rollDeg, double pitchDeg)
@@ -58,9 +60,18 @@ public partial class OsdHorizon : Control
         {
             if (deg == 0) continue;
             float y = y0 - deg * PixelsPerDegree;
-            for (float x = -RungHalfWidth; x < -Gap; x += 14) Outlined(new Vector2(x, y), new Vector2(x + 8, y));
-            for (float x = Gap; x < RungHalfWidth; x += 14) Outlined(new Vector2(x, y), new Vector2(x + 8, y));
-            string label = System.Math.Abs(deg).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // Positive (nose-up) rungs are solid, negative (nose-down) rungs are dashed, Betaflight style.
+            if (deg > 0)
+            {
+                Outlined(new Vector2(-RungHalfWidth, y), new Vector2(-Gap, y));
+                Outlined(new Vector2(Gap, y), new Vector2(RungHalfWidth, y));
+            }
+            else
+            {
+                for (float x = -RungHalfWidth; x < -Gap; x += 14) Outlined(new Vector2(x, y), new Vector2(x + 8, y));
+                for (float x = Gap; x < RungHalfWidth; x += 14) Outlined(new Vector2(x, y), new Vector2(x + 8, y));
+            }
+            string label = deg.ToString(System.Globalization.CultureInfo.InvariantCulture);
             DrawStringOutline(_font, new Vector2(RungHalfWidth + 6, y + 6), label, HorizontalAlignment.Left, -1, 16, 4, Colors.Black);
             DrawString(_font, new Vector2(RungHalfWidth + 6, y + 6), label, HorizontalAlignment.Left, -1, 16, Colors.White);
         }
@@ -71,33 +82,5 @@ public partial class OsdHorizon : Control
     {
         DrawLine(a, b, Colors.Black, Line + 2);
         DrawLine(a, b, Colors.White, Line);
-    }
-}
-
-/// <summary>Arrow pointing at the pilot: straight up means ahead, turned by the relative bearing (right positive).</summary>
-public partial class OsdHomeArrow : Control
-{
-    float _bearingRad;
-
-    public override void _Ready()
-    {
-        MouseFilter = MouseFilterEnum.Ignore;
-        CustomMinimumSize = new Vector2(36, 36);
-        Size = CustomMinimumSize;
-    }
-
-    public void SetBearing(double relativeDeg)
-    {
-        _bearingRad = Mathf.DegToRad((float)relativeDeg);
-        QueueRedraw();
-    }
-
-    public override void _Draw()
-    {
-        DrawSetTransform(Size / 2, _bearingRad, Vector2.One);
-        Vector2[] arrow = [new(0, -15), new(10, 10), new(0, 4), new(-10, 10)];
-        DrawColoredPolygon(arrow, Colors.White);
-        DrawPolyline([.. arrow, arrow[0]], Colors.Black, 2f, true);
-        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 }

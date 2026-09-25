@@ -66,6 +66,7 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 
 ## HUD
 
+- [ ] Existing installs keep their saved choice: if the OSD is off at first, press H once (new installs start with it on).
 - [ ] The OSD shows speed (left), height and vario (right), the home arrow with the distance and the heading (top),
   volts, amps and mAh (bottom left), throttle and timer (bottom right), in white outlined monospace figures.
 - [ ] In FPV the artificial horizon and pitch ladder follow roll and pitch (right bank: right end up; nose up:

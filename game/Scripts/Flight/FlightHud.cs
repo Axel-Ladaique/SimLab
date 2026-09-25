@@ -47,13 +47,14 @@ public partial class FlightHud : CanvasLayer
     public override void _Ready()
     {
         var big = new LabelSettings { Font = MonoFont(), FontSize = FontSize, FontColor = Colors.White, OutlineSize = 5, OutlineColor = Colors.Black };
-        var small = new LabelSettings { Font = big.Font, FontSize = SmallSize, FontColor = Colors.White, OutlineSize = 4, OutlineColor = Colors.Black };
+        var small = new LabelSettings { Font = big.Font, FontSize = SmallSize, FontColor = Colors.White, OutlineSize = 5, OutlineColor = Colors.Black };
 
         _osd = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
         _osd.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(_osd);
 
         _horizon = new OsdHorizon();
+        _horizon.Init(big.Font);
         _osd.AddChild(_horizon);
 
         _homeArrow = new OsdHomeArrow();
@@ -163,7 +164,8 @@ public partial class FlightHud : CanvasLayer
         _heading.Text = $"{((int)System.Math.Round(osd.HeadingDeg) % 360).ToString("000", Inv)}°";
         _speed.Text = $"{osd.AirspeedKmh.ToString("0", Inv)} km/h";
         _height.Text = $"{osd.HeightM.ToString("0", Inv)} m";
-        _vario.Text = $"{(osd.VarioMs >= 0 ? "↑" : "↓")} {System.Math.Abs(osd.VarioMs).ToString("0.0", Inv)} m/s";
+        double vario = System.Math.Round(osd.VarioMs, 1);
+        _vario.Text = $"{(vario >= 0 ? "↑" : "↓")} {System.Math.Abs(vario).ToString("0.0", Inv)} m/s";
         _battery.Text = osd.BatteryVolts is { } v
             ? $"{v.ToString("0.0", Inv)} V  {osd.CurrentAmps!.Value.ToString("0.0", Inv)} A  {osd.ConsumedMah!.Value.ToString("0", Inv)} mAh"
             : "— V";
