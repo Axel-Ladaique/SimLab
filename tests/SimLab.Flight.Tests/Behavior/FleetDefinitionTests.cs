@@ -56,4 +56,23 @@ public class FleetDefinitionTests
         Assert.Equal(2, tips.Count);
         foreach (var tip in tips) Assert.True(Math.Abs(tip.Position.Z - tipZ) < 0.005, $"{tip.Name} z {tip.Position.Z:F3}, wing tip {tipZ:F3}");
     }
+
+    [Fact]
+    public void Wing_fin_top_hull_points_sit_on_the_winglet_tips()
+    {
+        var def = Fleet.Load("wing");
+        var winglet = def.Surfaces.Single(s => s.Name == "winglets");
+        double dihedral = winglet.DihedralDeg * Math.PI / 180;
+        double tipQuarterChordX = winglet.Root.X + winglet.Span * Math.Tan(winglet.SweepDeg * Math.PI / 180);
+        double leadingEdge = tipQuarterChordX - winglet.TipChord / 4, trailingEdge = leadingEdge + winglet.TipChord;
+        double tipY = winglet.Root.Y + winglet.Span * Math.Cos(dihedral), tipZ = winglet.Root.Z + winglet.Span * Math.Sin(dihedral);
+        var tops = def.Hull.Where(h => h.Name.StartsWith("finTop", StringComparison.Ordinal)).ToList();
+        Assert.Equal(2, tops.Count);
+        foreach (var top in tops)
+        {
+            Assert.True(Math.Abs(top.Position.Z - tipZ) < 0.005, $"{top.Name} z {top.Position.Z:F3}, winglet tip {tipZ:F3}");
+            Assert.True(Math.Abs(Math.Abs(top.Position.Y) - tipY) < 0.005, $"{top.Name} y {top.Position.Y:F3}, winglet tip {tipY:F3}");
+            Assert.InRange(top.Position.X, leadingEdge, trailingEdge);
+        }
+    }
 }

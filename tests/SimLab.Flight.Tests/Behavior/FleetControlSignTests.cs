@@ -39,6 +39,25 @@ public class FleetControlSignTests
     public void Up_elevator_gives_a_nose_up_moment(string id) =>
         Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Elevator = 0.5 }).Y > 0);
 
+    /// <summary>
+    /// The wing's elevons carry both channels: ±12° for aileron (weight 0.6 of the ±20° throw) and the full ±20° for pitch.
+    /// Mix clamps the sum per surface, so full aileron with full elevator saturates the elevon that both push the same way
+    /// (−20°) while the other gets −8°: the roll differential shrinks from 24° to 12° but keeps its sign.
+    /// </summary>
+    [Theory]
+    [InlineData(1, 0, -12, 12)]
+    [InlineData(0, 1, -20, -20)]
+    [InlineData(1, 1, -20, -8)]
+    [InlineData(-1, 1, -8, -20)]
+    [InlineData(1, -1, 8, 20)]
+    public void Wing_elevons_keep_the_full_pitch_throw_with_a_smaller_aileron_throw(double aileron, double elevator, double rightDeg, double leftDeg)
+    {
+        var controls = Fleet.Load("wing").Controls;
+        var input = new ControlInputs(0, aileron, elevator, 0);
+        Assert.Equal(rightDeg, Angle.Deg(Aircraft.TargetDeflection(controls.Single(c => c.Name == "elevonRight"), input)), 6);
+        Assert.Equal(leftDeg, Angle.Deg(Aircraft.TargetDeflection(controls.Single(c => c.Name == "elevonLeft"), input)), 6);
+    }
+
     [Theory]
     [InlineData("trainer")]
     [InlineData("sport")]
