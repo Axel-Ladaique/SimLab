@@ -8,6 +8,7 @@ using SimLab.App.Settings;
 using SimLab.App.Ui;
 using SimLab.Flight.Airframe;
 using SimLab.Flight.Controls;
+using SimLab.Game.Audio;
 using SimLab.Game.Flight;
 using SimLab.Game.Radio;
 
@@ -49,6 +50,7 @@ public partial class MainMenu : Control
         _view = new MenuAircraftView();
         _view.Init(() => _services.Settings.Audio, services.Settings.Conditions);
         AddChild(_view);
+        AddChild(new FieldAmbience());
 
         _aircraft = AircraftCatalog.List(AppPaths.AircraftRoot, out var errors);
 

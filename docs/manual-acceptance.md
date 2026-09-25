@@ -27,7 +27,8 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Wind presets move the windsock (Calm hangs, Gusty stretches); time presets move the sun and the shadows.
 - [ ] Personnaliser shows the five sliders; moving one off a preset un-presses its chip; moving it back onto the
   preset presses it again. The values persist after a restart.
-- [ ] Sticks centred and throttle closed: the aircraft is level and still, the propeller disk hidden, nothing heard.
+- [ ] Sticks centred and throttle closed: the aircraft is level and still, the propeller disk hidden, only the field ambience is heard.
+- [ ] The field ambience (birds, wind) plays on the home screen; the motor is clearly quieter than in flight and the Ambience volume of the sound screen applies.
 - [ ] For each aircraft: right aileron banks it right (about 15°), pulling the elevator stick raises the nose, right
   rudder swings the nose right (trainer, sport; the wing has no rudder), throttle spins the propeller, plays the
   motor and creeps the aircraft forward; all come back smoothly.

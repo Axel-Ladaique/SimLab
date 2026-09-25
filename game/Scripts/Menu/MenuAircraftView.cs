@@ -29,6 +29,9 @@ public partial class MenuAircraftView : ControlPreview
     // Same generator buffer as the flight and sound-screen voices (rounded up by Godot to 2048 frames).
     const float BufferSeconds = 0.04f;
 
+    /// <summary>The run-up voice is a backdrop on the home screen, well below its flight level.</summary>
+    const float VoiceVolumeDb = -9f;
+
     /// <summary>Rest heading: nose toward the camera (which looks north) and to its left, into the picture.</summary>
     const double HeadingDeg = 205;
     /// <summary>Where the aircraft flies in place (world ENU): north-west of the pilot box and a few metres up, with
@@ -73,6 +76,7 @@ public partial class MenuAircraftView : ControlPreview
         {
             Stream = new AudioStreamGenerator { MixRate = SampleRate, BufferLength = BufferSeconds },
             Bus = AudioBuses.Aircraft,
+            VolumeDb = VoiceVolumeDb,
         };
         AddChild(_voice);
     }
