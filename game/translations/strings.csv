@@ -6,8 +6,12 @@ MENU_SOUND,Son,Sound
 MENU_SETTINGS,Réglages,Settings
 MENU_QUIT,Quitter,Quit
 MENU_AIRCRAFT,Avion,Aircraft
-MENU_CONDITIONS,Conditions de vol,Flight conditions
-MENU_LIVE_HINT,"Aperçu en direct : bougez les manches (ou les touches de vol) pour voir les gouvernes, la réaction de l'avion et entendre le moteur.","Live view: move the sticks (or the flight keys) to see the surfaces, how the aircraft reacts, and hear the motor."
+MENU_FIELD,Terrain,Field
+MENU_WIND,Vent,Wind
+MENU_TIME,Heure,Time of day
+MENU_CUSTOMIZE,Personnaliser ›,Customize ›
+MENU_CUSTOMIZE_HIDE,‹ Masquer les réglages fins,‹ Hide fine settings
+MENU_LIVE_HINT,Bougez les manches pour essayer l'avion,Move the sticks to try the aircraft
 COND_WIND_SPEED,Vent (m/s),Wind (m/s)
 COND_WIND_DIR,Vent venant de (°),Wind from (°)
 COND_TURBULENCE,Turbulence,Turbulence

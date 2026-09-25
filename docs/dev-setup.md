@@ -39,7 +39,7 @@ User data (settings, radio profiles, flight recordings): `~/Library/Application 
 | `--screenshot-aircraft <id> <png>` | Close-up of an aircraft with deflected controls |
 | `--screenshot-flight <id> <s> <png>` | Scripted takeoff seen from the pilot box |
 | `--screenshot-diagnostics <id> <s> <png>` | Same scripted takeoff with the F3 diagnostics overlay forced on |
-| `--screenshot-menu <png>` | Screenshot of the main menu (the live view at rest, sticks centred) |
+| `--screenshot-menu <png>` | Screenshot of the home screen (the live view at rest, sticks centred) |
 | `--screenshot-menu-live <png> [id]` | Main menu with the live view driven by fixed commands (throttle 0.6, right aileron 0.8, up elevator 0.8, right rudder 0.8) instead of the radio, taken after ~3 s so the reaction has settled; `[id]` shows that aircraft instead of the last one flown (the saved choice is unchanged). Plays the motor voice briefly (needs a windowed run like every screenshot) |
 | `--screenshot-settings <png>` | Screenshot of the settings screen |
 | `--screenshot-sound <png>` | Screenshot of the sound screen (8 volume sliders and the Listen preview toggle) |

@@ -70,6 +70,18 @@ public class TranslationTests
     }
 
     [Fact]
+    public void Every_key_used_by_the_main_menu_exists()
+    {
+        var keys = Shipped().Keys.ToHashSet();
+        foreach (var k in new[] { "APP_TITLE", "MENU_FLY", "MENU_RADIO", "MENU_SOUND", "MENU_SETTINGS", "MENU_QUIT",
+                     "MENU_AIRCRAFT", "MENU_FIELD", "MENU_WIND", "MENU_TIME", "MENU_CUSTOMIZE", "MENU_CUSTOMIZE_HIDE",
+                     "MENU_LIVE_HINT", "COND_WIND_SPEED", "COND_WIND_DIR", "COND_TURBULENCE", "COND_SUN_AZIMUTH",
+                     "COND_SUN_ELEVATION", "SET_FULLSCREEN" })
+            Assert.Contains(k, keys);
+        foreach (var field in SimLab.App.Field.FieldCatalog.All) Assert.Contains(field.NameKey, keys);
+    }
+
+    [Fact]
     public void Every_aircraft_sheet_key_exists()
     {
         var keys = Shipped().Keys.ToHashSet();
