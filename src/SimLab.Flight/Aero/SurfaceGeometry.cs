@@ -127,6 +127,7 @@ public static class SurfaceGeometry
             Chord = chord,
             Area = area,
             SpanFraction = spanFraction,
+            SpanFractionHalfWidth = 0.5 / spec.Segments,
             Airfoil = airfoil,
             InducedFactor = inducedFactor,
             FlowChordAxis = flowChord,

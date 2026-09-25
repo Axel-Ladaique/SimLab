@@ -53,8 +53,8 @@ public class RollRateTests(ITestOutputHelper output)
         Assert.InRange(ratio, 1.0, 1.6);
     }
 
-    [Fact(Skip = "Open: sport full-aileron pb/2V is 0.214 (0.245 on 6 wing strips, 0.361 without the DATCOM large-deflection correction). " +
-                 "The rest is not throw-related (15° gave 0.218 on 6 strips); see docs/realism-backlog.md #11.")]
+    [Fact(Skip = "Open: sport full-aileron pb/2V is 0.227 (converged in the strip count; 0.361 without the DATCOM large-deflection correction). " +
+                 "Throw is not the lever (15° gave 0.218 before the fractional control coverage); see docs/realism-backlog.md #11.")]
     public void Sport_full_aileron_roll_helix_angle_is_realistic()
     {
         double helix = HelixAngle("sport", FullAileronRollRate("sport"));

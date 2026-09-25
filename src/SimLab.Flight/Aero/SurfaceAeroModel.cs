@@ -23,6 +23,7 @@ public sealed class SurfaceAeroModel : IAeroModel
     PropWash _cachedWash;
     bool _washValid;
     readonly BodySpec[] _bodies;
+    readonly List<ControlSurfaceSpec> _assigned = [];
     readonly double _wingAspectRatio;
     readonly double _tailArm;
     double _lastWingCl;
@@ -88,7 +89,7 @@ public sealed class SurfaceAeroModel : IAeroModel
             double groundEffect = InducedFlow.GroundEffectFactor(height, WingSpan);
             double delta = seg.ControlIndex >= 0 ? ctx.Deflections[seg.ControlIndex] : 0;
             // Plain flaps lose effectiveness at large deflections as the flow separates on the flap.
-            double flap = delta == 0 ? 0 : FlapEfficiency * SurfaceGeometry.LargeDeflectionFactor(delta, seg.ControlChordFraction) * delta;
+            double flap = delta == 0 ? 0 : seg.ControlCoverage * FlapEfficiency * SurfaceGeometry.LargeDeflectionFactor(delta, seg.ControlChordFraction) * delta;
 
             double alphaGeo = alpha + seg.FlapEffectiveness * flap;
             if (seg.Role == SurfaceRole.HorizontalTail) alphaGeo -= Downwash * groundEffect;
@@ -98,7 +99,7 @@ public sealed class SurfaceAeroModel : IAeroModel
             var coeff = seg.Airfoil.Evaluate(alphaGeo - ai, reynolds);
             double sinDelta = Math.Sin(delta);
             double cl = coeff.Cl * Math.Cos(ai);
-            double cd = coeff.Cd + coeff.Cl * Math.Sin(ai) + seg.ControlChordFraction * sinDelta * sinDelta;
+            double cd = coeff.Cd + coeff.Cl * Math.Sin(ai) + seg.ControlCoverage * seg.ControlChordFraction * sinDelta * sinDelta;
 
             var liftDir = (c * -un + n * uc) / v;
             var dragDir = (c * uc + n * un) / -v;
@@ -200,19 +201,31 @@ public sealed class SurfaceAeroModel : IAeroModel
 
     void AssignControl(ControlSurfaceSpec control, int index)
     {
+        foreach (var other in _assigned)
+        {
+            bool sameSide = control.Side == Side.Both || other.Side == Side.Both || control.Side == other.Side;
+            if (other.Surface == control.Surface && sameSide
+                && Math.Min(control.SpanEnd, other.SpanEnd) > Math.Max(control.SpanStart, other.SpanStart))
+                throw new ArgumentException($"Control '{control.Name}' overlaps another control on surface '{control.Surface}'.");
+        }
+        _assigned.Add(control);
+
         int covered = 0;
         foreach (var seg in _segments)
         {
             if (seg.SurfaceName != control.Surface) continue;
             if (control.Side != Side.Both && seg.Side != control.Side) continue;
-            if (seg.SpanFraction < control.SpanStart || seg.SpanFraction > control.SpanEnd) continue;
-            if (seg.ControlIndex >= 0)
-                throw new ArgumentException($"Control '{control.Name}' overlaps another control on surface '{control.Surface}'.");
+            double lo = seg.SpanFraction - seg.SpanFractionHalfWidth, hi = seg.SpanFraction + seg.SpanFractionHalfWidth;
+            double coverage = (Math.Min(hi, control.SpanEnd) - Math.Max(lo, control.SpanStart)) / (hi - lo);
+            if (coverage <= 1e-9) continue;
+            covered++;
+            // A strip shared by two adjacent controls keeps the one covering more of it (at most half a strip is lost).
+            if (seg.ControlIndex >= 0 && seg.ControlCoverage >= coverage) continue;
             seg.ControlIndex = index;
+            seg.ControlCoverage = Math.Min(1, coverage);
             seg.FlapEffectiveness = SurfaceGeometry.FlapEffectiveness(control.ChordFraction);
             seg.FlapMomentEffectiveness = SurfaceGeometry.FlapMomentCoefficient(control.ChordFraction);
             seg.ControlChordFraction = control.ChordFraction;
-            covered++;
         }
         if (covered == 0)
             throw new ArgumentException($"Control '{control.Name}' does not cover any segment of surface '{control.Surface}'.");

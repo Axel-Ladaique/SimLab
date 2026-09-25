@@ -38,6 +38,9 @@ public sealed class SurfaceSegment
     /// <summary>Mid-strip position along the panel span, 0 at the root and 1 at the tip.</summary>
     public required double SpanFraction { get; init; }
 
+    /// <summary>Half the strip's width as a fraction of the panel span (the strip covers SpanFraction ± this).</summary>
+    public double SpanFractionHalfWidth { get; init; }
+
     public required Airfoil Airfoil { get; init; }
 
     /// <summary>1 / (π e AR) of the parent surface.</summary>
@@ -47,4 +50,10 @@ public sealed class SurfaceSegment
     public double FlapEffectiveness { get; set; }
     public double FlapMomentEffectiveness { get; set; }
     public double ControlChordFraction { get; set; }
+
+    /// <summary>
+    /// Fraction of the strip's span covered by its control (0..1): the flap's lift, moment and drag increments are scaled
+    /// by it, so results converge with the strip count instead of switching a whole strip at the control's end.
+    /// </summary>
+    public double ControlCoverage { get; set; }
 }

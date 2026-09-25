@@ -143,8 +143,39 @@ public class SurfaceAeroModelTests
     [Fact]
     public void Control_that_covers_no_segment_is_rejected()
     {
-        var bad = AileronRight with { SpanStart = 0.99, SpanEnd = 0.995 };
+        // A control of zero span covers nothing (a narrow one now covers a fraction of a strip, see below).
+        var bad = AileronRight with { SpanStart = 0.99, SpanEnd = 0.99 };
         Assert.Throws<ArgumentException>(() => new SurfaceAeroModel([Wing], TestAirfoils.Map(), [bad], []));
+    }
+
+    [Fact]
+    public void Control_effect_follows_its_span_and_converges_with_the_strip_count()
+    {
+        // A strip partly covered by a control gets that fraction of the flap effect, so the aileron's roll moment moves
+        // smoothly with its ends and hardly depends on how finely the wing is cut.
+        double Roll(int segments, double spanStart, double spanEnd)
+        {
+            var wing = Wing with { Segments = segments };
+            var right = AileronRight with { SpanStart = spanStart, SpanEnd = spanEnd };
+            var left = AileronLeft with { SpanStart = spanStart, SpanEnd = spanEnd };
+            var model = new SurfaceAeroModel([wing], TestAirfoils.Map(), [right, left], []);
+            return model.Evaluate(Context(Flow(15, 3), deflections: [-0.2, 0.2])).Moment.X;
+        }
+        double fine = Roll(96, 0.37, 0.93);
+        foreach (int n in new[] { 6, 12, 24, 48 })
+            Assert.True(Math.Abs(Roll(n, 0.37, 0.93) / fine - 1) < 0.03, $"{n} strips: {Roll(n, 0.37, 0.93):F4} vs {fine:F4}");
+        // Moving the inner end by 1% of the span changes the moment by about 1%, not by a whole strip.
+        double step = Roll(6, 0.40, 0.93) / Roll(6, 0.41, 0.93) - 1;
+        Assert.InRange(step, 0.001, 0.03);
+    }
+
+    [Fact]
+    public void Adjacent_controls_may_share_a_strip_but_not_overlap()
+    {
+        var flap = Flap with { Side = Side.Right, SpanStart = 0, SpanEnd = 0.45 };
+        _ = new SurfaceAeroModel([Wing], TestAirfoils.Map(), [AileronRight with { SpanStart = 0.45 }, flap], []);
+        Assert.Throws<ArgumentException>(() =>
+            new SurfaceAeroModel([Wing], TestAirfoils.Map(), [AileronRight with { SpanStart = 0.45 }, flap with { SpanEnd = 0.5 }], []));
     }
 
     [Fact]
