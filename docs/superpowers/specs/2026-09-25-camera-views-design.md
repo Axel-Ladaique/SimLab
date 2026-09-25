@@ -16,9 +16,8 @@ All rigs live in `SimLab.App.Cameras`, are pure C# and implement the existing `I
 chase rigs return world up. The game layer uses it in `LookAtFromPosition` instead of the fixed `Vector3.Up`.
 It keeps the current fallback when the look direction is almost parallel to up.
 
-`CameraContext` gains what the new rigs need: the aircraft's velocity (world ENU, from the interpolated display
-state), a terrain height function `Func<double, double, double>` (east, north → ground height, m) and the viewport
-aspect ratio (width / height).
+`CameraContext` gains what the new rigs need: a terrain height function `Func<double, double, double>`
+(east, north → ground height, m) and the viewport aspect ratio (width / height).
 
 ### 1.1 Ground (line of sight)
 
