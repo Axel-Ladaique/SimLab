@@ -11,7 +11,9 @@ namespace SimLab.Game.Audio;
 public partial class AircraftAudio : Node3D
 {
     const int SampleRate = 44100;
-    const float BufferSeconds = 0.05f;
+    // Godot rounds the generator's ring buffer up to a power of two frames: 0.04 s at 44.1 kHz gives 2048 frames
+    // (~46 ms of queued audio, still above one 30 fps frame); 0.05 s would round up to 4096 (~93 ms).
+    const float BufferSeconds = 0.04f;
     const float UnitSize = 12f;
     const float MaxDistance = 600f;
 
