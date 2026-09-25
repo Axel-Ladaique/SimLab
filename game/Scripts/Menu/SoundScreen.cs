@@ -113,7 +113,8 @@ public partial class SoundScreen : Control
                 _listenButton.Disabled = true;
             }
         }
-        catch (System.Exception ex) when (ex is System.IO.InvalidDataException or System.IO.FileNotFoundException or System.ArgumentException)
+        catch (System.Exception ex) when (ex is System.IO.InvalidDataException or System.IO.FileNotFoundException
+            or System.ArgumentException or System.Text.Json.JsonException)
         {
             _error.Text = $"{id}: {ex.Message}";
             _listenButton.Disabled = true;
