@@ -67,7 +67,7 @@ public partial class ControlPreview : SubViewportContainer
         sun.LookAtFromPosition(new Vector3(2, 5, 3), Vector3.Zero, Vector3.Up);
     }
 
-    public virtual void ShowAircraft(AircraftDefinition definition)
+    public void ShowAircraft(AircraftDefinition definition)
     {
         _visual?.QueueFree();
         Aircraft = new Aircraft(definition);

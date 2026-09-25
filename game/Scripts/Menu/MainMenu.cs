@@ -17,6 +17,9 @@ public partial class MainMenu : Control
     MenuAircraftView _view = null!;
     Label _viewError = null!;
     ControlInputs? _forcedInputs;
+    OptionButton _picker = null!;
+    System.Action<long> _describe = null!;
+    System.Collections.Generic.IReadOnlyList<AircraftEntry> _aircraft = [];
 
     public void Init(Services services, System.Action<string> fly, System.Action<string> groundCheck, System.Action radio, System.Action sound, System.Action settings, System.Action quit, string? flightError = null)
     {
@@ -39,9 +42,9 @@ public partial class MainMenu : Control
             message.CustomMinimumSize = new Vector2(780, 0);
             column.AddChild(message);
         }
-        var aircraft = AircraftCatalog.List(AppPaths.AircraftRoot, out var errors);
+        var aircraft = _aircraft = AircraftCatalog.List(AppPaths.AircraftRoot, out var errors);
 
-        var picker = new OptionButton();
+        var picker = _picker = new OptionButton();
         int selected = 0;
         for (int i = 0; i < aircraft.Count; i++)
         {
@@ -51,6 +54,7 @@ public partial class MainMenu : Control
         var description = Ui.Text("", 16);
         description.CustomMinimumSize = new Vector2(780, 0);
         void Describe(long index) => description.Text = index >= 0 && index < aircraft.Count ? aircraft[(int)index].Description : "";
+        _describe = Describe;
         column.AddChild(Ui.Row(Ui.RowLabel(Ui.T("MENU_AIRCRAFT")), picker));
         column.AddChild(description);
 
@@ -107,17 +111,17 @@ public partial class MainMenu : Control
         _viewError = Ui.Text("", 14);
         right.AddChild(_viewError);
 
+        picker.ItemSelected += index =>
+        {
+            Describe(index);
+            ShowAircraft(aircraft[(int)index].Id);
+        };
         if (aircraft.Count > 0)
         {
             picker.Selected = selected;
             Describe(selected);
             ShowAircraft(aircraft[selected].Id);
         }
-        picker.ItemSelected += index =>
-        {
-            Describe(index);
-            ShowAircraft(aircraft[(int)index].Id);
-        };
     }
 
     void ShowAircraft(string id)
@@ -128,9 +132,9 @@ public partial class MainMenu : Control
             _view.ShowAircraft(AircraftLoader.Load(folder), SoundSpecLoader.Load(folder));
             _viewError.Text = "";
         }
-        catch (System.Exception ex) when (ex is System.IO.InvalidDataException or System.IO.FileNotFoundException
-            or System.ArgumentException or System.Text.Json.JsonException)
+        catch (System.Exception ex)
         {
+            // Any failure (not only the loaders' own): a bad aircraft must never stop the menu from being built.
             _viewError.Text = $"{id}: {ex.Message}";
         }
     }
@@ -140,7 +144,23 @@ public partial class MainMenu : Control
     public void ForceInputs(ControlInputs inputs, string? aircraftId = null)
     {
         _forcedInputs = inputs;
-        if (aircraftId is not null) ShowAircraft(aircraftId);
+        if (aircraftId is null) return;
+        int index = System.Linq.Enumerable.ToList(_aircraft).FindIndex(a => a.Id == aircraftId);
+        if (index >= 0)
+        {
+            _picker.Selected = index;
+            _describe(index);
+        }
+        ShowAircraft(aircraftId);
+    }
+
+    /// <summary>The arrow keys fly the live view (aileron, elevator); keep them from also moving the UI focus or a
+    /// focused slider, which would silently change and save the flight conditions. <see cref="KeyboardInput"/> polls
+    /// the physical key state, which marking the event handled does not affect.</summary>
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is InputEventKey { PhysicalKeycode: Key.Left or Key.Right or Key.Up or Key.Down })
+            GetViewport().SetInputAsHandled();
     }
 
     public override void _Process(double delta)

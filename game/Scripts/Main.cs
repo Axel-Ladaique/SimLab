@@ -25,6 +25,7 @@ public partial class Main : Node
     double _smokeSeconds = -1;
     string? _smokeScreenshot;
     string _smokeAircraft = "";
+    bool _quitting;
 
     public override void _Ready()
     {
@@ -34,6 +35,8 @@ public partial class Main : Node
         _services = new Services { Settings = settings, Radios = store, Router = new InputRouter(guid => store.Load(guid, out _)) };
         DisplaySettings.Apply(settings);
         AudioBuses.Apply(settings);
+        // Closing the window (or Cmd+Q) goes through the same clean Quit as the menu button.
+        GetTree().AutoAcceptQuit = false;
         if (!RunCommandLine(OS.GetCmdlineUserArgs())) ShowMenu();
     }
 
@@ -51,6 +54,10 @@ public partial class Main : Node
     /// thread has released its playback, so nothing is reported leaked at exit.</summary>
     async void Quit()
     {
+        if (_quitting) return;
+        _quitting = true;
+        // Called from the Quit button's Pressed signal: let that emission finish before freeing the button's screen.
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         _current?.Free();
         _current = null;
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -99,6 +106,11 @@ public partial class Main : Node
         }
         Switch(scene);
         return true;
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationWMCloseRequest) Quit();
     }
 
     public override void _Process(double delta)

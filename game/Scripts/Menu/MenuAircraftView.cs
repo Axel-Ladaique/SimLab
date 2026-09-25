@@ -27,10 +27,12 @@ public partial class MenuAircraftView : ControlPreview
     /// <summary>Rest heading: nose toward the camera (which looks north) and to its left.</summary>
     const double HeadingDeg = 205;
     const float FovDeg = 30f;
-    const float CameraElevationDeg = 18f;
+    /// <summary>High enough that a banked wing is never seen edge-on.</summary>
+    const float CameraElevationDeg = 27f;
 
-    /// <summary>Sky tilt that drops the horizon below the aircraft, so it is seen against the sky.</summary>
-    const float SkyTiltDeg = -30f;
+    /// <summary>Sky tilt that drops the horizon about 12° below the view centre, so the aircraft is seen against the
+    /// sky with the horizon low in the frame.</summary>
+    const float SkyTiltDeg = -(CameraElevationDeg + 12f);
 
     readonly EngineSynth _synth = new(SampleRate);
     readonly GeneratorFeeder _feeder;
@@ -137,8 +139,6 @@ public partial class MenuAircraftView : ControlPreview
             // Silent until the throttle first opens: no voice runs while the menu is only browsed. Nothing is heard
             // under `--headless` (dummy driver), and a playback started there is reported leaked at exit.
             if (_throttle <= 0 || _runUp is null || AudioBuses.Headless) return;
-            // A flight left while paused leaves the Aircraft bus muted; the view would otherwise be silent.
-            AudioBuses.SetAircraftMuted(false);
             _voice.Play();
             _playback = (AudioStreamGeneratorPlayback)_voice.GetStreamPlayback();
         }

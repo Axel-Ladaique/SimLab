@@ -108,14 +108,6 @@ public sealed class ReactiveAttitude
         _forward.Step(t.Forward, TravelOmega, dt, _maxForward);
     }
 
-    public void Reset()
-    {
-        _bank = default;
-        _pitch = default;
-        _yaw = default;
-        _forward = default;
-    }
-
     /// <summary>Display state: the rest pose at <paramref name="origin"/> (level, nose toward
     /// <paramref name="heading"/>, rad clockwise from north) offset by the reaction.</summary>
     public static RigidBodyState Pose(in Reaction reaction, Vec3 origin, double heading)
