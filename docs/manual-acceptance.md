@@ -17,24 +17,28 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Reverse: tick "Inverser" on the rudder; the rudder line now reads "à gauche" for a right stick and the model
   follows. Leave the screen and come back: the box is still ticked (the profile was saved). Untick it again.
 
-## Main menu live view
-- [ ] The menu shows the flight setup and buttons on the left and, on the right, the selected aircraft in flight
-  against the sky seen from 3/4 front, horizon below; the camera does not move.
-- [ ] Sticks centred and throttle closed: the aircraft is level and still, the propeller disk is hidden, nothing is heard.
-- [ ] For each of trainer, sport, wing (pick it in the list; the view changes immediately):
-  - right aileron: the surfaces move like on the radio screen and the aircraft banks right (its right wing goes
-    down), about 15° at full stick, and comes back level when the stick is released;
-  - pull the elevator stick: the nose rises (about 10° at full stick);
-  - right rudder: the nose swings to the aircraft's right (trainer, sport); the wing, which has no rudder, stays put;
-  - open the throttle: the propeller disk appears, the motor is heard (pitch rising with the throttle) and the
-    aircraft moves forward a little (toward the camera), then glides back smoothly as the throttle closes and falls
-    silent at idle.
-- [ ] Motion is smooth, with no jerks, and the aircraft stays in frame at full deflection of every stick.
+## Home screen
+- [ ] The app opens full screen; Settings → "Plein écran" off gives a window, on again gives full screen, and the
+  choice is kept after a restart. On a 16:10 screen nothing is cut and there are no black bars.
+- [ ] The chosen field fills the screen (sky, runway, trees, windsock); the selected aircraft flies in place right
+  of the left panel, fully in frame at full deflection of every stick; the camera does not move.
+- [ ] ‹ › and the dots change the aircraft; the name, description, sheet and 3D view change together. The sheet reads
+  right for each aircraft: trainer tricycle, sport tail-dragger, wing hand launch with elevons; span, mass, power.
+- [ ] Wind presets move the windsock (Calm hangs, Gusty stretches); time presets move the sun and the shadows.
+- [ ] Personnaliser shows the five sliders; moving one off a preset un-presses its chip; moving it back onto the
+  preset presses it again. The values persist after a restart.
+- [ ] Sticks centred and throttle closed: the aircraft is level and still, the propeller disk hidden, only the field ambience is heard.
+- [ ] The field ambience (birds, wind) plays on the home screen; the motor is clearly quieter than in flight and the Ambience volume of the sound screen applies.
+- [ ] For each aircraft: right aileron banks it right (about 15°), pulling the elevator stick raises the nose, right
+  rudder swings the nose right (trainer, sport; the wing has no rudder), throttle spins the propeller, plays the
+  motor and creeps the aircraft forward; all come back smoothly.
 - [ ] Tick "Inverser" on the rudder in the radio screen, come back: right rudder now yaws the nose left. Untick it.
-- [ ] The keyboard works when no radio is connected (arrows, A/D; W/S for the throttle on QWERTY, Z/S on AZERTY).
-- [ ] Leaving the menu (Fly, Ground check, Radio, Sound, Settings) or quitting stops the motor sound at once; the
-  sound-screen volumes (Master, Aircraft, Propeller, Motor) apply to it.
-- [ ] Fly, Ground check, Radio, Sound, Settings, Quit and a flight-start error message all work as before.
+- [ ] The keyboard works when no radio is connected (arrows, A/D; W/S for the throttle on QWERTY, Z/S on AZERTY),
+  and the arrows never change a chip or a slider.
+- [ ] Leaving the menu (Fly, Radio, Sound, Settings) or quitting stops the motor sound at once; the sound-screen
+  volumes (Master, Aircraft, Propeller, Motor) apply to it.
+- [ ] Fly starts the flight with the shown aircraft; Radio, Sound, Settings, Quit and a flight-start error message
+  (shown at the top of the panel) all work.
 
 ## Flight (for each of trainer, sport, wing)
 - [ ] Right aileron rolls right, pulling the elevator stick pitches up, right rudder yaws right, throttle up accelerates.
@@ -67,10 +71,3 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
   change the synthesized voices; Impacts changes bounce/crash loudness; Master/Aircraft/Ambience change the buses).
 - [ ] Leaving the screen (Back or the menu) stops the preview immediately.
 - [ ] All 8 values persist after restarting the app.
-
-## Ground check
-- [ ] Main menu → pick the trainer → Ground check: the aircraft sits on the runway, the camera circles it.
-- [ ] Move each stick: the matching surfaces move the right way (rudder right → trailing edge right seen from behind)
-  and the on-screen readout agrees.
-- [ ] Advance the throttle: the motor spins up and is heard; the aircraft may creep forward.
-- [ ] Repeat with the sport and the wing (the wing rests on its belly and stays intact).

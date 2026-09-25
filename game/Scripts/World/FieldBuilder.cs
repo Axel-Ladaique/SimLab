@@ -7,6 +7,9 @@ using SimLab.Flight.Terrain;
 
 namespace SimLab.Game.World;
 
+/// <summary>The field's nodes that change after it is built.</summary>
+public readonly record struct FieldNodes(WindsockNode Windsock, DirectionalLight3D Sun);
+
 /// <summary>Builds the generic club field: sky, sun, rolling terrain, grass runway, pilot box, trees and windsock.</summary>
 public static class FieldBuilder
 {
@@ -16,10 +19,12 @@ public static class FieldBuilder
     static readonly Color SkyHorizon = new(0.66f, 0.76f, 0.88f);
     static readonly Color Gravel = new(0.55f, 0.52f, 0.47f);
 
-    public static WindsockNode Build(Node3D root, ClubFieldTerrain terrain, FlightConditions conditions)
+    public static FieldNodes Build(Node3D root, ClubFieldTerrain terrain, FlightConditions conditions)
     {
         root.AddChild(Environment());
-        root.AddChild(Sun(conditions));
+        var sun = new DirectionalLight3D { ShadowEnabled = true, LightEnergy = 1.0f };
+        AimSun(sun, conditions);
+        root.AddChild(sun);
         root.AddChild(TerrainMesh(terrain));
         root.AddChild(FlatPatch(ClubField.RunwayLength, ClubField.RunwayWidth, new Vector3(0, 0.03f, 0), Mowed));
         var pilot = ClubField.PilotPosition.WorldToGodot();
@@ -28,7 +33,15 @@ public static class FieldBuilder
         AddTrees(root, terrain.Trees);
         var sock = new WindsockNode { Position = ClubField.WindsockPosition.WorldToGodot() };
         root.AddChild(sock);
-        return sock;
+        return new FieldNodes(sock, sun);
+    }
+
+    /// <summary>Points the light from the conditions' sun position.</summary>
+    public static void AimSun(DirectionalLight3D sun, FlightConditions conditions)
+    {
+        var toSun = SunMath.Direction(conditions.SunAzimuthDeg, conditions.SunElevationDeg).WorldToGodot();
+        var up = Mathf.Abs(toSun.Y) > 0.99f ? Vector3.Back : Vector3.Up;
+        sun.Transform = Transform3D.Identity.LookingAt(-toSun, up);
     }
 
     static WorldEnvironment Environment()
@@ -61,18 +74,6 @@ public static class FieldBuilder
             FogSkyAffect = 0f,
         };
         return new WorldEnvironment { Environment = environment };
-    }
-
-    static DirectionalLight3D Sun(FlightConditions conditions)
-    {
-        var toSun = SunMath.Direction(conditions.SunAzimuthDeg, conditions.SunElevationDeg).WorldToGodot();
-        var up = Mathf.Abs(toSun.Y) > 0.99f ? Vector3.Back : Vector3.Up;
-        return new DirectionalLight3D
-        {
-            ShadowEnabled = true,
-            LightEnergy = 1.0f,
-            Transform = Transform3D.Identity.LookingAt(-toSun, up),
-        };
     }
 
     static MeshInstance3D TerrainMesh(ClubFieldTerrain terrain)

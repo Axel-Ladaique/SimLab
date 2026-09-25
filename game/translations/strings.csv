@@ -1,19 +1,29 @@
 keys,fr,en
 APP_TITLE,SimLab — simulateur de vol RC,SimLab — RC flight simulator
 MENU_FLY,Voler,Fly
-MENU_GROUND_CHECK,Contrôle au sol,Ground check
 MENU_RADIO,Radio,Radio
 MENU_SOUND,Son,Sound
 MENU_SETTINGS,Réglages,Settings
 MENU_QUIT,Quitter,Quit
 MENU_AIRCRAFT,Avion,Aircraft
-MENU_CONDITIONS,Conditions de vol,Flight conditions
-MENU_LIVE_HINT,"Aperçu en direct : bougez les manches (ou les touches de vol) pour voir les gouvernes, la réaction de l'avion et entendre le moteur.","Live view: move the sticks (or the flight keys) to see the surfaces, how the aircraft reacts, and hear the motor."
+MENU_FIELD,Terrain,Field
+MENU_WIND,Vent,Wind
+MENU_TIME,Heure,Time of day
+MENU_CUSTOMIZE,Personnaliser ›,Customize ›
+MENU_CUSTOMIZE_HIDE,‹ Masquer les réglages fins,‹ Hide fine settings
+MENU_LIVE_HINT,Bougez les manches pour essayer l'avion,Move the sticks to try the aircraft
 COND_WIND_SPEED,Vent (m/s),Wind (m/s)
 COND_WIND_DIR,Vent venant de (°),Wind from (°)
 COND_TURBULENCE,Turbulence,Turbulence
 COND_SUN_AZIMUTH,Soleil : azimut (°),Sun azimuth (°)
 COND_SUN_ELEVATION,Soleil : hauteur (°),Sun elevation (°)
+WIND_CALM,Calme,Calm
+WIND_BREEZE,Brise,Breeze
+WIND_WINDY,Venté,Windy
+WIND_GUSTY,Rafales,Gusty
+TIME_MORNING,Matin,Morning
+TIME_NOON,Midi,Noon
+TIME_EVENING,Soir,Evening
 BACK,Retour,Back
 RADIO_TITLE,Radio,Radio
 RADIO_NO_DEVICE,"Aucune radio détectée. Branchez la radio en USB et choisissez « USB Joystick (HID) » sur la radio.","No radio detected. Plug the radio in over USB and choose ""USB Joystick (HID)"" on the radio."
@@ -51,6 +61,8 @@ SET_FLIGHT_DATA,Afficher les données de vol,Show flight data
 SET_RECORD,Enregistrer les vols (CSV),Record flights (CSV)
 SET_LANGUAGE,Langue,Language
 SET_VSYNC,Synchronisation verticale,Vertical sync
+SET_FULLSCREEN,Plein écran,Full screen
+FIELD_CLUB,Terrain du club,Club field
 SND_TITLE,Son,Sound
 SND_MASTER,Volume général,Master volume
 SND_AIRCRAFT,Volume avion,Aircraft volume
@@ -76,7 +88,6 @@ HUD_FPS,Images/s,FPS
 HUD_INPUT,Commande,Input
 HUD_KEYBOARD_SHORT,Clavier,Keyboard
 HUD_PHYSICS_STEPS,Pas physiques/image,Physics steps/frame
-GROUND_CHECK_HINT,"Contrôle au sol : vérifie les gouvernes et écoute le moteur. Échap pour revenir au menu.","Ground check: check the control surfaces and listen to the motor. Esc returns to the menu."
 WIND_ON,Vent activé,Wind on
 WIND_OFF,Vent coupé,Wind off
 CRASH_TITLE,Crash !,Crash!
@@ -114,3 +125,20 @@ CHECK_EFFECT_YAWRIGHT,lacet à droite,yaw right
 CHECK_EFFECT_YAWLEFT,lacet à gauche,yaw left
 CHECK_NO_SURFACE,aucune gouverne,no control surface
 CHECK_WRONG_WAY,(SENS INVERSÉ !),(WRONG WAY!)
+SHEET_SPAN,Envergure,Span
+SHEET_LENGTH,Longueur,Length
+SHEET_MASS,Masse,Mass
+SHEET_WING_AREA,Surface alaire,Wing area
+SHEET_WING_LOADING,Charge alaire,Wing loading
+SHEET_POWER,Motorisation,Power
+SHEET_GLIDER,Planeur (sans moteur),Glider (no motor)
+SHEET_TAKEOFF,Décollage,Take-off
+SHEET_CHANNELS,Voies,Channels
+TAKEOFF_TRICYCLE,Roues (train tricycle),Wheels (tricycle gear)
+TAKEOFF_TAILDRAGGER,Roues (train classique),Wheels (tail-dragger)
+TAKEOFF_HAND,Lancé main,Hand launch
+CHANNEL_AILERONS,ailerons,ailerons
+CHANNEL_ELEVONS,élevons,elevons
+CHANNEL_ELEVATOR,profondeur,elevator
+CHANNEL_RUDDER,dérive,rudder
+CHANNEL_THROTTLE,gaz,throttle

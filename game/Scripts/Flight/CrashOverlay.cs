@@ -11,7 +11,10 @@ public partial class CrashOverlay : CanvasLayer
 
     public override void _Ready()
     {
-        _panel = new PanelContainer { Position = new Vector2(550, 330), CustomMinimumSize = new Vector2(500, 200) };
+        _panel = new PanelContainer { CustomMinimumSize = new Vector2(500, 200) };
+        _panel.SetAnchorsPreset(Control.LayoutPreset.Center);
+        _panel.GrowHorizontal = Control.GrowDirection.Both;
+        _panel.GrowVertical = Control.GrowDirection.Both;
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 12);
         column.AddChild(Ui.Text(Ui.T("CRASH_TITLE"), 40));

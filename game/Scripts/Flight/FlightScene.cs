@@ -37,16 +37,16 @@ public partial class FlightScene : Node3D
     public RouterOutput LastInput { get; private set; }
     public int LastSteps { get; private set; }
 
-    public void Init(Services services, string aircraftId, System.Action exit, System.Func<double, ControlInputs>? script = null, StartMode mode = StartMode.Normal)
+    public void Init(Services services, string aircraftId, System.Action exit, System.Func<double, ControlInputs>? script = null)
     {
         _services = services;
         _exit = exit;
         _script = script;
         var definition = AircraftLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId));
-        _session = new FlightSession(definition, services.Settings.Conditions, mode);
+        _session = new FlightSession(definition, services.Settings.Conditions);
         services.Router.ResetForNewFlight();
 
-        _windsock = FieldBuilder.Build(this, _session.Terrain, services.Settings.Conditions);
+        _windsock = FieldBuilder.Build(this, _session.Terrain, services.Settings.Conditions).Windsock;
         _visual = new AircraftVisual();
         AddChild(_visual);
         _visual.Build(AircraftMeshBuilder.Build(definition, _session.Aircraft.Aero.Segments));
@@ -60,16 +60,9 @@ public partial class FlightScene : Node3D
         audio.Init(_session, SoundSpecLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId)), () => services.Settings.Audio);
         AddChild(new FieldAmbience());
 
-        if (mode == StartMode.GroundCheck)
-        {
-            _rig = new OrbitRig(services.Settings.FovDeg);
-        }
-        else
-        {
-            var pilot = ClubField.PilotPosition;
-            var eye = new Vec3(pilot.X, pilot.Y, _session.Terrain.Height(pilot.X, pilot.Y) + ClubField.EyeHeight);
-            _rig = new LineOfSightRig(eye, services.Settings.FovDeg, services.Settings.AutoZoom);
-        }
+        var pilot = ClubField.PilotPosition;
+        var eye = new Vec3(pilot.X, pilot.Y, _session.Terrain.Height(pilot.X, pilot.Y) + ClubField.EyeHeight);
+        _rig = new LineOfSightRig(eye, services.Settings.FovDeg, services.Settings.AutoZoom);
         _rig.Reset(Context());
         _camera = new Camera3D { Current = true, Near = 0.1f, Far = 4000f, Fov = (float)services.Settings.FovDeg };
         AddChild(_camera);
@@ -79,7 +72,7 @@ public partial class FlightScene : Node3D
         AddChild(_crash);
         _diagnostics = new DiagnosticsOverlay();
         AddChild(_diagnostics);
-        if (services.Settings.RecordFlights && script is null && mode == StartMode.Normal) StartRecording(aircraftId, definition);
+        if (services.Settings.RecordFlights && script is null) StartRecording(aircraftId, definition);
     }
 
     public override void _Process(double delta)

@@ -1,4 +1,5 @@
 using SimLab.App.Localization;
+using SimLab.App.Settings;
 using SimLab.App.Ui;
 using SimLab.App.Visual;
 using SimLab.Flight.Ground;
@@ -58,5 +59,35 @@ public class TranslationTests
         foreach (var k in new[] { "CHECK_STEER_LEFT", "CHECK_STEER_RIGHT", "CHECK_NO_SURFACE", "CHECK_WRONG_WAY",
                      "RADIO_REVERSE", "RADIO_REVERSE_TITLE", "RADIO_PREVIEW_TITLE", "RADIO_PREVIEW_AIRCRAFT" })
             Assert.Contains(k, keys);
+    }
+
+    [Fact]
+    public void Every_condition_preset_has_a_name()
+    {
+        var keys = Shipped().Keys.ToHashSet();
+        foreach (var p in Enum.GetValues<WindPreset>()) Assert.Contains(ConditionPresets.Key(p), keys);
+        foreach (var p in Enum.GetValues<TimePreset>()) Assert.Contains(ConditionPresets.Key(p), keys);
+    }
+
+    [Fact]
+    public void Every_key_used_by_the_main_menu_exists()
+    {
+        var keys = Shipped().Keys.ToHashSet();
+        foreach (var k in new[] { "APP_TITLE", "MENU_FLY", "MENU_RADIO", "MENU_SOUND", "MENU_SETTINGS", "MENU_QUIT",
+                     "MENU_AIRCRAFT", "MENU_FIELD", "MENU_WIND", "MENU_TIME", "MENU_CUSTOMIZE", "MENU_CUSTOMIZE_HIDE",
+                     "MENU_LIVE_HINT", "COND_WIND_SPEED", "COND_WIND_DIR", "COND_TURBULENCE", "COND_SUN_AZIMUTH",
+                     "COND_SUN_ELEVATION", "SET_FULLSCREEN" })
+            Assert.Contains(k, keys);
+        foreach (var field in SimLab.App.Field.FieldCatalog.All) Assert.Contains(field.NameKey, keys);
+    }
+
+    [Fact]
+    public void Every_aircraft_sheet_key_exists()
+    {
+        var keys = Shipped().Keys.ToHashSet();
+        foreach (var line in AircraftSheet.From(TestData.Aircraft("trainer")).Lines(k => k)) Assert.Contains(line.Key, keys);
+        Assert.Contains("SHEET_GLIDER", keys);
+        foreach (var k in Enum.GetValues<TakeoffKind>()) Assert.Contains(AircraftSheet.TakeoffKey(k), keys);
+        foreach (var c in Enum.GetValues<SheetChannel>()) Assert.Contains(AircraftSheet.ChannelKey(c), keys);
     }
 }
