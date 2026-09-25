@@ -13,6 +13,13 @@ COND_WIND_DIR,Vent venant de (°),Wind from (°)
 COND_TURBULENCE,Turbulence,Turbulence
 COND_SUN_AZIMUTH,Soleil : azimut (°),Sun azimuth (°)
 COND_SUN_ELEVATION,Soleil : hauteur (°),Sun elevation (°)
+WIND_CALM,Calme,Calm
+WIND_BREEZE,Brise,Breeze
+WIND_WINDY,Venté,Windy
+WIND_GUSTY,Rafales,Gusty
+TIME_MORNING,Matin,Morning
+TIME_NOON,Midi,Noon
+TIME_EVENING,Soir,Evening
 BACK,Retour,Back
 RADIO_TITLE,Radio,Radio
 RADIO_NO_DEVICE,"Aucune radio détectée. Branchez la radio en USB et choisissez « USB Joystick (HID) » sur la radio.","No radio detected. Plug the radio in over USB and choose ""USB Joystick (HID)"" on the radio."

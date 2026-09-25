@@ -1,4 +1,5 @@
 using SimLab.App.Localization;
+using SimLab.App.Settings;
 using SimLab.App.Ui;
 using SimLab.App.Visual;
 using SimLab.Flight.Ground;
@@ -58,5 +59,13 @@ public class TranslationTests
         foreach (var k in new[] { "CHECK_STEER_LEFT", "CHECK_STEER_RIGHT", "CHECK_NO_SURFACE", "CHECK_WRONG_WAY",
                      "RADIO_REVERSE", "RADIO_REVERSE_TITLE", "RADIO_PREVIEW_TITLE", "RADIO_PREVIEW_AIRCRAFT" })
             Assert.Contains(k, keys);
+    }
+
+    [Fact]
+    public void Every_condition_preset_has_a_name()
+    {
+        var keys = Shipped().Keys.ToHashSet();
+        foreach (var p in Enum.GetValues<WindPreset>()) Assert.Contains(ConditionPresets.Key(p), keys);
+        foreach (var p in Enum.GetValues<TimePreset>()) Assert.Contains(ConditionPresets.Key(p), keys);
     }
 }
