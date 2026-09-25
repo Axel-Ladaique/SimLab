@@ -9,6 +9,7 @@ public class GroundHandlingTests
     [Theory]
     [InlineData("trainer")]
     [InlineData("sport")]
+    [InlineData("3d")]
     public void Rests_on_its_gear_without_drifting(string id)
     {
         var sim = Fleet.OnGround(id);

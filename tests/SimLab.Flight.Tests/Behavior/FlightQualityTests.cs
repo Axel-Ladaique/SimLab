@@ -38,6 +38,7 @@ public class FlightQualityTests
     [Theory]
     [InlineData("sport")]
     [InlineData("wing")]
+    [InlineData("3d")]
     public void Flies_hands_off_for_ten_seconds(string id)
     {
         var sim = Fleet.InFlight(id, 100, Fleet.Cruise(id).Airspeed);
@@ -85,6 +86,7 @@ public class FlightQualityTests
     [Theory]
     [InlineData("trainer")]
     [InlineData("sport")]
+    [InlineData("3d")]
     public void Dutch_roll_damps_after_a_rudder_pulse(string id)
     {
         double Run(bool pulse)

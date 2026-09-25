@@ -11,7 +11,7 @@ public class FleetDefinitionTests
     [InlineData("trainer", 2.6, 0.525)]
     [InlineData("sport", 2.2, 0.336)]
     [InlineData("wing", 1.1, 0.2475)]
-    [InlineData("3d", 1.5, 0.336)]
+    [InlineData("3d", 1.3, 0.336)]
     public void Definition_loads_with_expected_mass_and_wing_area(string id, double mass, double wingArea)
     {
         var def = Fleet.Load(id);

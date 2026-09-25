@@ -7,7 +7,7 @@ namespace SimLab.App.Tests.Visual;
 
 public class ReactiveAttitudeTests
 {
-    public static readonly TheoryData<string> Shipped = new() { "trainer", "sport", "wing" };
+    public static readonly TheoryData<string> Shipped = new() { "trainer", "sport", "wing", "3d" };
 
     static readonly double MaxBank = Angle.Rad(ReactiveAttitude.MaxBankDeg);
     static readonly double MaxPitch = Angle.Rad(ReactiveAttitude.MaxPitchDeg);
