@@ -3,6 +3,7 @@
   "description": "Swept foam flying wing with elevons and a pusher prop. Hand launch, belly landing.",
   "mass": 1.1,
   "cg": [0.31, 0, 0],
+  "fpvCamera": { "position": [0.04, 0, 0.03], "uptiltDeg": 25, "fovDeg": 120 },
   "inertia": { "roll": 0.05, "yaw": 0.08, "pitch": 0.03 },
   "surfaces": [
     { "name": "wing", "role": "wing", "root": [0.213, 0, 0], "span": 0.55, "rootChord": 0.30, "tipChord": 0.15,

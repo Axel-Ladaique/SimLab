@@ -13,19 +13,18 @@ Sub-project 1 (core) — headless libraries:
   keyboard fallback.
 - `aircraft/` — data-driven aircraft (trainer, sport, FPV wing). Values are estimates; see `docs/tuning-log.md`.
 
-- `src/SimLab.App` — testable game logic: club field and terrain, line-of-sight camera, procedural aircraft
-  meshes, input routing, flight session, settings, translations.
-- `game/` — Godot 4 (.NET) simulator: radio setup and calibration, club field, line-of-sight flying, HUD,
-  crash screen, French/English menus. See `docs/dev-setup.md` to build and run, and
-  `docs/manual-acceptance.md` for the pilot's checklist.
+- `src/SimLab.App` — testable game logic: club field and terrain, three camera views (ground line-of-sight, FPV,
+  chase), procedural aircraft meshes, input routing, flight session, settings, translations.
+- `game/` — Godot 4 (.NET) simulator: radio setup and calibration, club field, flying from the ground, FPV or
+  chase view (C key or a bound radio switch), HUD, crash screen, French/English menus. See `docs/dev-setup.md`
+  to build and run, and `docs/manual-acceptance.md` for the pilot's checklist.
 
-Next: VSPAERO/CFD import and telemetry replay (sub-project 2), FPV and chase cameras (sub-project 3),
-VTOL/drones (sub-project 4).
+Next: VSPAERO/CFD import and telemetry replay (sub-project 2), VTOL/drones (sub-project 4).
 
 ## Keyboard (without a radio)
 
 W/S (Z/S on AZERTY) throttle · arrows aileron/elevator (↓ = pull) · A/D (Q/D on AZERTY) rudder ·
-R reset · P pause · V wind on/off · F3 diagnostics · Esc menu.
+R reset · P pause · V wind on/off · C camera view · F3 diagnostics · Esc menu.
 
 ## Build and test
 

@@ -167,5 +167,16 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal("club", AppSettings.Load(path).LastField);
     }
 
+    [Fact]
+    public void Camera_view_is_saved_and_an_unknown_one_falls_back_to_ground()
+    {
+        var path = Path.Combine(_dir, "settings.json");
+        Assert.Equal(SimLab.App.Cameras.CameraView.Ground, new AppSettings().CameraView);
+        new AppSettings { CameraView = SimLab.App.Cameras.CameraView.Chase }.Save(path);
+        Assert.Equal(SimLab.App.Cameras.CameraView.Chase, AppSettings.Load(path).CameraView);
+        Assert.Equal(SimLab.App.Cameras.CameraView.Ground,
+            new AppSettings { CameraView = (SimLab.App.Cameras.CameraView)42 }.Sanitized().CameraView);
+    }
+
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SimLab.App.Cameras;
 using SimLab.App.Field;
 
 namespace SimLab.App.Settings;
@@ -16,6 +17,8 @@ public sealed record AppSettings
 
     public double FovDeg { get; init; } = 50;
     public bool AutoZoom { get; init; } = true;
+    /// <summary>Flight camera view, remembered from the last flight.</summary>
+    public CameraView CameraView { get; init; } = CameraView.Ground;
     public bool ShowFlightData { get; init; }
     public bool RecordFlights { get; init; } = true;
     public bool VSync { get; init; } = true;
@@ -50,6 +53,7 @@ public sealed record AppSettings
     {
         FovDeg = Math.Clamp(FovDeg, 10, 100),
         Language = Language is "fr" or "en" ? Language : "fr",
+        CameraView = Enum.IsDefined(CameraView) ? CameraView : CameraView.Ground,
         Conditions = Conditions ?? new FlightConditions(),
         Audio = (Audio ?? new AudioSettings()).Sanitized(),
         LastField = FieldCatalog.Find(LastField ?? "").Id,

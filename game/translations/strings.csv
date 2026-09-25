@@ -37,6 +37,7 @@ RADIO_MODE,Mode des manches,Stick mode
 RADIO_BIND_RESET,Interrupteur « reset »,Reset switch
 RADIO_BIND_PAUSE,Interrupteur « pause »,Pause switch
 RADIO_BIND_WIND,Interrupteur « vent »,Wind switch
+RADIO_BIND_CAMERA,Interrupteur « vue »,View switch
 RADIO_BIND_WAIT,Basculez l'interrupteur maintenant…,Flip the switch now…
 RADIO_BIND_DONE,Interrupteur assigné.,Switch assigned.
 RADIO_AXES,Voies brutes,Raw axes
@@ -82,7 +83,7 @@ HUD_THROTTLE,Gaz,Throttle
 HUD_BATTERY,Batterie,Battery
 HUD_TIMER,Chrono,Timer
 HUD_PAUSED,PAUSE,PAUSED
-HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind"
+HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent, C vue","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind, C view"
 HUD_LATENCY,Latence estimée,Estimated latency
 HUD_FPS,Images/s,FPS
 HUD_INPUT,Commande,Input

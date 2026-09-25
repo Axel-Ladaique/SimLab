@@ -51,6 +51,19 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Language switch fr ↔ en works immediately.
 - [ ] A CSV appears in the recordings folder after a flight (Settings → record flights).
 
+## Camera views
+- [ ] In flight, C cycles ground → FPV → chase → ground; the keyboard help line shows "C vue" / "C view".
+- [ ] Radio screen → "Interrupteur « vue »" binds a switch; in flight it cycles the views like C.
+- [ ] FPV: no part of the aircraft is seen (its shadow on the ground may be), the horizon rolls and pitches with
+  it; the wing's camera looks up about 25° (the horizon sits low in level flight at speed).
+- [ ] Chase: the aircraft is seen from behind and above, the horizon stays level through banks and loops, the
+  camera swings round smoothly in turns and never goes below the ground (land and taxi in chase view; near the
+  tree line the camera can pass through a tree canopy — only the ground is avoided).
+- [ ] R (or the radio reset switch) puts the camera straight back behind or on the aircraft, with no swing.
+- [ ] Leave the flight in chase view and start another: it starts in chase view.
+- [ ] In FPV the motor is steady, no Doppler; in chase the pitch no longer drops steadily; from the ground view
+  it still shifts as it flies by.
+
 ## Sound
 - [ ] Trainer on the runway, throttle at zero: only the field ambience is heard.
 - [ ] Sweep the throttle slowly to full and back: motor pitch rises and falls smoothly, no clicks or dropouts.

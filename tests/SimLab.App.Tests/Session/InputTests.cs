@@ -122,4 +122,15 @@ public class InputTests
         Assert.Equal(1 + 8 + 0.5 * Simulation.FixedStep * 1000, meter.AverageMs, 9);
         Assert.Equal(0, new LatencyMeter().AverageMs);
     }
+
+    [Fact]
+    public void C_key_asks_for_the_next_camera_once_per_press()
+    {
+        var router = new InputRouter(_ => null);
+        var c = new KeyboardCommands(false, false, false, NextCamera: true);
+        Assert.Equal(SwitchAction.NextCamera, Assert.Single(router.Update(0.016, [], default, c).Actions));
+        Assert.Empty(router.Update(0.016, [], default, c).Actions);
+        Assert.Empty(router.Update(0.016, [], default, default).Actions);
+        Assert.Equal(SwitchAction.NextCamera, Assert.Single(router.Update(0.016, [], default, c).Actions));
+    }
 }

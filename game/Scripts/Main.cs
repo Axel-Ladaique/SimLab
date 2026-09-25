@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Linq;
 using Godot;
 using SimLab.App.Audio;
+using SimLab.App.Cameras;
 using SimLab.App.Field;
 using SimLab.App.Session;
 using SimLab.App.Settings;
@@ -249,8 +250,18 @@ public partial class Main : Node
             _smokeAircraft = args[shot + 1];
             _smokeSeconds = double.Parse(args[shot + 2], CultureInfo.InvariantCulture);
             _smokeScreenshot = args[shot + 3];
-            if (StartFlight(_smokeAircraft, t => new ControlInputs(1, 0, t > 3.5 && t < 5 ? 0.25 : 0.05, 0)) && diagnostics)
-                ((FlightScene)_current!).Diagnostics.Shown = true;
+            if (StartFlight(_smokeAircraft, t => new ControlInputs(1, 0, t > 3.5 && t < 5 ? 0.25 : 0.05, 0)))
+            {
+                var scene = (FlightScene)_current!;
+                if (diagnostics) scene.Diagnostics.Shown = true;
+                if (ArgValue(args, "--view") is { } view)
+                {
+                    if (System.Enum.TryParse<CameraView>(view, true, out var parsed) && System.Enum.IsDefined(parsed))
+                        scene.ShowCamera(parsed);
+                    else
+                        GD.PushWarning($"Unknown --view value: {view}");
+                }
+            }
             return true;
         }
         return false;

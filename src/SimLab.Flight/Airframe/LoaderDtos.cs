@@ -17,6 +17,7 @@ internal sealed class AircraftDto
     public List<WheelDto> Gear { get; set; } = new();
     public List<HullDto> Hull { get; set; } = new();
     public CrashDto Crash { get; set; } = new();
+    public FpvCameraDto? FpvCamera { get; set; }
     public Dictionary<string, string> Provenance { get; set; } = new();
 }
 
@@ -156,4 +157,11 @@ internal sealed class PropellerDto
     public double[]? Cp { get; set; }
     public string? ApcFile { get; set; }
     public double ApcRpm { get; set; } = 8000;
+}
+
+internal sealed class FpvCameraDto
+{
+    public Vec3 Position { get; set; }
+    public double UptiltDeg { get; set; } = FpvCameraSpec.DefaultUptiltDeg;
+    public double FovDeg { get; set; } = FpvCameraSpec.DefaultHorizontalFovDeg;
 }

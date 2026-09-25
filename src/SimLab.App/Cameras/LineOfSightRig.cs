@@ -39,7 +39,7 @@ public sealed class LineOfSightRig : ICameraRig
         double k = 1 - Math.Exp(-Math.Max(dt, 0) / HeadTimeConstant);
         _look = (_look + (direction - _look) * k).Normalized();
         double fov = AutoZoom ? ZoomedFov(distance, ctx.AircraftSpan) : BaseFovDeg;
-        return new CameraPose(Eye, Eye + _look * Math.Max(distance, 1.0), fov);
+        return new CameraPose(Eye, Eye + _look * Math.Max(distance, 1.0), fov, Vec3.UnitZ);
     }
 
     /// <summary>FOV that shows the span at <see cref="TargetScreenFraction"/> of the screen, never narrower than base/<see cref="MaxZoomFactor"/>.</summary>

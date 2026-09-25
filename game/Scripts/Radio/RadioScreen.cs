@@ -94,7 +94,8 @@ public partial class RadioScreen : Control
         column.AddChild(Ui.Row(
             Ui.Button(Ui.T("RADIO_BIND_RESET"), () => StartCapture(SwitchAction.Reset)),
             Ui.Button(Ui.T("RADIO_BIND_PAUSE"), () => StartCapture(SwitchAction.Pause)),
-            Ui.Button(Ui.T("RADIO_BIND_WIND"), () => StartCapture(SwitchAction.ToggleWind))));
+            Ui.Button(Ui.T("RADIO_BIND_WIND"), () => StartCapture(SwitchAction.ToggleWind)),
+            Ui.Button(Ui.T("RADIO_BIND_CAMERA"), () => StartCapture(SwitchAction.NextCamera))));
         column.AddChild(Ui.Text(Ui.T("RADIO_HELP"), 16));
         column.AddChild(Ui.Button(Ui.T("BACK"), back));
         BuildControlCheck(columns);

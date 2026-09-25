@@ -23,6 +23,7 @@ public class LineOfSightRigTests
         var expected = (target - Eye).Normalized();
         Assert.True(Vec3.Dot(LookDirection(pose), expected) > 0.9999);
         Assert.Equal(50, pose.VerticalFovDeg);
+        Assert.Equal(Vec3.UnitZ, pose.Up);
     }
 
     [Fact]
