@@ -50,6 +50,9 @@ public partial class FlightScene : Node3D
         _visual = new AircraftVisual();
         AddChild(_visual);
         _visual.Build(AircraftMeshBuilder.Build(definition, _session.Aircraft.Aero.Segments));
+        // Place the visual (and therefore the audio node, its child) at the spawn point before the audio node is
+        // added, so its first Doppler-tracked position isn't the world origin (which would read as a spike).
+        _visual.UpdateFrom(_session.Aircraft, _session.DisplayState);
 
         AudioBuses.Apply(services.Settings);
         var audio = new AircraftAudio();

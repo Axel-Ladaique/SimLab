@@ -10,9 +10,11 @@ namespace SimLab.Game.Audio;
 public partial class AircraftAudio : Node3D
 {
     const int SampleRate = 44100;
-    const float BufferSeconds = 0.1f;
+    const float BufferSeconds = 0.05f;
     const float UnitSize = 12f;
     const float MaxDistance = 600f;
+    // Rendered and pushed to the generator in fixed-size chunks so steady-state _Process does no allocation.
+    const int ChunkFrames = 256;
 
     FlightSession _session = null!;
     AircraftSound _sound = null!;
@@ -25,7 +27,8 @@ public partial class AircraftAudio : Node3D
     readonly List<AudioStreamPlayer3D> _impactPlayers = [];
     int _nextImpact;
     readonly RandomNumberGenerator _rng = new();
-    float[] _scratch = [];
+    readonly float[] _chunkScratch = new float[ChunkFrames];
+    readonly Vector2[] _chunkStereo = new Vector2[ChunkFrames];
 
     /// <summary>Builds the node tree; playback only starts in <see cref="_Ready"/>, once this subtree is actually
     /// inside the scene tree (the caller adds this node to a still-detached parent before this returns).</summary>
@@ -91,7 +94,10 @@ public partial class AircraftAudio : Node3D
             Bus = AudioBuses.Aircraft,
             UnitSize = UnitSize,
             MaxDistance = MaxDistance,
-            DopplerTracking = AudioStreamPlayer3D.DopplerTrackingEnum.PhysicsStep,
+            // The aircraft visual (and this node, its child) is moved in _Process, not the physics step, so
+            // PhysicsStep would sample a stale transform at render rates above the physics rate, undershooting
+            // and jittering the Doppler velocity estimate.
+            DopplerTracking = AudioStreamPlayer3D.DopplerTrackingEnum.IdleStep,
             AttenuationFilterCutoffHz = 8000,
         };
         AddChild(p);
@@ -103,21 +109,21 @@ public partial class AircraftAudio : Node3D
         AudioBuses.SetAircraftMuted(_session.Paused);
         if (_session.Paused) return;
         var frame = _sound.Update(delta);
-        if (frame.Reset) _synth.Reset();
+        if (frame.Reset)
+        {
+            _synth.Reset();
+            _playback?.ClearBuffer(); // drop whatever pre-reset audio was already queued
+        }
 
         // Null under a driver with no real audio output (headless smoke tests use the dummy driver).
-        if (_playback is not null)
+        // Rendered in fixed-size chunks (see ChunkFrames) so no array is allocated per frame; EngineSynth ramps
+        // from its last sample to the target SynthParams on every Render call, so pushing the same target across
+        // several chunks in one _Process is correct (the parameters just haven't changed since the last chunk).
+        while (_playback is not null && _playback.GetFramesAvailable() >= ChunkFrames)
         {
-            int frames = _playback.GetFramesAvailable();
-            if (frames > 0)
-            {
-                if (_scratch.Length < frames) _scratch = new float[frames];
-                var span = _scratch.AsSpan(0, frames);
-                _synth.Render(span, frame.Synth);
-                var stereo = new Vector2[frames];
-                for (int i = 0; i < frames; i++) stereo[i] = new Vector2(span[i], span[i]);
-                _playback.PushBuffer(stereo);
-            }
+            _synth.Render(_chunkScratch, frame.Synth);
+            for (int i = 0; i < ChunkFrames; i++) _chunkStereo[i] = new Vector2(_chunkScratch[i], _chunkScratch[i]);
+            _playback.PushBuffer(_chunkStereo);
         }
 
         if (_sample is not null)
