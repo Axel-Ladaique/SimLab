@@ -17,14 +17,32 @@ public partial class FlightHud : CanvasLayer
     const int SmallSize = 15;
     static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
+    /// <summary>Idle time after which the cursor and the buttons hide.</summary>
+    const double MouseIdleSeconds = 2.5;
+
     Control _osd = null!;
     OsdHorizon _horizon = null!;
     OsdHomeArrow _homeArrow = null!;
     Label _home = null!, _heading = null!, _speed = null!, _height = null!, _vario = null!;
     Label _battery = null!, _throttle = null!, _timer = null!, _help = null!, _banner = null!;
 
+    System.Action _toggleHud = () => { };
+    System.Action _nextView = () => { };
+    bool _manageMouse;
+    HBoxContainer _buttons = null!;
+    Button _viewButton = null!;
+    double _mouseIdle = MouseIdleSeconds;
+
     /// <summary>The OSD's monospace font, with fallbacks for macOS, Windows and Linux.</summary>
     public static Font MonoFont() => new SystemFont { FontNames = ["Menlo", "Consolas", "DejaVu Sans Mono", "monospace"] };
+
+    /// <param name="manageMouse">False for scripted runs: they leave the cursor alone.</param>
+    public void Init(System.Action toggleHud, System.Action nextView, bool manageMouse)
+    {
+        _toggleHud = toggleHud;
+        _nextView = nextView;
+        _manageMouse = manageMouse;
+    }
 
     public override void _Ready()
     {
@@ -63,6 +81,40 @@ public partial class FlightHud : CanvasLayer
         _banner.OffsetBottom = -60;
         _banner.HorizontalAlignment = HorizontalAlignment.Center;
         AddChild(_banner);
+
+        // Outside _osd, so the buttons stay available when the OSD is off.
+        _viewButton = Ui.FlatButton("", () => _nextView());
+        _buttons = Ui.Row(Ui.FlatButton(Ui.T("HUD_BUTTON"), () => _toggleHud()), _viewButton);
+        _buttons.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+        _buttons.GrowHorizontal = Control.GrowDirection.Begin;
+        _buttons.OffsetRight = -20;
+        _buttons.OffsetTop = 20;
+        _buttons.Visible = false;
+        AddChild(_buttons);
+        if (_manageMouse) Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Hidden;
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        if (!_manageMouse || @event is not InputEventMouseMotion) return;
+        _mouseIdle = 0;
+        if (Godot.Input.MouseMode != Godot.Input.MouseModeEnum.Visible) Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
+        _buttons.Visible = true;
+    }
+
+    public override void _Process(double delta)
+    {
+        if (!_manageMouse || _mouseIdle >= MouseIdleSeconds) return;
+        _mouseIdle += delta;
+        if (_mouseIdle < MouseIdleSeconds) return;
+        _buttons.Visible = false;
+        Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Hidden;
+    }
+
+    // The menu and the other screens always get their cursor back.
+    public override void _ExitTree()
+    {
+        if (_manageMouse) Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
     }
 
     /// <summary>
@@ -95,6 +147,12 @@ public partial class FlightHud : CanvasLayer
     public void UpdateHud(FlightSession session, RouterOutput input, OsdData osd, bool shown, CameraView view)
     {
         _banner.Text = session.Paused ? Ui.T("HUD_PAUSED") : "";
+        _viewButton.Text = string.Format(Ui.T("HUD_VIEW_BUTTON"), Ui.T(view switch
+        {
+            CameraView.Fpv => "VIEW_FPV",
+            CameraView.Chase => "VIEW_CHASE",
+            _ => "VIEW_GROUND",
+        }));
         _osd.Visible = shown;
         if (!shown) return;
 

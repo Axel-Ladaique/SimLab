@@ -58,7 +58,7 @@ SET_SCREEN_HEIGHT,Hauteur de l'écran (cm),Screen height (cm)
 SET_VIEW_DISTANCE,Distance aux yeux (cm),Viewing distance (cm)
 SET_FOV_FROM_SCREEN,Calculer depuis l'écran,Compute from screen
 SET_AUTOZOOM,Zoom automatique limité,Limited auto-zoom
-SET_FLIGHT_DATA,Afficher les données de vol,Show flight data
+SET_FLIGHT_DATA,Afficher le HUD (H),Show the HUD (H)
 SET_RECORD,Enregistrer les vols (CSV),Record flights (CSV)
 SET_LANGUAGE,Langue,Language
 SET_VSYNC,Synchronisation verticale,Vertical sync
@@ -83,7 +83,8 @@ VIEW_GROUND,Sol,Ground
 VIEW_FPV,FPV,FPV
 VIEW_CHASE,3e pers.,Chase
 HUD_VIEW_BUTTON,Vue : {0},View: {0}
-HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent, C vue","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind, C view"
+HUD_BUTTON,HUD,HUD
+HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent, C vue, H HUD","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind, C view, H HUD"
 HUD_LATENCY,Latence estimée,Estimated latency
 HUD_FPS,Images/s,FPS
 HUD_INPUT,Commande,Input

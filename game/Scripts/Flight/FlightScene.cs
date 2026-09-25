@@ -85,6 +85,7 @@ public partial class FlightScene : Node3D
         _camera = new Camera3D { Current = true, Near = 0.1f, Far = 4000f, Fov = (float)services.Settings.FovDeg };
         AddChild(_camera);
         _hud = new FlightHud();
+        _hud.Init(ToggleHud, NextCamera, manageMouse: script is null);
         AddChild(_hud);
         _crash = new CrashOverlay();
         AddChild(_crash);
@@ -114,6 +115,14 @@ public partial class FlightScene : Node3D
     {
         _cameras.Select(view, Context());
         _retrackDoppler = true;
+    }
+
+    /// <summary>Shows or hides the OSD and remembers it (H key, HUD button). Scripted runs keep it on.</summary>
+    public void ToggleHud()
+    {
+        if (_script is not null) return;
+        _services.Settings = _services.Settings with { ShowFlightData = !_services.Settings.ShowFlightData };
+        _services.SaveSettings();
     }
 
     void RememberCamera()
@@ -172,6 +181,12 @@ public partial class FlightScene : Node3D
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (@event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.H })
+        {
+            GetViewport().SetInputAsHandled();
+            ToggleHud();
+            return;
+        }
         if (!@event.IsActionPressed("ui_cancel")) return;
         GetViewport().SetInputAsHandled();
         _exit();

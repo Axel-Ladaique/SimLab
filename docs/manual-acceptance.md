@@ -64,6 +64,20 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] In FPV the motor is steady, no Doppler; in chase the pitch no longer drops steadily; from the ground view
   it still shifts as it flies by.
 
+## HUD
+
+- [ ] The OSD shows speed (left), height and vario (right), the home arrow with the distance and the heading (top),
+  volts, amps and mAh (bottom left), throttle and timer (bottom right), in white outlined monospace figures.
+- [ ] In FPV the artificial horizon and pitch ladder follow roll and pitch (right bank: right end up; nose up:
+  horizon down); in the ground and chase views they are absent.
+- [ ] The home arrow points toward the pilot box (fly away and turn: it swings round); the distance grows.
+- [ ] H hides and shows the OSD; it stays as left in the next flight; the Settings check box "Afficher le HUD (H)"
+  shows the same state. PAUSE stays visible with the OSD off.
+- [ ] Moving the mouse shows the cursor and the "HUD" and "Vue : …" buttons at the top right; after 2.5 s still,
+  both hide. Clicking "HUD" toggles the OSD; clicking the view button cycles the views and its text follows.
+- [ ] Space, Enter, the arrows and the radio never press these buttons.
+- [ ] R resets the mAh to 0. Esc back to the menu: the cursor is there.
+
 ## Sound
 - [ ] Trainer on the runway, throttle at zero: only the field ambience is heard.
 - [ ] Sweep the throttle slowly to full and back: motor pitch rises and falls smoothly, no clicks or dropouts.

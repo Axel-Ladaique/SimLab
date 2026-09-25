@@ -178,5 +178,9 @@ public sealed class SettingsTests : IDisposable
             new AppSettings { CameraView = (SimLab.App.Cameras.CameraView)42 }.Sanitized().CameraView);
     }
 
+    [Fact]
+    public void The_hud_is_shown_by_default()
+        => Assert.True(new AppSettings().ShowFlightData);
+
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 }
