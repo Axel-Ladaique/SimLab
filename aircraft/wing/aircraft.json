@@ -12,9 +12,9 @@
   ],
   "controls": [
     { "name": "elevonRight", "surface": "wing", "side": "right", "chordFraction": 0.22, "spanStart": 0.15, "spanEnd": 0.95,
-      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": -0.6, "elevator": -1 } },
+      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": -0.75, "elevator": -1 } },
     { "name": "elevonLeft", "surface": "wing", "side": "left", "chordFraction": 0.22, "spanStart": 0.15, "spanEnd": 0.95,
-      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": 0.6, "elevator": -1 } }
+      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": 0.75, "elevator": -1 } }
   ],
   "bodies": [ { "name": "pod", "position": [0.27, 0, 0], "cdA": [0.004, 0.012, 0.02] } ],
   "power": "power.json",
