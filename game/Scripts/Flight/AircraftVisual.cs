@@ -33,12 +33,17 @@ public partial class AircraftVisual : Node3D
         }
     }
 
-    public void UpdateFrom(Aircraft aircraft, RigidBodyState display)
+    public void UpdateFrom(Aircraft aircraft, RigidBodyState display) =>
+        UpdateFrom(aircraft, display, aircraft.Power?.Telemetry.Rpm ?? 0);
+
+    /// <param name="propRpm">Propeller speed to show (the disk appears above 200 rpm), for views where the power
+    /// plant does not run.</param>
+    public void UpdateFrom(Aircraft aircraft, RigidBodyState display, double propRpm)
     {
         Transform = GodotConvert.BodyTransform(display.Position, display.Orientation);
         foreach (var (pivot, axis, index) in _controls)
             pivot.Basis = new Basis(axis, (float)aircraft.Deflections[index]);
-        if (_propeller is not null) _propeller.Visible = (aircraft.Power?.Telemetry.Rpm ?? 0) > 200;
+        if (_propeller is not null) _propeller.Visible = propRpm > 200;
     }
 
     /// <summary>Preview helper: shows every control surface at the same deflection (rad, positive = trailing edge down).</summary>
