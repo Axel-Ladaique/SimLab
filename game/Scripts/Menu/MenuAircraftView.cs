@@ -34,9 +34,10 @@ public partial class MenuAircraftView : ControlPreview
 
     /// <summary>Rest heading: nose toward the camera (which looks north) and to its left, into the picture.</summary>
     const double HeadingDeg = 205;
-    /// <summary>Where the aircraft flies in place (world ENU): north-west of the pilot box and a few metres up, with
-    /// the runway behind it as the camera sees it.</summary>
-    static readonly Vec3 Origin = new(-6, -12, 4);
+    /// <summary>Where the aircraft flies in place (world ENU): south-east of the pilot box, some 18 m south of the
+    /// windsock and a few metres up. The camera, south of it and looking north, sees the windsock just left of the
+    /// aircraft (right of the menu panel), then the runway and the tree line beyond.</summary>
+    static readonly Vec3 Origin = new(20, -46, 4);
     const float FovDeg = 40f;
     /// <summary>Camera slightly above the aircraft: a banked wing is not seen edge-on and the horizon sits in the
     /// upper part of the image.</summary>
