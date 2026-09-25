@@ -28,15 +28,13 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Personnaliser shows the five sliders; moving one off a preset un-presses its chip; moving it back onto the
   preset presses it again. The values persist after a restart.
 - [ ] Sticks centred and throttle closed: the aircraft is level and still, the propeller disk hidden, only the field ambience is heard.
-- [ ] The field ambience (birds, wind) plays on the home screen; the motor is clearly quieter than in flight and the Ambience volume of the sound screen applies.
+- [ ] The field ambience (birds, wind) plays on the home screen; the motor is never heard there, even at full throttle, and the Ambience volume of the sound screen applies.
 - [ ] For each aircraft: right aileron banks it right (about 15°), pulling the elevator stick raises the nose, right
-  rudder swings the nose right (trainer, sport; the wing has no rudder), throttle spins the propeller, plays the
-  motor and creeps the aircraft forward; all come back smoothly.
+  rudder swings the nose right (trainer, sport; the wing has no rudder), throttle spins the propeller (silently)
+  and creeps the aircraft forward; all come back smoothly.
 - [ ] Tick "Inverser" on the rudder in the radio screen, come back: right rudder now yaws the nose left. Untick it.
 - [ ] The keyboard works when no radio is connected (arrows, A/D; W/S for the throttle on QWERTY, Z/S on AZERTY),
   and the arrows never change a chip or a slider.
-- [ ] Leaving the menu (Fly, Radio, Sound, Settings) or quitting stops the motor sound at once; the sound-screen
-  volumes (Master, Aircraft, Propeller, Motor) apply to it.
 - [ ] Fly starts the flight with the shown aircraft; Radio, Sound, Settings, Quit and a flight-start error message
   (shown at the top of the panel) all work.
 

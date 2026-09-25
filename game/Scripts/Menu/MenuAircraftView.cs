@@ -9,7 +9,6 @@ using SimLab.Flight.Atmosphere;
 using SimLab.Flight.Controls;
 using SimLab.Flight.Dynamics;
 using SimLab.Flight.Geometry;
-using SimLab.Game.Audio;
 using SimLab.Game.Radio;
 using SimLab.Game.World;
 
@@ -20,18 +19,12 @@ namespace SimLab.Game.Menu;
 /// conditions) with the selected aircraft flying in place in front of the camera, framed right of the menu panel.
 /// Its surfaces follow the radio or keyboard through the aircraft's own mixing and servos (like the radio screen's
 /// <see cref="ControlPreview"/>), it banks, pitches, yaws and creeps forward within small limits in the direction its
-/// control moments and thrust give (<see cref="ReactiveAttitude"/>), and it plays its synthesized motor voice at the
-/// static run-up rpm of the throttle (<see cref="StaticRunUp"/>). The sun and the windsock follow the conditions live.
+/// control moments and thrust give (<see cref="ReactiveAttitude"/>), and its propeller spins at the static run-up rpm
+/// of the throttle (<see cref="StaticRunUp"/>). The motor is not heard here: the home screen only plays the field
+/// ambience. The sun and the windsock follow the conditions live.
 /// </summary>
 public partial class MenuAircraftView : ControlPreview
 {
-    const int SampleRate = 44100;
-    // Same generator buffer as the flight and sound-screen voices (rounded up by Godot to 2048 frames).
-    const float BufferSeconds = 0.04f;
-
-    /// <summary>The run-up voice is a backdrop on the home screen, well below its flight level.</summary>
-    const float VoiceVolumeDb = -9f;
-
     /// <summary>Rest heading: nose toward the camera (which looks north) and to its left, into the picture.</summary>
     const double HeadingDeg = 205;
     /// <summary>Where the aircraft flies in place (world ENU): south-east of the pilot box, some 18 m south of the
@@ -47,38 +40,21 @@ public partial class MenuAircraftView : ControlPreview
     /// <summary>Horizontal place of the aircraft in the image, −1 left edge to 1 right edge: right of the menu panel.</summary>
     const float ScreenX = 0.45f;
 
-    readonly EngineSynth _synth = new(SampleRate);
-    readonly GeneratorFeeder _feeder;
-    System.Func<AudioSettings> _audio = () => new AudioSettings();
-    AudioStreamPlayer _voice = null!;
-    AudioStreamGeneratorPlayback? _playback;
     SoundSpec _spec = SoundSpec.Default;
     ReactiveAttitude? _reaction;
     StaticRunUp? _runUp;
-    double _throttle;
     double _maxForward;
     FlightConditions _conditions = new();
     FieldNodes? _field;
 
-    public MenuAircraftView() => _feeder = new GeneratorFeeder(_synth);
-
-    /// <param name="audio">Read every frame, so the sound screen's mix applies here too.</param>
     /// <param name="conditions">Sun and wind of the field when the menu opens.</param>
-    public void Init(System.Func<AudioSettings> audio, FlightConditions conditions)
+    public void Init(FlightConditions conditions)
     {
         _conditions = conditions; // read by BuildScenery, which the base Init calls
         Init(Vector2.Zero); // covers the parent's area in physical pixels: see FitToPixels
-        _audio = audio;
         Camera.Fov = FovDeg;
         Camera.Near = 0.1f;
         Camera.Far = 4000f;
-        _voice = new AudioStreamPlayer
-        {
-            Stream = new AudioStreamGenerator { MixRate = SampleRate, BufferLength = BufferSeconds },
-            Bus = AudioBuses.Aircraft,
-            VolumeDb = VoiceVolumeDb,
-        };
-        AddChild(_voice);
     }
 
     protected override void BuildScenery(SubViewport scene)
@@ -131,13 +107,10 @@ public partial class MenuAircraftView : ControlPreview
         _maxForward = System.Math.Min(ReactiveAttitude.DefaultMaxForward, HullSize);
         _reaction = new ReactiveAttitude(definition, _maxForward);
         _runUp = definition.Power is { } power ? new StaticRunUp(power, _spec) : null;
-        _throttle = 0;
-        _synth.Reset();
     }
 
     protected override RigidBodyState DisplayState(double dt, in ControlInputs inputs)
     {
-        _throttle = inputs.Throttle;
         if (_reaction is null || Aircraft is null) return ReactiveAttitude.Pose(default, Origin, Angle.Rad(HeadingDeg));
         _reaction.Step(dt, Aircraft.Deflections, inputs.Throttle);
         return ReactiveAttitude.Pose(_reaction.Current, Origin, Angle.Rad(HeadingDeg));
@@ -165,28 +138,5 @@ public partial class MenuAircraftView : ControlPreview
         Camera.HOffset = -ScreenX * distance * tanHalf * aspect;
     }
 
-    public override void _Process(double delta)
-    {
-        FitToPixels();
-        if (_playback is null)
-        {
-            // Silent until the throttle first opens: no voice runs while the menu is only browsed. Nothing is heard
-            // under `--headless` (dummy driver), and a playback started there is reported leaked at exit.
-            if (_throttle <= 0 || _runUp is null || AudioBuses.Headless) return;
-            _voice.Play();
-            _playback = (AudioStreamGeneratorPlayback)_voice.GetStreamPlayback();
-        }
-        _synth.Mix = VoiceMix.From(_audio());
-        _feeder.Push(_playback, _runUp?.Synth(_throttle) ?? SynthParams.Silent);
-    }
-
-    // The generated voice never ends on its own: stop it before the tree tears down, or Godot reports its playback
-    // object as leaked at exit.
-    public override void _ExitTree()
-    {
-        _voice.Stop();
-        _playback?.Dispose();
-        _playback = null;
-        _voice.Stream = null;
-    }
+    public override void _Process(double delta) => FitToPixels();
 }

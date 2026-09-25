@@ -48,7 +48,7 @@ public partial class MainMenu : Control
         SetAnchorsPreset(LayoutPreset.FullRect);
 
         _view = new MenuAircraftView();
-        _view.Init(() => _services.Settings.Audio, services.Settings.Conditions);
+        _view.Init(services.Settings.Conditions);
         AddChild(_view);
         AddChild(new FieldAmbience());
 
