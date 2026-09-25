@@ -71,6 +71,9 @@ public class AircraftSoundTests
         session.Tick(1.0 / 60, ControlInputs.Neutral);
         var f = sound.Update(1.0 / 60);
         Assert.True(f.Synth.PropGain < 0.05, $"{f.Synth.PropGain}");
+        Assert.True(f.Reset, "the frame right after a reset must report Reset");
+        session.Tick(1.0 / 60, ControlInputs.Neutral);
+        Assert.False(sound.Update(1.0 / 60).Reset, "Reset must not stay set on later frames");
 
         var first = ImpactsAfterDrop(session, sound);
         Assert.Equal(1, first.Count(k => k == ImpactKind.Crash));

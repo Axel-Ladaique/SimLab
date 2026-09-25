@@ -38,6 +38,7 @@ public static class OfflineAudio
         {
             session.Tick(FrameDt, script(session.Simulation.Time));
             var frame = sound.Update(FrameDt);
+            if (frame.Reset) synth.Reset();
             produced += FrameDt * sampleRate;
             int count = (int)Math.Round(produced) - output.Count;
             var buffer = new float[count];
