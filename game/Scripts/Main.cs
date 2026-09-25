@@ -43,13 +43,20 @@ public partial class Main : Node
     public void ShowMenu(string? error)
     {
         var menu = new MainMenu();
-        menu.Init(_services, id => StartFlight(id), id => StartFlight(id, null, StartMode.GroundCheck), ShowRadio, ShowSettings, () => GetTree().Quit(), error);
+        menu.Init(_services, id => StartFlight(id), id => StartFlight(id, null, StartMode.GroundCheck), ShowRadio, ShowSound, ShowSettings, () => GetTree().Quit(), error);
         Switch(menu);
     }
 
     public void ShowRadio()
     {
         var screen = new RadioScreen();
+        screen.Init(_services, ShowMenu);
+        Switch(screen);
+    }
+
+    public void ShowSound()
+    {
+        var screen = new SoundScreen();
         screen.Init(_services, ShowMenu);
         Switch(screen);
     }
@@ -145,6 +152,12 @@ public partial class Main : Node
         {
             ShowSettings();
             CaptureAfterFrames(20, settingsShot);
+            return true;
+        }
+        if (ArgValue(args, "--screenshot-sound") is { } soundShot)
+        {
+            ShowSound();
+            CaptureAfterFrames(20, soundShot);
             return true;
         }
         if (ArgValue(args, "--screenshot-field") is { } fieldShot)

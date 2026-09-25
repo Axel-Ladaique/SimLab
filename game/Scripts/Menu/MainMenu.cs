@@ -6,7 +6,7 @@ namespace SimLab.Game.Menu;
 
 public partial class MainMenu : Control
 {
-    public void Init(Services services, System.Action<string> fly, System.Action<string> groundCheck, System.Action radio, System.Action settings, System.Action quit, string? flightError = null)
+    public void Init(Services services, System.Action<string> fly, System.Action<string> groundCheck, System.Action radio, System.Action sound, System.Action settings, System.Action quit, string? flightError = null)
     {
         var column = Ui.Screen(this, Ui.T("APP_TITLE"));
         if (flightError is not null)
@@ -71,6 +71,7 @@ public partial class MainMenu : Control
                 groundCheck(id);
             }),
             Ui.Button(Ui.T("MENU_RADIO"), radio),
+            Ui.Button(Ui.T("MENU_SOUND"), sound),
             Ui.Button(Ui.T("MENU_SETTINGS"), settings),
             Ui.Button(Ui.T("MENU_QUIT"), quit)));
     }

@@ -3,6 +3,7 @@ APP_TITLE,SimLab — simulateur de vol RC,SimLab — RC flight simulator
 MENU_FLY,Voler,Fly
 MENU_GROUND_CHECK,Contrôle au sol,Ground check
 MENU_RADIO,Radio,Radio
+MENU_SOUND,Son,Sound
 MENU_SETTINGS,Réglages,Settings
 MENU_QUIT,Quitter,Quit
 MENU_AIRCRAFT,Avion,Aircraft
@@ -49,9 +50,17 @@ SET_FLIGHT_DATA,Afficher les données de vol,Show flight data
 SET_RECORD,Enregistrer les vols (CSV),Record flights (CSV)
 SET_LANGUAGE,Langue,Language
 SET_VSYNC,Synchronisation verticale,Vertical sync
-SET_VOLUME_MASTER,Volume général,Master volume
-SET_VOLUME_AIRCRAFT,Volume avion,Aircraft volume
-SET_VOLUME_AMBIENCE,Volume ambiance,Ambience volume
+SND_TITLE,Son,Sound
+SND_MASTER,Volume général,Master volume
+SND_AIRCRAFT,Volume avion,Aircraft volume
+SND_PROPELLER,Volume hélice,Propeller volume
+SND_MOTOR,Volume moteur,Motor volume
+SND_WIND,Volume vent,Wind volume
+SND_ROLLING,Volume roulement,Rolling volume
+SND_IMPACTS,Volume impacts,Impacts volume
+SND_AMBIENCE,Volume ambiance,Ambience volume
+SND_LISTEN,Écouter,Listen
+SND_STOP,Arrêter,Stop
 HUD_AIRSPEED,Vitesse,Airspeed
 HUD_ALTITUDE,Hauteur,Height
 HUD_THROTTLE,Gaz,Throttle

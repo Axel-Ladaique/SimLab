@@ -57,7 +57,7 @@ public partial class FlightScene : Node3D
         AudioBuses.Apply(services.Settings);
         var audio = new AircraftAudio();
         _visual.AddChild(audio);
-        audio.Init(_session, SoundSpecLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId)));
+        audio.Init(_session, SoundSpecLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId)), () => services.Settings.Audio);
         AddChild(new FieldAmbience());
 
         if (mode == StartMode.GroundCheck)

@@ -30,9 +30,9 @@ public static class AudioBuses
     public static void Apply(AppSettings s)
     {
         Ensure();
-        Set("Master", s.MasterVolume);
-        Set(Aircraft, s.AircraftVolume);
-        Set(Ambience, s.AmbienceVolume);
+        Set("Master", s.Audio.Master);
+        Set(Aircraft, s.Audio.Aircraft);
+        Set(Ambience, s.Audio.Ambience);
     }
 
     public static void SetAircraftMuted(bool muted)

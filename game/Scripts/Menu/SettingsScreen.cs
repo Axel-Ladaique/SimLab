@@ -1,7 +1,6 @@
 using Godot;
 using SimLab.App.Cameras;
 using SimLab.App.Settings;
-using SimLab.Game.Audio;
 
 namespace SimLab.Game.Menu;
 
@@ -37,22 +36,6 @@ public partial class SettingsScreen : Control
             Change(x => x with { VSync = v });
             DisplaySettings.Apply(services.Settings);
         }));
-
-        column.AddChild(Ui.Slider(Ui.T("SET_VOLUME_MASTER"), 0, 1, 0.05, s.MasterVolume, v =>
-        {
-            Change(x => x with { MasterVolume = v });
-            AudioBuses.Apply(services.Settings);
-        }, "0.00"));
-        column.AddChild(Ui.Slider(Ui.T("SET_VOLUME_AIRCRAFT"), 0, 1, 0.05, s.AircraftVolume, v =>
-        {
-            Change(x => x with { AircraftVolume = v });
-            AudioBuses.Apply(services.Settings);
-        }, "0.00"));
-        column.AddChild(Ui.Slider(Ui.T("SET_VOLUME_AMBIENCE"), 0, 1, 0.05, s.AmbienceVolume, v =>
-        {
-            Change(x => x with { AmbienceVolume = v });
-            AudioBuses.Apply(services.Settings);
-        }, "0.00"));
 
         var language = new OptionButton();
         language.AddItem("Français", 0);

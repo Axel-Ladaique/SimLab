@@ -38,7 +38,16 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Cut the motor at altitude and glide: wind noise remains and rises when diving.
 - [ ] Taxi on the grass: rolling noise follows ground speed. A firm landing gives a thump; a crash gives a louder hit.
 - [ ] Pause: aircraft sound stops; the ambience continues. Resume and reset behave.
-- [ ] Settings: the three volume sliders act immediately and persist after a restart.
+
+## Sound screen
+- [ ] Main menu → Son/Sound opens a dedicated screen with 8 sliders (Master, Aircraft, Propeller, Motor, Wind,
+  Rolling, Impacts, Field ambience) and a Listen/Écouter toggle.
+- [ ] Listen plays a 12 s loop for the last selected aircraft: idle, a full-power sweep, an idle-down, a wind pass,
+  a rolling pass and one impact.
+- [ ] Each slider audibly changes its sound both in the Listen preview and in flight (Propeller/Motor/Wind/Rolling
+  change the synthesized voices; Impacts changes bounce/crash loudness; Master/Aircraft/Ambience change the buses).
+- [ ] Leaving the screen (Back or the menu) stops the preview immediately.
+- [ ] All 8 values persist after restarting the app.
 
 ## Ground check
 - [ ] Main menu → pick the trainer → Ground check: the aircraft sits on the runway, the camera circles it.
