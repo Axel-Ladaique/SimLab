@@ -89,7 +89,7 @@ internal static class Hover
     /// horizontal drift (0.1 rad per m/s), the roll about the thrust axis is held at its starting value, and the throttle
     /// holds the altitude. Reports the largest nose tilt from vertical and roll excursion over <paramref name="seconds"/>.
     /// </summary>
-    public static Result Fly(AircraftDefinition def, double seconds, Action<string>? log = null)
+    public static Result Fly(AircraftDefinition def, double seconds, bool holdTrim = true, Action<string>? log = null)
     {
         const double Wn = 6, Zeta = 0.8, LeanGain = 0.1, MaxLean = 8 * Math.PI / 180;
         var authority = StaticAuthority(def);
@@ -128,7 +128,7 @@ internal static class Hover
             var moment = inertia * accel;
             // Aileron + rolls right (−x), elevator + pitches up (+y), rudder + yaws right (−z): stick = (M − bias)/(moment per stick).
             // The pilot also holds the stick where the static hover needs it (trim against the bias).
-            var bias = authority.Bias;
+            var bias = holdTrim ? authority.Bias : Vec3.Zero;
             double ail = Math.Clamp((bias.X - moment.X) / ailAuth, -1, 1);
             double ele = Math.Clamp((moment.Y - bias.Y) / eleAuth, -1, 1);
             double rud = Math.Clamp((bias.Z - moment.Z) / rudAuth, -1, 1);

@@ -16,12 +16,18 @@ namespace SimLab.Flight.Tests.Behavior;
 /// </summary>
 public class HoverTests(ITestOutputHelper output)
 {
+    /// <summary>
+    /// The margin converges with the strip count (fractional control coverage): 1.59 at the shipped 12 strips, 1.53 at
+    /// 24, 1.52 at 48 and 96. The threshold, 1.45, is the converged value less the spread allowed by the swirl
+    /// calibration band (35–45% of the torque recovered gives about 1.47–1.59), not a design target: the sport is a
+    /// sport aerobat that can just hold a prop hang, unlike the 3D (3.8).
+    /// </summary>
     [Fact]
     public void Sport_full_aileron_outweighs_the_torque_roll_in_a_static_hover()
     {
         var a = Hover.StaticAuthority(Fleet.Load("sport"));
         output.WriteLine($"throttle {a.Throttle:F3}, bias {a.Bias}, aileron {a.Aileron}, margin {a.RollMargin:F2}");
-        Assert.True(a.RollMargin >= 1.5, $"full aileron {a.Aileron.X:F3} N·m vs roll bias {a.Bias.X:F3} N·m: margin {a.RollMargin:F2}");
+        Assert.True(a.RollMargin >= 1.45, $"full aileron {a.Aileron.X:F3} N·m vs roll bias {a.Bias.X:F3} N·m: margin {a.RollMargin:F2}");
     }
 
     /// <summary>
@@ -55,13 +61,22 @@ public class HoverTests(ITestOutputHelper output)
         return -Vec3.Dot(Moment(steady.Torque) - Moment(0), reaction) / steady.Torque;
     }
 
+    /// <summary>
+    /// Proves roll authority in a prop hang for a pilot who holds the static hover trim. Without the trim the PD pilot
+    /// holds the yaw bias (2° right thrust) with a steady tilt, drifts, and the fin in the slipstream weathercocks the
+    /// nose into the drift until the rudder saturates (realism backlog #12); that is not what this test covers.
+    /// </summary>
     [Fact]
-    public void Sport_holds_a_prop_hang_with_a_simple_attitude_pilot()
+    public void Sport_holds_a_prop_hang_on_roll_authority_with_the_hover_trim_held()
     {
         var r = Hover.Fly(Fleet.Load("sport"), 10);
         output.WriteLine(r.ToString());
+        output.WriteLine($"without the trim: {Hover.Fly(Fleet.Load("sport"), 10, holdTrim: false)}");
         Assert.True(r.Lost.Length == 0, r.ToString());
         Assert.True(r.MaxTiltDeg <= 15 && r.MaxRollDeg <= 15, r.ToString());
+        Assert.Equal(0, r.AileronSaturation);
+        Assert.Equal(0, r.RudderSaturation);
+        Assert.Equal(0, r.ElevatorSaturation);
     }
 
     [Fact]
