@@ -95,6 +95,15 @@ synthesized (filtered noise), not sampled.
 `AppSettings` gains `MasterVolume`, `AircraftVolume`, `AmbienceVolume` (0..1, defaults 0.8 / 1.0 / 0.5) and the
 settings screen gains three sliders. Old settings files without these fields load with the defaults.
 
+## 5b. Sound screen (added 2026-09-25 at the user's request)
+
+A "Sound" button in the main menu opens a dedicated screen; the three volume sliders move there from the settings
+screen. Sliders (0–100 %, applied live and saved immediately): Master, Aircraft (whole aircraft group), Propeller,
+Motor (brushless whine), Wind, Rolling, Impacts, Field ambience. Settings hold them in one `Audio` block
+(`AudioSettings`); Master/Aircraft/Ambience drive the buses, the four voice volumes scale the synthesizer's voices,
+Impacts scales the one-shots. A "Listen" toggle plays a looping preview of the last selected aircraft: idle → full
+power → idle sweep, a wind pass, a rolling pass and one impact, so the mix can be tuned without flying.
+
 ## 6. Testing
 
 - Unit tests (tests/SimLab.App.Tests/Audio): frequencies from RPM and `SoundSpec`; gains monotonic in thrust,
