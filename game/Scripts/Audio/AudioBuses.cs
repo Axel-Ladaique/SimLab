@@ -13,11 +13,13 @@ public static class AudioBuses
     /// pointless (nothing is heard) and, at least on 4.7, leaves Ogg Vorbis playback objects the engine reports
     /// as leaked resources at process exit because the driver never runs the mix thread that would finalize a
     /// stopped stream. Godot glue nodes skip `Play()` in that case.</summary>
+    static readonly string[] Names = [Aircraft, Ambience];
+
     public static bool Headless => DisplayServer.GetName() == "headless";
 
     public static void Ensure()
     {
-        foreach (var name in new[] { Aircraft, Ambience })
+        foreach (var name in Names)
         {
             if (AudioServer.GetBusIndex(name) >= 0) continue;
             AudioServer.AddBus();

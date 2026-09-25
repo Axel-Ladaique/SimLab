@@ -30,6 +30,7 @@ public partial class AircraftAudio : Node3D
     readonly List<AudioStreamPlayer3D> _impactPlayers = [];
     int _nextImpact;
     readonly RandomNumberGenerator _rng = new();
+    bool? _muted; // last state pushed to the Aircraft bus; null until the first _Process applies it
 
     public AircraftAudio() => _feeder = new GeneratorFeeder(_synth);
 
@@ -102,7 +103,11 @@ public partial class AircraftAudio : Node3D
 
     public override void _Process(double delta)
     {
-        AudioBuses.SetAircraftMuted(_session.Paused);
+        if (_muted != _session.Paused)
+        {
+            _muted = _session.Paused;
+            AudioBuses.SetAircraftMuted(_session.Paused);
+        }
         if (_session.Paused) return;
         _synth.Mix = VoiceMix.From(_audio());
         var frame = _sound.Update(delta);
