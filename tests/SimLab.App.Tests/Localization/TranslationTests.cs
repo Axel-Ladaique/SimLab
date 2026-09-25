@@ -68,4 +68,14 @@ public class TranslationTests
         foreach (var p in Enum.GetValues<WindPreset>()) Assert.Contains(ConditionPresets.Key(p), keys);
         foreach (var p in Enum.GetValues<TimePreset>()) Assert.Contains(ConditionPresets.Key(p), keys);
     }
+
+    [Fact]
+    public void Every_aircraft_sheet_key_exists()
+    {
+        var keys = Shipped().Keys.ToHashSet();
+        foreach (var line in AircraftSheet.From(TestData.Aircraft("trainer")).Lines(k => k)) Assert.Contains(line.Key, keys);
+        Assert.Contains("SHEET_GLIDER", keys);
+        foreach (var k in Enum.GetValues<TakeoffKind>()) Assert.Contains(AircraftSheet.TakeoffKey(k), keys);
+        foreach (var c in Enum.GetValues<SheetChannel>()) Assert.Contains(AircraftSheet.ChannelKey(c), keys);
+    }
 }

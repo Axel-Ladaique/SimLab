@@ -121,3 +121,20 @@ CHECK_EFFECT_YAWRIGHT,lacet à droite,yaw right
 CHECK_EFFECT_YAWLEFT,lacet à gauche,yaw left
 CHECK_NO_SURFACE,aucune gouverne,no control surface
 CHECK_WRONG_WAY,(SENS INVERSÉ !),(WRONG WAY!)
+SHEET_SPAN,Envergure,Span
+SHEET_LENGTH,Longueur,Length
+SHEET_MASS,Masse,Mass
+SHEET_WING_AREA,Surface alaire,Wing area
+SHEET_WING_LOADING,Charge alaire,Wing loading
+SHEET_POWER,Motorisation,Power
+SHEET_GLIDER,Planeur (sans moteur),Glider (no motor)
+SHEET_TAKEOFF,Décollage,Take-off
+SHEET_CHANNELS,Voies,Channels
+TAKEOFF_TRICYCLE,Roues (train tricycle),Wheels (tricycle gear)
+TAKEOFF_TAILDRAGGER,Roues (train classique),Wheels (tail-dragger)
+TAKEOFF_HAND,Lancé main,Hand launch
+CHANNEL_AILERONS,ailerons,ailerons
+CHANNEL_ELEVONS,élevons,elevons
+CHANNEL_ELEVATOR,profondeur,elevator
+CHANNEL_RUDDER,dérive,rudder
+CHANNEL_THROTTLE,gaz,throttle
