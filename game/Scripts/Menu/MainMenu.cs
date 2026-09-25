@@ -21,7 +21,7 @@ public partial class MainMenu : Control
     System.Action<long> _describe = null!;
     System.Collections.Generic.IReadOnlyList<AircraftEntry> _aircraft = [];
 
-    public void Init(Services services, System.Action<string> fly, System.Action<string> groundCheck, System.Action radio, System.Action sound, System.Action settings, System.Action quit, string? flightError = null)
+    public void Init(Services services, System.Action<string> fly, System.Action radio, System.Action sound, System.Action settings, System.Action quit, string? flightError = null)
     {
         _services = services;
         // The keyboard throttle (and the radio's switch state) start fresh on the menu, not where the last flight left them.
@@ -88,12 +88,6 @@ public partial class MainMenu : Control
             if (aircraft.Count == 0) return;
             SelectAndSave(out var id);
             fly(id);
-        }));
-        buttons.AddChild(Ui.Button(Ui.T("MENU_GROUND_CHECK"), () =>
-        {
-            if (aircraft.Count == 0) return;
-            SelectAndSave(out var id);
-            groundCheck(id);
         }));
         buttons.AddChild(Ui.Button(Ui.T("MENU_RADIO"), radio));
         buttons.AddChild(Ui.Button(Ui.T("MENU_SOUND"), sound));

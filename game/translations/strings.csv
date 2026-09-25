@@ -1,7 +1,6 @@
 keys,fr,en
 APP_TITLE,SimLab — simulateur de vol RC,SimLab — RC flight simulator
 MENU_FLY,Voler,Fly
-MENU_GROUND_CHECK,Contrôle au sol,Ground check
 MENU_RADIO,Radio,Radio
 MENU_SOUND,Son,Sound
 MENU_SETTINGS,Réglages,Settings
@@ -76,7 +75,6 @@ HUD_FPS,Images/s,FPS
 HUD_INPUT,Commande,Input
 HUD_KEYBOARD_SHORT,Clavier,Keyboard
 HUD_PHYSICS_STEPS,Pas physiques/image,Physics steps/frame
-GROUND_CHECK_HINT,"Contrôle au sol : vérifie les gouvernes et écoute le moteur. Échap pour revenir au menu.","Ground check: check the control surfaces and listen to the motor. Esc returns to the menu."
 WIND_ON,Vent activé,Wind on
 WIND_OFF,Vent coupé,Wind off
 CRASH_TITLE,Crash !,Crash!

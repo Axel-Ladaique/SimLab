@@ -13,9 +13,6 @@ using SimLab.Input;
 
 namespace SimLab.App.Session;
 
-/// <summary>How a flight begins: a normal takeoff, or a ground check at rest for control and sound checks.</summary>
-public enum StartMode { Normal, GroundCheck }
-
 /// <summary>One flight at the club field: owns the simulation and applies pilot actions (reset, pause, wind).</summary>
 public sealed class FlightSession : IDisposable
 {
@@ -27,11 +24,10 @@ public sealed class FlightSession : IDisposable
     readonly FlightEnvironment _windy;
     readonly FlightEnvironment _calm;
 
-    public FlightSession(AircraftDefinition definition, FlightConditions conditions, StartMode mode = StartMode.Normal)
+    public FlightSession(AircraftDefinition definition, FlightConditions conditions)
     {
         Definition = definition;
         Conditions = conditions;
-        Mode = mode;
         Terrain = new ClubFieldTerrain(TreePlanter.Plant(TreeSeed));
         _windy = new FlightEnvironment(Terrain, new WindField(conditions.ToWindSettings(), conditions.Seed));
         _calm = new FlightEnvironment(Terrain, new WindField(new WindSettings(), conditions.Seed));
@@ -43,7 +39,6 @@ public sealed class FlightSession : IDisposable
 
     public AircraftDefinition Definition { get; }
     public FlightConditions Conditions { get; }
-    public StartMode Mode { get; }
     public ClubFieldTerrain Terrain { get; }
     public Aircraft Aircraft { get; }
     public Simulation Simulation { get; private set; }
@@ -59,7 +54,7 @@ public sealed class FlightSession : IDisposable
 
     public RigidBodyState StartState()
     {
-        if (Definition.Wheels.Count > 0 || Mode == StartMode.GroundCheck)
+        if (Definition.Wheels.Count > 0)
         {
             double heading = ClubField.TakeoffHeading(Conditions.WindFromDeg);
             var (x, y) = ClubField.TakeoffPoint(heading);

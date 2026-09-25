@@ -32,9 +32,9 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Motion is smooth, with no jerks, and the aircraft stays in frame at full deflection of every stick.
 - [ ] Tick "Inverser" on the rudder in the radio screen, come back: right rudder now yaws the nose left. Untick it.
 - [ ] The keyboard works when no radio is connected (arrows, A/D; W/S for the throttle on QWERTY, Z/S on AZERTY).
-- [ ] Leaving the menu (Fly, Ground check, Radio, Sound, Settings) or quitting stops the motor sound at once; the
+- [ ] Leaving the menu (Fly, Radio, Sound, Settings) or quitting stops the motor sound at once; the
   sound-screen volumes (Master, Aircraft, Propeller, Motor) apply to it.
-- [ ] Fly, Ground check, Radio, Sound, Settings, Quit and a flight-start error message all work as before.
+- [ ] Fly, Radio, Sound, Settings, Quit and a flight-start error message all work as before.
 
 ## Flight (for each of trainer, sport, wing)
 - [ ] Right aileron rolls right, pulling the elevator stick pitches up, right rudder yaws right, throttle up accelerates.
@@ -67,10 +67,3 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
   change the synthesized voices; Impacts changes bounce/crash loudness; Master/Aircraft/Ambience change the buses).
 - [ ] Leaving the screen (Back or the menu) stops the preview immediately.
 - [ ] All 8 values persist after restarting the app.
-
-## Ground check
-- [ ] Main menu → pick the trainer → Ground check: the aircraft sits on the runway, the camera circles it.
-- [ ] Move each stick: the matching surfaces move the right way (rudder right → trailing edge right seen from behind)
-  and the on-screen readout agrees.
-- [ ] Advance the throttle: the motor spins up and is heard; the aircraft may creep forward.
-- [ ] Repeat with the sport and the wing (the wing rests on its belly and stays intact).
