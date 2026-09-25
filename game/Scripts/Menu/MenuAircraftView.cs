@@ -9,7 +9,6 @@ using SimLab.Flight.Atmosphere;
 using SimLab.Flight.Controls;
 using SimLab.Flight.Dynamics;
 using SimLab.Flight.Geometry;
-using SimLab.Flight.Terrain;
 using SimLab.Game.Audio;
 using SimLab.Game.Radio;
 using SimLab.Game.World;
@@ -38,7 +37,7 @@ public partial class MenuAircraftView : ControlPreview
     const float FovDeg = 40f;
     /// <summary>Camera slightly above the aircraft: a banked wing is not seen edge-on and the horizon sits in the
     /// upper part of the image.</summary>
-    const float CameraElevationDeg = 15f;
+    const float CameraElevationDeg = 10f;
     /// <summary>Fraction of the half-height of the image the aircraft's framing extent fills.</summary>
     const float FrameFill = 0.5f;
     /// <summary>Horizontal place of the aircraft in the image, −1 left edge to 1 right edge: right of the menu panel.</summary>
