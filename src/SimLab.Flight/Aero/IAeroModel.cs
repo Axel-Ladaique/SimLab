@@ -3,9 +3,6 @@ using SimLab.Flight.Geometry;
 
 namespace SimLab.Flight.Aero;
 
-/// <summary>Propeller slipstream: points behind the disk and within <see cref="Radius"/> of its axis get <see cref="Velocity"/> added along the axis.</summary>
-public readonly record struct PropWash(Vec3 PositionBody, Vec3 AxisBody, double Radius, double Velocity);
-
 /// <param name="AirVelocityBody">CG velocity relative to the air mass, body axes.</param>
 /// <param name="UpBody">World up expressed in body axes.</param>
 /// <param name="Deflections">Control-surface deflections in radians (positive = trailing edge down), indexed like the model's control list.</param>

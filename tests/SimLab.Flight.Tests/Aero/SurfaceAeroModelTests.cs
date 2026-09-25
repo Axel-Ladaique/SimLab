@@ -1,4 +1,5 @@
 using SimLab.Flight.Aero;
+using SimLab.Flight.Dynamics;
 using SimLab.Flight.Geometry;
 
 namespace SimLab.Flight.Tests.Aero;
@@ -84,11 +85,55 @@ public class SurfaceAeroModelTests
         Assert.Equal(0, model.Downwash);
     }
 
+    /// <summary>A 0.3 m prop 0.3 m ahead of the wing's quarter chord, 20 N of static thrust.</summary>
+    static PropWash WashAhead(double y = 0, double torque = 0, int spin = 1) =>
+        PropWash.Create(new Vec3(-0.3, y, 0), BodyAxes.Forward, 0.15, 20, torque, 0, 1.225, spin);
+
+    [Fact]
+    public void Centred_wash_on_a_symmetric_wing_gives_no_roll_or_yaw_without_swirl()
+    {
+        var load = WingOnly().Evaluate(Context(Flow(3, 5), wash: WashAhead()));
+        Assert.True(load.Force.Z > WingOnly().Evaluate(Context(Flow(3, 5))).Force.Z, "the wash adds lift");
+        Assert.Equal(0, load.Moment.X, 9);
+        Assert.Equal(0, load.Moment.Z, 9);
+    }
+
+    [Fact]
+    public void Wash_is_weighted_by_the_strips_overlap_so_a_small_shift_changes_the_load_smoothly()
+    {
+        // With a centre-point in/out test a whole strip enters or leaves the wash at once; with the overlap weighting,
+        // moving the prop 2 mm sideways changes the lift and the roll moment by a small fraction.
+        var model = WingOnly();
+        BodyLoad Load(double y) => model.Evaluate(Context(Flow(3, 5), wash: WashAhead(y)));
+        double lift = Load(0).Force.Z;
+        for (double y = -0.06; y <= 0.06; y += 0.002)
+        {
+            var a = Load(y);
+            var b = Load(y + 0.002);
+            Assert.True(Math.Abs(b.Force.Z - a.Force.Z) < 0.01 * lift, $"lift jump at y {y:F3}: {a.Force.Z:F3} → {b.Force.Z:F3}");
+            Assert.True(Math.Abs(b.Moment.X - a.Moment.X) < 0.002 * lift, $"roll jump at y {y:F3}: {a.Moment.X:F4} → {b.Moment.X:F4}");
+        }
+        Assert.Equal(Load(0.02).Moment.X, -Load(-0.02).Moment.X, 9);
+        Assert.True(Load(0.02).Moment.X > 0, "wash shifted right lifts the right wing: roll left (+x)");
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(-1)]
+    public void Swirl_on_a_symmetric_wing_opposes_the_motor_reaction_torque(int spin)
+    {
+        // The motor reaction torque on the airframe is −axis·spin·Q (forward axis, spin +1: +x, roll left).
+        var moment = WingOnly().Evaluate(Context(Vec3.Zero, wash: WashAhead(torque: 0.4, spin: spin))).Moment;
+        var reaction = BodyAxes.Forward * (-spin * 0.4);
+        Assert.True(Vec3.Dot(moment, reaction) < 0, $"swirl moment {moment} vs reaction torque {reaction}");
+        Assert.True(Math.Abs(moment.X) < 0.4, $"the wing cannot recover more than the torque: {moment.X:F3}");
+    }
+
     [Fact]
     public void Prop_wash_blows_over_a_stationary_tail()
     {
         var model = new SurfaceAeroModel([Stab], TestAirfoils.Map(), [Elevator], []);
-        var wash = new PropWash(new Vec3(0, 0, 0), BodyAxes.Forward, 0.5, 10);
+        var wash = PropWash.Create(Vec3.Zero, BodyAxes.Forward, 0.25, 20, 0, 0, 1.225, 1);
         var still = model.Evaluate(Context(Vec3.Zero, deflections: [-0.3]));
         var blown = model.Evaluate(Context(Vec3.Zero, deflections: [-0.3], wash: wash));
         Assert.Equal(Vec3.Zero, still.Force);

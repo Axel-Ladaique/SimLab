@@ -13,9 +13,6 @@ public sealed class Aircraft
 {
     public const double Gravity = 9.80665;
 
-    /// <summary>Fraction of the far-wake slipstream velocity seen by surfaces behind the prop.</summary>
-    public const double WashFactor = 0.8;
-
     readonly Servo[] _servos;
     readonly double[] _deflections;
     readonly double[] _steer;
@@ -107,7 +104,8 @@ public sealed class Aircraft
             var air = start.Orientation.InverseRotate(start.Velocity - wind);
             double axial = Vec3.Dot(air + Vec3.Cross(start.AngularVelocity, spec.Position), spec.ThrustAxis);
             telemetry = Power.Step(dt, input.Throttle, axial, density);
-            wash = new PropWash(spec.Position, spec.ThrustAxis, spec.Propeller.DiameterM / 2, telemetry.WashVelocity * WashFactor);
+            wash = PropWash.Create(spec.Position, spec.ThrustAxis, spec.Propeller.DiameterM / 2, telemetry.Thrust, telemetry.PropTorque,
+                axial, density, spec.SpinDirection);
         }
         double propOmega = Power?.Omega ?? 0;
         double weight = Definition.Mass.Mass * Gravity;
@@ -118,7 +116,7 @@ public sealed class Aircraft
             double height = s.Position.Z - env.Terrain.Height(s.Position.X, s.Position.Y);
             var up = s.Orientation.InverseRotate(Vec3.UnitZ);
             var load = Aero.Evaluate(new AeroContext(air, s.AngularVelocity, density, height, up, _deflections, wash));
-            if (Power is not null) load += PowerPlantLoads.Compute(Power.Spec, telemetry, propOmega, air, s.AngularVelocity);
+            if (Power is not null) load += PowerPlantLoads.Compute(Power.Spec, telemetry, propOmega, air, s.AngularVelocity, wash.InducedVelocity);
             load += Ground.Evaluate(s, env.Terrain, _steer);
             return new Wrench(s.Orientation.Rotate(load.Force) + new Vec3(0, 0, -weight), load.Moment);
         };

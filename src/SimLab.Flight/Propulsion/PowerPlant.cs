@@ -1,5 +1,12 @@
 namespace SimLab.Flight.Propulsion;
 
+/// <param name="MotorTorque">Electromagnetic torque on the rotor, ke·I (N·m).</param>
+/// <param name="PropTorque">Aerodynamic torque on the prop (N·m): the angular momentum flux given to the slipstream.</param>
+/// <param name="ReactionTorque">
+/// Torque the motor puts on the airframe (N·m, about the thrust axis, against the spin): the electromagnetic torque minus
+/// the rotor's bearing and iron-loss friction, which acts between rotor and stator and so stays inside the airframe.
+/// In steady state it equals <paramref name="PropTorque"/>.
+/// </param>
 public readonly record struct PowerTelemetry(
     double Rpm,
     double Thrust,
@@ -9,7 +16,8 @@ public readonly record struct PowerTelemetry(
     double BatteryVoltage,
     double StateOfCharge,
     double Duty,
-    double WashVelocity);
+    double PropTorque,
+    double ReactionTorque);
 
 public readonly record struct SteadyStateResult(double Omega, double Thrust, double Torque, double Current)
 {
@@ -47,19 +55,16 @@ public sealed class PowerPlant
         double current = MotorCurrent(duty, voc, Omega);
         var load = PropellerAero.Evaluate(Spec.Propeller, Omega, axialSpeed, density);
         double motorTorque = _ke * current;
+        double reactionTorque = motorTorque - Friction(Omega);
 
-        Omega = Math.Max(0, Omega + dt * (motorTorque - Friction(Omega) - load.Torque) / Spec.Motor.RotorInertia);
+        Omega = Math.Max(0, Omega + dt * (reactionTorque - load.Torque) / Spec.Motor.RotorInertia);
 
         double batteryCurrent = duty * current;
         StateOfCharge = Math.Max(0, StateOfCharge - batteryCurrent * dt / (Spec.Battery.CapacityAh * 3600));
 
-        double radius = Spec.Propeller.DiameterM / 2;
-        double v = Math.Max(axialSpeed, 0);
-        double wash = load.Thrust > 0 ? Math.Sqrt(v * v + 2 * load.Thrust / (density * Math.PI * radius * radius)) - v : 0;
-
         Telemetry = new PowerTelemetry(
             Omega * 60 / (2 * Math.PI), load.Thrust, motorTorque, current, batteryCurrent,
-            voc - batteryCurrent * Spec.Battery.InternalResistanceOhm, StateOfCharge, duty, wash);
+            voc - batteryCurrent * Spec.Battery.InternalResistanceOhm, StateOfCharge, duty, load.Torque, reactionTorque);
         return Telemetry;
     }
 

@@ -76,11 +76,20 @@ public class PropulsionTests
     [Fact]
     public void Loads_contain_thrust_and_a_roll_left_reaction_for_a_clockwise_prop()
     {
-        var t = default(PowerTelemetry) with { Thrust = 20, MotorTorque = 0.5 };
+        var t = default(PowerTelemetry) with { Thrust = 20, MotorTorque = 0.52, ReactionTorque = 0.5 };
         var load = PowerPlantLoads.Compute(TrainerLike(), t, 0, Vec3.Zero, Vec3.Zero);
         Assert.Equal(-20, load.Force.X, 12);
         Assert.Equal(0.5, load.Moment.X, 12);
         Assert.Equal(0, load.Moment.Z, 12);
+    }
+
+    [Fact]
+    public void Airframe_reaction_torque_is_the_prop_torque_once_spun_up()
+    {
+        // Bearing and iron-loss friction act between rotor and stator, so only the prop's torque reaches the airframe.
+        var t = SpunUp().Telemetry;
+        Assert.True(t.MotorTorque > t.ReactionTorque, "the electromagnetic torque also covers the friction");
+        Assert.Equal(t.PropTorque, t.ReactionTorque, 3);
     }
 
     [Fact]
@@ -90,6 +99,21 @@ public class PropulsionTests
         var level = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(-15, 0, 0), Vec3.Zero);
         var noseUp = PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(-15, 0, -3), Vec3.Zero);
         Assert.True(noseUp.Moment.Z > level.Moment.Z);
+    }
+
+    [Fact]
+    public void P_factor_in_a_hover_is_small_and_grows_smoothly_with_drift()
+    {
+        // The disk inflow angle is measured against the total axial flow through the disk (freestream + induced
+        // velocity): 1 m/s of sideways drift under a hovering prop (v_i ≈ 11 m/s) is a 5° inflow angle, not 90°.
+        var t = default(PowerTelemetry) with { Thrust = 20 };
+        const double inducedVelocity = 11;
+        double Yaw(double drift) => PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(0, 0, -drift), Vec3.Zero, inducedVelocity).Moment.Z -
+                                    PowerPlantLoads.Compute(TrainerLike(), t, 0, Vec3.Zero, Vec3.Zero, inducedVelocity).Moment.Z;
+        double full = 20 * 0.1 * TrainerLike().Propeller.DiameterM;   // the offset at a 90° inflow angle
+        Assert.InRange(Math.Abs(Yaw(1.0)), 0.05 * full, 0.12 * full);
+        Assert.True(Math.Abs(Yaw(1.01) - Yaw(0.99)) < 0.01 * full, "no jump at 1 m/s");
+        Assert.True(Math.Abs(Yaw(0.5)) < Math.Abs(Yaw(1.0)));
     }
 
     [Fact]

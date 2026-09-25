@@ -12,6 +12,9 @@ public sealed class SurfaceSegment
     /// <summary>Quarter-chord point at mid-strip, body axes.</summary>
     public required Vec3 Position { get; init; }
 
+    /// <summary>From <see cref="Position"/> to the strip's outer end along its quarter-chord line, body axes (half the strip width).</summary>
+    public Vec3 HalfSpan { get; init; }
+
     /// <summary>Unit vector along the chord, pointing to the leading edge.</summary>
     public required Vec3 ChordAxis { get; init; }
 

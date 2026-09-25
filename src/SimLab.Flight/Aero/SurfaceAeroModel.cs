@@ -14,6 +14,9 @@ public sealed class SurfaceAeroModel : IAeroModel
     const double FlapEfficiency = 0.85;
     const double MaxDownwash = 0.3;
 
+    /// <summary>Points per strip at which the prop wash is sampled (overlap weighting).</summary>
+    const int WashSamples = 8;
+
     readonly SurfaceSegment[] _segments;
     readonly BodySpec[] _bodies;
     readonly double _wingAspectRatio;
@@ -58,15 +61,18 @@ public sealed class SurfaceAeroModel : IAeroModel
 
         foreach (var seg in _segments)
         {
-            var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, seg.Position) + WashAt(ctx.Wash, seg.Position);
+            var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, seg.Position);
             var c = seg.FlowChordAxis;
             var n = seg.FlowNormalAxis;
+            // Mean in-plane speed squared over the strip; differs from v² only where the prop wash varies across it.
+            double meanSquare = -1;
+            if (ctx.Wash.IsActive) u = Blow(ctx.Wash, seg, u, c, n, out meanSquare);
             double uc = Vec3.Dot(u, c);
             double un = Vec3.Dot(u, n);
             double v = Math.Sqrt(uc * uc + un * un);
             if (v < 0.1) continue;
 
-            double q = 0.5 * ctx.Density * v * v;
+            double q = 0.5 * ctx.Density * Math.Max(v * v, meanSquare);
             double alpha = Math.Atan2(-un, uc);
             double height = ctx.HeightAboveGround + Vec3.Dot(seg.Position, ctx.UpBody);
             double groundEffect = InducedFlow.GroundEffectFactor(height, WingSpan);
@@ -128,14 +134,36 @@ public sealed class SurfaceAeroModel : IAeroModel
         _lastAirspeed = 0;
     }
 
-    static Vec3 WashAt(in PropWash wash, Vec3 p)
+    /// <summary>
+    /// Adds the prop wash to a strip's relative velocity <paramref name="u"/>. The wash is sampled at
+    /// <see cref="WashSamples"/> points spread evenly along the strip's quarter-chord line, so a strip partly inside the
+    /// slipstream is weighted by its actual overlap. Returns the mean relative velocity (it sets the angle of attack) and,
+    /// in <paramref name="meanSquare"/>, the mean of the squared in-plane speed (it sets the dynamic pressure); −1 if the
+    /// strip is outside the slipstream. The station (distance behind the disk) is taken at the strip's centre.
+    /// </summary>
+    static Vec3 Blow(in PropWash wash, SurfaceSegment seg, Vec3 u, Vec3 c, Vec3 n, out double meanSquare)
     {
-        if (wash.Velocity <= 0 || wash.Radius <= 0) return Vec3.Zero;
-        var rel = p - wash.PositionBody;
+        meanSquare = -1;
+        var rel = seg.Position - wash.PositionBody;
         double along = Vec3.Dot(rel, wash.AxisBody);
-        if (along > 0) return Vec3.Zero;
+        if (along >= 0) return u;
+        var station = wash.At(-along);
         var radial = rel - wash.AxisBody * along;
-        return radial.Length <= wash.Radius ? wash.AxisBody * wash.Velocity : Vec3.Zero;
+        var halfSpan = seg.HalfSpan - wash.AxisBody * Vec3.Dot(seg.HalfSpan, wash.AxisBody);
+        if (radial.Length - halfSpan.Length >= station.OuterRadius) return u;
+
+        var sum = Vec3.Zero;
+        double squares = 0;
+        for (int k = 0; k < WashSamples; k++)
+        {
+            double t = (2.0 * k + 1) / WashSamples - 1;
+            var uk = u - wash.AirVelocity(station, radial + halfSpan * t);
+            double ukc = Vec3.Dot(uk, c), ukn = Vec3.Dot(uk, n);
+            sum += uk;
+            squares += ukc * ukc + ukn * ukn;
+        }
+        meanSquare = squares / WashSamples;
+        return sum / WashSamples;
     }
 
     void AssignControl(ControlSurfaceSpec control, int index)

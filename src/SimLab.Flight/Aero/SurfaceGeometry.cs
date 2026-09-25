@@ -38,10 +38,13 @@ public static class SurfaceGeometry
             // The swept quarter-chord line turns with the section (dihedral, incidence and twist), so setting the
             // surface at incidence i is the same as flying it at angle of attack i.
             var spanAxis = orientation.Rotate(new Vec3(tanSweep, 1, 0).Normalized());
+            // From mid-strip to the strip's outer end along the quarter-chord line (the prop wash is spread over the strip).
+            var halfSpan = dihedral.Rotate(new Vec3(tanSweep, 1, 0) * (0.5 * spec.Span * (t1 - t0)));
 
-            segments.Add(Make(spec, Side.Right, position, chordAxis, normal, spanAxis, chord, area, tm, airfoil, inducedFactor));
+            segments.Add(Make(spec, Side.Right, position, chordAxis, normal, spanAxis, halfSpan, chord, area, tm, airfoil, inducedFactor));
             if (spec.Mirror)
-                segments.Add(Make(spec, Side.Left, Mirror(position), Mirror(chordAxis), Mirror(normal), Mirror(spanAxis), chord, area, tm, airfoil, inducedFactor));
+                segments.Add(Make(spec, Side.Left, Mirror(position), Mirror(chordAxis), Mirror(normal), Mirror(spanAxis), Mirror(halfSpan),
+                    chord, area, tm, airfoil, inducedFactor));
         }
         return segments;
     }
@@ -103,7 +106,7 @@ public static class SurfaceGeometry
     /// <summary>Reflection across the aircraft's plane of symmetry (the x–z plane).</summary>
     static Vec3 Mirror(Vec3 v) => new(v.X, -v.Y, v.Z);
 
-    static SurfaceSegment Make(SurfaceSpec spec, Side side, Vec3 position, Vec3 chordAxis, Vec3 normal, Vec3 spanAxis,
+    static SurfaceSegment Make(SurfaceSpec spec, Side side, Vec3 position, Vec3 chordAxis, Vec3 normal, Vec3 spanAxis, Vec3 halfSpan,
         double chord, double area, double spanFraction, Airfoil airfoil, double inducedFactor)
     {
         // The section plane of simple sweep theory is perpendicular to the swept span line; its normal is
@@ -118,6 +121,7 @@ public static class SurfaceGeometry
             Role = spec.Role,
             Side = side,
             Position = position,
+            HalfSpan = halfSpan,
             ChordAxis = chordAxis,
             NormalAxis = normal,
             Chord = chord,
