@@ -12,6 +12,7 @@ using SimLab.Flight.Recording;
 using SimLab.Game.Audio;
 using SimLab.Game.Radio;
 using SimLab.Game.World;
+using SimLab.Input;
 
 namespace SimLab.Game.Flight;
 
@@ -22,7 +23,8 @@ public partial class FlightScene : Node3D
     FlightSession _session = null!;
     AircraftVisual _visual = null!;
     Camera3D _camera = null!;
-    ICameraRig _rig = null!;
+    CameraDirector _cameras = null!;
+    int _resetCount;
     WindsockNode _windsock = null!;
     FlightHud _hud = null!;
     CrashOverlay _crash = null!;
@@ -36,6 +38,7 @@ public partial class FlightScene : Node3D
     public DiagnosticsOverlay Diagnostics => _diagnostics;
     public RouterOutput LastInput { get; private set; }
     public int LastSteps { get; private set; }
+    public CameraView CameraView => _cameras.Current;
 
     public void Init(Services services, string aircraftId, System.Action exit, System.Func<double, ControlInputs>? script = null)
     {
@@ -62,8 +65,10 @@ public partial class FlightScene : Node3D
 
         var pilot = ClubField.PilotPosition;
         var eye = new Vec3(pilot.X, pilot.Y, _session.Terrain.Height(pilot.X, pilot.Y) + ClubField.EyeHeight);
-        _rig = new LineOfSightRig(eye, services.Settings.FovDeg, services.Settings.AutoZoom);
-        _rig.Reset(Context());
+        var ground = new LineOfSightRig(eye, services.Settings.FovDeg, services.Settings.AutoZoom);
+        _cameras = new CameraDirector(ground, new FpvRig(FpvCameraSpec.For(definition)), new ChaseRig(), services.Settings.CameraView);
+        _cameras.Reset(Context());
+        _resetCount = _session.ResetCount;
         _camera = new Camera3D { Current = true, Near = 0.1f, Far = 4000f, Fov = (float)services.Settings.FovDeg };
         AddChild(_camera);
         _hud = new FlightHud();
@@ -75,19 +80,53 @@ public partial class FlightScene : Node3D
         if (services.Settings.RecordFlights && script is null) StartRecording(aircraftId, definition);
     }
 
+    /// <summary>Ground → FPV → chase → ground; remembered for the next flight.</summary>
+    public void NextCamera()
+    {
+        _cameras.Next(Context());
+        RememberCamera();
+    }
+
+    /// <summary>Jumps to a view; remembered for the next flight.</summary>
+    public void SelectCamera(CameraView view)
+    {
+        _cameras.Select(view, Context());
+        RememberCamera();
+    }
+
+    /// <summary>Switches the view without remembering it (command-line screenshots).</summary>
+    public void ShowCamera(CameraView view) => _cameras.Select(view, Context());
+
+    void RememberCamera()
+    {
+        if (_services.Settings.CameraView == _cameras.Current) return;
+        _services.Settings = _services.Settings with { CameraView = _cameras.Current };
+        _services.SaveSettings();
+    }
+
     public override void _Process(double delta)
     {
         ulong start = Time.GetTicksUsec();
         LastInput = _script is null
             ? _services.Router.Update(delta, JoypadReader.Poll(), KeyboardInput.Keys(), KeyboardInput.Commands())
             : new RouterOutput(_script(_session.Simulation.Time), [], InputSource.Keyboard, "script");
-        foreach (var action in LastInput.Actions) _session.Handle(action);
+        foreach (var action in LastInput.Actions)
+        {
+            if (action == SwitchAction.NextCamera && _script is null) NextCamera();
+            else _session.Handle(action);
+        }
         if (_session.Recorder is { } recorder) recorder.RawChannels = LastInput.RawFrame?.Axes;
         LastSteps = _session.Tick(delta, LastInput.Controls);
         _latency.Add((Time.GetTicksUsec() - start) / 1e6, delta, _session.Simulation.InterpolationAlpha);
 
         _visual.UpdateFrom(_session.Aircraft, _session.DisplayState);
-        var pose = _rig.Update(delta, Context());
+        if (_session.ResetCount != _resetCount)
+        {
+            _resetCount = _session.ResetCount;
+            _cameras.Reset(Context());
+        }
+        var pose = _cameras.Update(delta, Context());
+        _camera.SetCullMaskValue(AircraftVisual.Layer, _cameras.Current != CameraView.Fpv);
         var from = pose.Position.WorldToGodot();
         var to = pose.LookAt.WorldToGodot();
         var up = pose.Up.WorldToGodot();

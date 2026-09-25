@@ -10,6 +10,9 @@ namespace SimLab.Game.Flight;
 /// <summary>Draws the procedural aircraft; control surfaces rotate about their hinges with the servo deflections.</summary>
 public partial class AircraftVisual : Node3D
 {
+    /// <summary>Render layer (1-based) of the aircraft meshes, so a camera can leave them out (the FPV view).</summary>
+    public const int Layer = 2;
+
     readonly List<(Node3D Pivot, Vector3 Axis, int ControlIndex)> _controls = [];
     Node3D? _propeller;
 
@@ -68,6 +71,7 @@ public partial class AircraftVisual : Node3D
                 CullMode = BaseMaterial3D.CullModeEnum.Disabled,
                 Transparency = alpha < 1f ? BaseMaterial3D.TransparencyEnum.Alpha : BaseMaterial3D.TransparencyEnum.Disabled,
             },
+            Layers = 1u << (Layer - 1),
         };
     }
 }
