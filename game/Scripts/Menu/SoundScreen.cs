@@ -29,7 +29,7 @@ public partial class SoundScreen : Control
     SoundSpec _spec = SoundSpec.Default;
     bool _listening;
     double _previewTime;
-    AudioStreamPlayer? _impactPlayer;
+    AudioStreamPlayer _impactPlayer = null!;
 
     public SoundScreen() => _feeder = new GeneratorFeeder(_synth);
 
@@ -75,6 +75,11 @@ public partial class SoundScreen : Control
             Bus = AudioBuses.Aircraft,
         };
         AddChild(_voice);
+
+        // One persistent player, reused for every impact one-shot (like AircraftAudio's own impact players):
+        // never freed until _ExitTree, so nothing ever holds a reference to a node Godot has already destroyed.
+        _impactPlayer = new AudioStreamPlayer { Bus = AudioBuses.Aircraft };
+        AddChild(_impactPlayer);
 
         _impacts = ImpactSounds.Load("res://Audio/impacts");
         LoadAircraft();
@@ -139,9 +144,7 @@ public partial class SoundScreen : Control
         _voice.Stop();
         _playback?.Dispose();
         _playback = null;
-        _impactPlayer?.Stop();
-        _impactPlayer?.QueueFree();
-        _impactPlayer = null;
+        _impactPlayer.Stop();
         _listenButton.Text = Ui.T("SND_LISTEN");
     }
 
@@ -162,29 +165,19 @@ public partial class SoundScreen : Control
         if (_impacts.Count == 0) return;
         double volume = ImpactMix.Linear(1.0, _services.Settings.Audio.Impacts);
         if (volume <= 0.001) return;
-        _impactPlayer?.Stop();
-        _impactPlayer?.QueueFree();
-        var player = new AudioStreamPlayer
-        {
-            Bus = AudioBuses.Aircraft,
-            Stream = _impacts[_rng.RandiRange(0, _impacts.Count - 1)],
-            VolumeDb = Mathf.LinearToDb((float)volume),
-        };
-        AddChild(player);
-        player.Finished += player.QueueFree;
-        player.Play();
-        _impactPlayer = player;
+        _impactPlayer.Stream = _impacts[_rng.RandiRange(0, _impacts.Count - 1)];
+        _impactPlayer.VolumeDb = Mathf.LinearToDb((float)volume);
+        _impactPlayer.Play();
     }
 
     // The generated voice never reaches a natural end, so it must be stopped explicitly before the tree tears
-    // down; otherwise Godot reports its playback objects as leaked at process exit.
+    // down; otherwise Godot reports its playback object as leaked at process exit. The impact player is a plain
+    // one-shot (like AircraftAudio's own impact players) and doesn't need this, but stopping it too is harmless.
     public override void _ExitTree()
     {
         _voice.Stop();
         _playback?.Dispose();
         _playback = null;
-        // Just stop it: it's a child of this screen, so the tree teardown frees it — QueueFree here would double-free.
-        _impactPlayer?.Stop();
-        _impactPlayer = null;
+        _impactPlayer.Stop();
     }
 }
