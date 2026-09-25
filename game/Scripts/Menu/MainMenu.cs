@@ -1,18 +1,42 @@
 using Godot;
+using SimLab.App.Audio;
 using SimLab.App.Session;
 using SimLab.App.Settings;
+using SimLab.Flight.Airframe;
+using SimLab.Flight.Controls;
+using SimLab.Game.Flight;
+using SimLab.Game.Radio;
 
 namespace SimLab.Game.Menu;
 
+/// <summary>Flight setup (aircraft, conditions) and the screen buttons on the left; on the right a live view of the
+/// selected aircraft that reacts to the radio or keyboard (<see cref="MenuAircraftView"/>).</summary>
 public partial class MainMenu : Control
 {
+    Services _services = null!;
+    MenuAircraftView _view = null!;
+    Label _viewError = null!;
+    ControlInputs? _forcedInputs;
+
     public void Init(Services services, System.Action<string> fly, System.Action<string> groundCheck, System.Action radio, System.Action sound, System.Action settings, System.Action quit, string? flightError = null)
     {
-        var column = Ui.Screen(this, Ui.T("APP_TITLE"));
+        _services = services;
+        // The keyboard throttle (and the radio's switch state) start fresh on the menu, not where the last flight left them.
+        services.Router.ResetForNewFlight();
+
+        var screen = Ui.Screen(this, Ui.T("APP_TITLE"));
+        var columns = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        columns.AddThemeConstantOverride("separation", 40);
+        screen.AddChild(columns);
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 12);
+        columns.AddChild(column);
+
         if (flightError is not null)
         {
             var message = Ui.Text(flightError, 18);
             message.AddThemeColorOverride("font_color", new Color(1f, 0.45f, 0.35f));
+            message.CustomMinimumSize = new Vector2(780, 0);
             column.AddChild(message);
         }
         var aircraft = AircraftCatalog.List(AppPaths.AircraftRoot, out var errors);
@@ -25,13 +49,8 @@ public partial class MainMenu : Control
             if (aircraft[i].Id == services.Settings.LastAircraft) selected = i;
         }
         var description = Ui.Text("", 16);
+        description.CustomMinimumSize = new Vector2(780, 0);
         void Describe(long index) => description.Text = index >= 0 && index < aircraft.Count ? aircraft[(int)index].Description : "";
-        if (aircraft.Count > 0)
-        {
-            picker.Selected = selected;
-            Describe(selected);
-        }
-        picker.ItemSelected += Describe;
         column.AddChild(Ui.Row(Ui.RowLabel(Ui.T("MENU_AIRCRAFT")), picker));
         column.AddChild(description);
 
@@ -57,22 +76,77 @@ public partial class MainMenu : Control
             services.SaveSettings();
         }
 
-        column.AddChild(Ui.Row(
-            Ui.Button(Ui.T("MENU_FLY"), () =>
-            {
-                if (aircraft.Count == 0) return;
-                SelectAndSave(out var id);
-                fly(id);
-            }),
-            Ui.Button(Ui.T("MENU_GROUND_CHECK"), () =>
-            {
-                if (aircraft.Count == 0) return;
-                SelectAndSave(out var id);
-                groundCheck(id);
-            }),
-            Ui.Button(Ui.T("MENU_RADIO"), radio),
-            Ui.Button(Ui.T("MENU_SOUND"), sound),
-            Ui.Button(Ui.T("MENU_SETTINGS"), settings),
-            Ui.Button(Ui.T("MENU_QUIT"), quit)));
+        var buttons = new GridContainer { Columns = 3 };
+        buttons.AddThemeConstantOverride("h_separation", 12);
+        buttons.AddThemeConstantOverride("v_separation", 12);
+        buttons.AddChild(Ui.Button(Ui.T("MENU_FLY"), () =>
+        {
+            if (aircraft.Count == 0) return;
+            SelectAndSave(out var id);
+            fly(id);
+        }));
+        buttons.AddChild(Ui.Button(Ui.T("MENU_GROUND_CHECK"), () =>
+        {
+            if (aircraft.Count == 0) return;
+            SelectAndSave(out var id);
+            groundCheck(id);
+        }));
+        buttons.AddChild(Ui.Button(Ui.T("MENU_RADIO"), radio));
+        buttons.AddChild(Ui.Button(Ui.T("MENU_SOUND"), sound));
+        buttons.AddChild(Ui.Button(Ui.T("MENU_SETTINGS"), settings));
+        buttons.AddChild(Ui.Button(Ui.T("MENU_QUIT"), quit));
+        column.AddChild(buttons);
+
+        var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        right.AddThemeConstantOverride("separation", 8);
+        columns.AddChild(right);
+        _view = new MenuAircraftView { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _view.Init(new Vector2(560, 620), () => _services.Settings.Audio);
+        right.AddChild(_view);
+        right.AddChild(Ui.Text(Ui.T("MENU_LIVE_HINT"), 14));
+        _viewError = Ui.Text("", 14);
+        right.AddChild(_viewError);
+
+        if (aircraft.Count > 0)
+        {
+            picker.Selected = selected;
+            Describe(selected);
+            ShowAircraft(aircraft[selected].Id);
+        }
+        picker.ItemSelected += index =>
+        {
+            Describe(index);
+            ShowAircraft(aircraft[(int)index].Id);
+        };
+    }
+
+    void ShowAircraft(string id)
+    {
+        try
+        {
+            var folder = System.IO.Path.Combine(AppPaths.AircraftRoot, id);
+            _view.ShowAircraft(AircraftLoader.Load(folder), SoundSpecLoader.Load(folder));
+            _viewError.Text = "";
+        }
+        catch (System.Exception ex) when (ex is System.IO.InvalidDataException or System.IO.FileNotFoundException
+            or System.ArgumentException or System.Text.Json.JsonException)
+        {
+            _viewError.Text = $"{id}: {ex.Message}";
+        }
+    }
+
+    /// <summary>Screenshot mode: drives the live view with fixed commands instead of the radio or keyboard, optionally
+    /// showing another aircraft than the last one flown (the picker and the saved choice are left as they are).</summary>
+    public void ForceInputs(ControlInputs inputs, string? aircraftId = null)
+    {
+        _forcedInputs = inputs;
+        if (aircraftId is not null) ShowAircraft(aircraftId);
+    }
+
+    public override void _Process(double delta)
+    {
+        var inputs = _forcedInputs
+            ?? _services.Router.Update(delta, JoypadReader.Poll(), KeyboardInput.Keys(), KeyboardInput.Commands()).Controls;
+        _view.Step(delta, inputs);
     }
 }

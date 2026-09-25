@@ -43,8 +43,18 @@ public partial class Main : Node
     public void ShowMenu(string? error)
     {
         var menu = new MainMenu();
-        menu.Init(_services, id => StartFlight(id), id => StartFlight(id, null, StartMode.GroundCheck), ShowRadio, ShowSound, ShowSettings, () => GetTree().Quit(), error);
+        menu.Init(_services, id => StartFlight(id), id => StartFlight(id, null, StartMode.GroundCheck), ShowRadio, ShowSound, ShowSettings, Quit, error);
         Switch(menu);
+    }
+
+    /// <summary>Frees the current screen first (stopping the live view's motor voice), then quits once the audio
+    /// thread has released its playback, so nothing is reported leaked at exit.</summary>
+    async void Quit()
+    {
+        _current?.Free();
+        _current = null;
+        for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        GetTree().Quit();
     }
 
     public void ShowRadio()
@@ -146,6 +156,17 @@ public partial class Main : Node
         {
             ShowMenu();
             CaptureAfterFrames(20, menuShot);
+            return true;
+        }
+        if (ArgValue(args, "--screenshot-menu-live") is { } menuLiveShot)
+        {
+            ShowMenu();
+            // Fixed commands (throttle, right aileron, up elevator, right rudder); long enough for the live view's
+            // springs to settle on their targets. An optional aircraft id follows the path.
+            int at = System.Array.IndexOf(args, "--screenshot-menu-live");
+            string? liveAircraft = at + 2 < args.Length && !args[at + 2].StartsWith("--") ? args[at + 2] : null;
+            ((MainMenu)_current!).ForceInputs(new ControlInputs(0.6, 0.8, 0.8, 0.8), liveAircraft);
+            CaptureAfterFrames(180, menuLiveShot);
             return true;
         }
         if (ArgValue(args, "--screenshot-settings") is { } settingsShot)
@@ -281,6 +302,9 @@ public partial class Main : Node
         // that is still playing is stopped before Quit(); otherwise Godot reports its playback objects as leaked.
         _current?.Free();
         _current = null;
+        // A stopped generator playback is only released once the audio thread has mixed again; quitting in the same
+        // frame intermittently reports it as leaked (seen with the main menu's live-view voice).
+        for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         GetTree().Quit(error == Error.Ok ? 0 : 1);
     }
 

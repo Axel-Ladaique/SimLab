@@ -8,6 +8,7 @@ MENU_SETTINGS,Réglages,Settings
 MENU_QUIT,Quitter,Quit
 MENU_AIRCRAFT,Avion,Aircraft
 MENU_CONDITIONS,Conditions de vol,Flight conditions
+MENU_LIVE_HINT,"Aperçu en direct : bougez les manches (ou les touches de vol) pour voir les gouvernes, la réaction de l'avion et entendre le moteur.","Live view: move the sticks (or the flight keys) to see the surfaces, how the aircraft reacts, and hear the motor."
 COND_WIND_SPEED,Vent (m/s),Wind (m/s)
 COND_WIND_DIR,Vent venant de (°),Wind from (°)
 COND_TURBULENCE,Turbulence,Turbulence
