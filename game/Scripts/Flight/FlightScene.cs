@@ -90,7 +90,8 @@ public partial class FlightScene : Node3D
         var pose = _rig.Update(delta, Context());
         var from = pose.Position.WorldToGodot();
         var to = pose.LookAt.WorldToGodot();
-        var up = Mathf.Abs((to - from).Normalized().Y) > 0.999f ? Vector3.Back : Vector3.Up;
+        var up = pose.Up.WorldToGodot();
+        if (Mathf.Abs((to - from).Normalized().Dot(up.Normalized())) > 0.999f) up = Vector3.Back;
         _camera.Fov = (float)pose.VerticalFovDeg;
         _camera.LookAtFromPosition(from, to, up);
         _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
@@ -111,7 +112,10 @@ public partial class FlightScene : Node3D
     CameraContext Context()
     {
         var display = _session.DisplayState;
-        return new CameraContext(display.Position, display.Orientation, _session.Span);
+        // Init runs before the scene enters the tree (Main.StartFlight), when there is no viewport yet.
+        var size = IsInsideTree() ? GetViewport().GetVisibleRect().Size : Vector2.Zero;
+        double aspect = size.Y > 0 ? size.X / size.Y : 16.0 / 9.0;
+        return new CameraContext(display.Position, display.Orientation, _session.Span, _session.Terrain.Height, aspect);
     }
 
     /// <summary>Raw radio axes recorded next to the processed controls (columns raw_axis0…).</summary>
