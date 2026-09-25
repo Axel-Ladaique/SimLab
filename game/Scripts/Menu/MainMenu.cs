@@ -28,6 +28,11 @@ public partial class MainMenu : Control
         services.Router.ResetForNewFlight();
 
         var screen = Ui.Screen(this, Ui.T("APP_TITLE"));
+        GetChild<ColorRect>(0).Color = Colors.Transparent;
+        _view = new MenuAircraftView();
+        _view.Init(() => _services.Settings.Audio, services.Settings.Conditions);
+        AddChild(_view);
+        MoveChild(_view, 0);
         var columns = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         columns.AddThemeConstantOverride("separation", 40);
         screen.AddChild(columns);
@@ -63,6 +68,7 @@ public partial class MainMenu : Control
         {
             services.Settings = services.Settings with { Conditions = update(services.Settings.Conditions) };
             services.SaveSettings();
+            _view.ApplyConditions(services.Settings.Conditions);
         }
         var c = services.Settings.Conditions;
         column.AddChild(Ui.Slider(Ui.T("COND_WIND_SPEED"), 0, 12, 0.5, c.WindSpeed, v => Change(x => x with { WindSpeed = v }), "0.0"));
@@ -98,9 +104,6 @@ public partial class MainMenu : Control
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         right.AddThemeConstantOverride("separation", 8);
         columns.AddChild(right);
-        _view = new MenuAircraftView { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        _view.Init(new Vector2(560, 620), () => _services.Settings.Audio);
-        right.AddChild(_view);
         right.AddChild(Ui.Text(Ui.T("MENU_LIVE_HINT"), 14));
         _viewError = Ui.Text("", 14);
         right.AddChild(_viewError);

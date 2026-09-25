@@ -46,7 +46,7 @@ public partial class FlightScene : Node3D
         _session = new FlightSession(definition, services.Settings.Conditions);
         services.Router.ResetForNewFlight();
 
-        _windsock = FieldBuilder.Build(this, _session.Terrain, services.Settings.Conditions);
+        _windsock = FieldBuilder.Build(this, _session.Terrain, services.Settings.Conditions).Windsock;
         _visual = new AircraftVisual();
         AddChild(_visual);
         _visual.Build(AircraftMeshBuilder.Build(definition, _session.Aircraft.Aero.Segments));
