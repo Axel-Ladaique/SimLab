@@ -82,6 +82,19 @@ public class FlightSessionTests
     }
 
     [Fact]
+    public void Reset_count_counts_resets_but_not_wind_toggles()
+    {
+        using var session = Session("trainer");
+        int initial = session.ResetCount;
+        session.Handle(SwitchAction.ToggleWind);
+        Assert.Equal(initial, session.ResetCount);
+        session.Handle(SwitchAction.Reset);
+        Assert.Equal(initial + 1, session.ResetCount);
+        session.Reset();
+        Assert.Equal(initial + 2, session.ResetCount);
+    }
+
+    [Fact]
     public void Flight_timer_stops_after_a_crash()
     {
         using var session = Session("trainer");

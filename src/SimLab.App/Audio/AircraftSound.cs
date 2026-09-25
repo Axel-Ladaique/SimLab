@@ -11,12 +11,16 @@ public sealed class AircraftSound
     readonly EngineSoundModel? _engine;
     readonly ParameterSmoother _smoother = new();
     readonly ImpactDetector _impacts = new();
-    double _lastTime = double.NegativeInfinity;
+    int _resetCount;
+    // Audio clock for the impact refractory times: advanced by the frame dt, so it stays monotonic when a wind toggle
+    // restarts the simulation clock at 0.
+    double _clock;
 
     public AircraftSound(FlightSession session, SoundSpec spec)
     {
         _session = session;
         Spec = spec;
+        _resetCount = session.ResetCount;
         if (session.Definition.Power is { } power) _engine = EngineSoundModel.For(power, spec);
     }
 
@@ -25,14 +29,14 @@ public sealed class AircraftSound
     public SoundFrame Update(double dt)
     {
         var aircraft = _session.Aircraft;
-        double time = _session.Simulation.Time;
-        bool reset = time < _lastTime;
+        _clock += dt;
+        bool reset = _session.ResetCount != _resetCount;
         if (reset)
         {
             _smoother.Reset(SynthParams.Silent);
             _impacts.Reset();
         }
-        _lastTime = time;
+        _resetCount = _session.ResetCount;
 
         var telemetry = aircraft.Power?.Telemetry;
         double rpm = telemetry?.Rpm ?? 0;
@@ -46,6 +50,6 @@ public sealed class AircraftSound
         var target = new SynthParams(engine.BladePassHz, engine.ShaftHz, engine.ElectricalHz, engine.PropGain, engine.WhineGain,
             windGain, cutoff, RollingSoundModel.Gain(touching, groundSpeed));
         var synth = _smoother.Update(target, dt);
-        return new SoundFrame(synth, rpm, _impacts.Update(contacts, aircraft.Crash, time), reset);
+        return new SoundFrame(synth, rpm, _impacts.Update(contacts, aircraft.Crash, _clock), reset);
     }
 }

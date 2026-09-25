@@ -140,7 +140,9 @@ Verified against the code on `feat/godot-game` during final verification (Task 1
   audio streams in that case (nothing would be heard anyway, and a playback started there can't be finalized
   cleanly).
 - **`SoundFrame.Reset` propagates session resets to the synth.** `AircraftSound` emits `SoundFrame.Reset = true`
-  after a session reset; both the offline renderer (`OfflineAudio.Render`) and `AircraftAudio._Process` call
+  after a session reset (detected through `FlightSession.ResetCount`, so a wind toggle, which also restarts the
+  simulation clock, is not mistaken for one; impact refractory times use an audio clock advanced by the frame
+  dt for the same reason); both the offline renderer (`OfflineAudio.Render`) and `AircraftAudio._Process` call
   `synth.Reset()` (and `AircraftAudio` also clears the queued generator buffer) when this flag is set, so phase
   and smoothers don't carry stale state across a reset.
 - **§5 volumes are superseded by §5b `AudioSettings`.** The three flat `AppSettings` fields described in §5

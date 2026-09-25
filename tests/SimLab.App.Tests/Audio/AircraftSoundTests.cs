@@ -4,6 +4,7 @@ using SimLab.App.Settings;
 using SimLab.Flight.Controls;
 using SimLab.Flight.Geometry;
 using SimLab.Flight.Ground;
+using SimLab.Input;
 
 namespace SimLab.App.Tests.Audio;
 
@@ -83,5 +84,62 @@ public class AircraftSoundTests
         session.Reset();
         session.Tick(1.0 / 60, ControlInputs.Neutral);
         Assert.Equal(first, ImpactsAfterDrop(session, sound));
+    }
+    [Fact]
+    public void Toggling_wind_is_not_a_reset_and_does_not_replay_the_crash()
+    {
+        using var session = Session("trainer");
+        var sound = new AircraftSound(session, SoundSpec.Default);
+        Run(session, sound, 1.5, ControlInputs.Neutral with { Throttle = 1 });
+        ImpactsAfterDrop(session, sound);
+
+        session.Handle(SwitchAction.ToggleWind);
+        for (int i = 0; i < 30; i++)
+        {
+            session.Tick(1.0 / 60, ControlInputs.Neutral);
+            var f = sound.Update(1.0 / 60);
+            Assert.False(f.Reset, "toggling the wind must not be reported as a reset");
+            Assert.DoesNotContain(f.Impacts, e => e.Kind == ImpactKind.Crash);
+        }
+    }
+
+    [Fact]
+    public void Toggling_wind_keeps_the_motor_sound_running()
+    {
+        using var session = Session("trainer");
+        var sound = new AircraftSound(session, SoundSpec.Default);
+        var before = Run(session, sound, 1.5, ControlInputs.Neutral with { Throttle = 1 });
+        session.Handle(SwitchAction.ToggleWind);
+        session.Tick(1.0 / 60, ControlInputs.Neutral with { Throttle = 1 });
+        var after = sound.Update(1.0 / 60);
+        Assert.True(after.Synth.PropGain > 0.8 * before.Synth.PropGain, $"{before.Synth.PropGain} -> {after.Synth.PropGain}");
+    }
+
+    [Fact]
+    public void Touchdowns_right_after_a_wind_toggle_are_heard()
+    {
+        // Toggling wind restarts the simulation clock at 0; impact refractory times must not hold events back.
+        using var session = Session("trainer");
+        var sound = new AircraftSound(session, SoundSpec.Default);
+        Run(session, sound, 1, ControlInputs.Neutral);
+        var first = Hop(session, sound);
+        Assert.NotEmpty(first);
+        session.Handle(SwitchAction.ToggleWind);
+        Assert.Equal(first, Hop(session, sound));
+    }
+
+    /// <summary>Lifts the aircraft 0.1 m and lets it settle for half a second; returns the impact kinds heard.</summary>
+    static List<ImpactKind> Hop(FlightSession session, AircraftSound sound)
+    {
+        var s = session.Aircraft.State;
+        session.Aircraft.OverrideState(s with { Position = s.Position + new Vec3(0, 0, 0.1), Velocity = new Vec3(0, 0, -1) });
+        var kinds = new List<ImpactKind>();
+        for (int i = 0; i < 30; i++)
+        {
+            session.Tick(1.0 / 60, ControlInputs.Neutral);
+            kinds.AddRange(sound.Update(1.0 / 60).Impacts.Select(e => e.Kind));
+        }
+        Assert.Equal(CrashCause.None, session.Aircraft.Crash);
+        return kinds;
     }
 }

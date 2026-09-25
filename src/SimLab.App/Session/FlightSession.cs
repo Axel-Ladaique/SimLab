@@ -50,6 +50,10 @@ public sealed class FlightSession : IDisposable
     public bool Paused { get; private set; }
     public bool WindEnabled { get; private set; } = true;
     public double FlightTime { get; private set; }
+
+    /// <summary>Number of <see cref="Reset"/> calls, including the constructor's own one. Lets observers tell a real
+    /// reset apart from a wind toggle, which swaps in a new <see cref="Simulation"/> whose clock also restarts at 0.</summary>
+    public int ResetCount { get; private set; }
     public double Span { get; }
     public FlightRecorder? Recorder { get; private set; }
 
@@ -70,6 +74,7 @@ public sealed class FlightSession : IDisposable
         Simulation.Reset(StartState());
         FlightTime = 0;
         Paused = false;
+        ResetCount++;
     }
 
     public void Handle(SwitchAction action)
