@@ -41,11 +41,10 @@ public class SoundPreviewTests
     }
 
     [Fact]
-    public void A_degenerate_engine_model_renders_silence_instead_of_nan()
+    public void Output_is_finite_at_the_minimum_static_rpm()
     {
-        // EngineSoundModel's own constructor clamps StaticRpm >= 1, so build a model whose StaticRpm cannot be
-        // non-positive through the normal API and instead exercise the guard's contract directly: no input here
-        // can make At(...) divide by zero, and every field must come back finite and zero-gain when it does.
+        // EngineSoundModel clamps StaticRpm >= 1, so SoundPreview's StaticRpm <= 0 guard is unreachable through the
+        // public API; the closest degenerate model is the clamp's floor, which must still give finite parameters.
         var engine = new EngineSoundModel(Spec, staticRpm: 1, staticThrust: 1, maxCurrent: 1);
         foreach (var t in new[] { 0.0, 1.5, 4.5, 6.0, 8.25, 10.5, 11.9 })
         {
