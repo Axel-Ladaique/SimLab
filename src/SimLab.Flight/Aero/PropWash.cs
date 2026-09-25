@@ -49,7 +49,8 @@ public readonly record struct WashStation(double Distance, double TubeRadius, do
 /// ends about 4–6 jet diameters downstream and beyond it the centreline velocity falls as 1/s at constant momentum flux
 /// (Rajaratnam, <i>Turbulent Jets</i>, 1976, ch. 3; Pope, <i>Turbulent Flows</i>, 2000, §5.1). A propeller jet, with its
 /// tip vortices and swirl, mixes sooner than a nozzle jet: <see cref="CoreLengthDiameters"/> = 4 contracted
-/// diameters. The mixing slows with coflow in proportion to the Brown–Roshko velocity-ratio parameter
+/// diameters, 2.8 prop diameters (marine propeller-jet studies report a zone of flow establishment of roughly 2–3.5
+/// prop diameters, reviewed by Lam et al., Ocean Engineering, 2011). The mixing slows with coflow in proportion to the Brown–Roshko velocity-ratio parameter
 /// (U₁ − U₂)/(U₁ + U₂) = 2v_i/(2v_i + 2V₀) (Brown &amp; Roshko, J. Fluid Mech. 64, 1974), so the core length is divided by
 /// it and the wash stays coherent in cruise.</item>
 /// <item>Profile: a cosine-tapered top hat. The inner edge starts at (1 − <see cref="TipLossFraction"/>)·R_s (the
