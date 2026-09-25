@@ -17,6 +17,25 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Reverse: tick "Inverser" on the rudder; the rudder line now reads "à gauche" for a right stick and the model
   follows. Leave the screen and come back: the box is still ticked (the profile was saved). Untick it again.
 
+## Main menu live view
+- [ ] The menu shows the flight setup and buttons on the left and, on the right, the selected aircraft in flight
+  against the sky seen from 3/4 front, horizon below; the camera does not move.
+- [ ] Sticks centred and throttle closed: the aircraft is level and still, the propeller disk is hidden, nothing is heard.
+- [ ] For each of trainer, sport, wing (pick it in the list; the view changes immediately):
+  - right aileron: the surfaces move like on the radio screen and the aircraft banks right (its right wing goes
+    down), about 15° at full stick, and comes back level when the stick is released;
+  - pull the elevator stick: the nose rises (about 10° at full stick);
+  - right rudder: the nose swings to the aircraft's right (trainer, sport); the wing, which has no rudder, stays put;
+  - open the throttle: the propeller disk appears, the motor is heard (pitch rising with the throttle) and the
+    aircraft moves forward a little (toward the camera), then glides back smoothly as the throttle closes and falls
+    silent at idle.
+- [ ] Motion is smooth, with no jerks, and the aircraft stays in frame at full deflection of every stick.
+- [ ] Tick "Inverser" on the rudder in the radio screen, come back: right rudder now yaws the nose left. Untick it.
+- [ ] The keyboard works when no radio is connected (arrows, A/D; W/S for the throttle on QWERTY, Z/S on AZERTY).
+- [ ] Leaving the menu (Fly, Ground check, Radio, Sound, Settings) or quitting stops the motor sound at once; the
+  sound-screen volumes (Master, Aircraft, Propeller, Motor) apply to it.
+- [ ] Fly, Ground check, Radio, Sound, Settings, Quit and a flight-start error message all work as before.
+
 ## Flight (for each of trainer, sport, wing)
 - [ ] Right aileron rolls right, pulling the elevator stick pitches up, right rudder yaws right, throttle up accelerates.
 - [ ] Control surfaces visibly move in the right direction on the model.
