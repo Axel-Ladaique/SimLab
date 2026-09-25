@@ -88,6 +88,12 @@ public sealed class SettingsTests : IDisposable
         File.WriteAllText(path, """{ "FovDeg": 50 }""");
         Assert.Equal(new AudioSettings(), AppSettings.Load(path).Audio);
 
+        // A pre-Audio-block file still has the old top-level MasterVolume/AircraftVolume/AmbienceVolume fields
+        // (from before this task); dropping them must not throw, and they must not resurrect as the new Audio
+        // block's values (the old fields are gone from AppSettings, so JSON deserialization just ignores them).
+        File.WriteAllText(path, """{ "FovDeg": 50, "MasterVolume": 0.3, "AircraftVolume": 0.6, "AmbienceVolume": 0.0 }""");
+        Assert.Equal(new AudioSettings(), AppSettings.Load(path).Audio);
+
         var clamped = (new AppSettings() with { Audio = new AudioSettings(Master: 3, Ambience: -1, Wind: 2, Rolling: -5) }).Sanitized();
         Assert.Equal((1.0, 0.0, 1.0, 0.0), (clamped.Audio.Master, clamped.Audio.Ambience, clamped.Audio.Wind, clamped.Audio.Rolling));
     }

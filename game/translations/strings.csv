@@ -61,6 +61,8 @@ SND_IMPACTS,Volume impacts,Impacts volume
 SND_AMBIENCE,Volume ambiance,Ambience volume
 SND_LISTEN,Écouter,Listen
 SND_STOP,Arrêter,Stop
+SND_NO_AIRCRAFT,Aucun avion disponible pour l'écoute.,No aircraft available for the preview.
+SND_NO_POWER,"{0} : pas de groupe motopropulseur à écouter.","{0}: no power plant to preview."
 HUD_AIRSPEED,Vitesse,Airspeed
 HUD_ALTITUDE,Hauteur,Height
 HUD_THROTTLE,Gaz,Throttle

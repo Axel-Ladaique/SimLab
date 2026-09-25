@@ -29,7 +29,7 @@ public partial class SoundScreen : Control
     SoundSpec _spec = SoundSpec.Default;
     bool _listening;
     double _previewTime;
-    bool _impactPlaying;
+    AudioStreamPlayer? _impactPlayer;
 
     public SoundScreen() => _feeder = new GeneratorFeeder(_synth);
 
@@ -87,7 +87,7 @@ public partial class SoundScreen : Control
             : catalog.Count > 0 ? catalog[0].Id : null;
         if (id is null)
         {
-            _error.Text = "No aircraft available for the preview.";
+            _error.Text = Ui.T("SND_NO_AIRCRAFT");
             _listenButton.Disabled = true;
             return;
         }
@@ -102,7 +102,7 @@ public partial class SoundScreen : Control
             }
             else
             {
-                _error.Text = $"{id}: no power plant to preview.";
+                _error.Text = string.Format(Ui.T("SND_NO_POWER"), id);
                 _listenButton.Disabled = true;
             }
         }
@@ -122,9 +122,10 @@ public partial class SoundScreen : Control
     void StartListening()
     {
         if (_engine is null || AudioBuses.Headless) return;
+        // A flight left while paused leaves the Aircraft bus muted; the preview would otherwise be silent.
+        AudioBuses.SetAircraftMuted(false);
         _listening = true;
         _previewTime = 0;
-        _impactPlaying = false;
         _synth.Reset();
         _voice.Play();
         _playback = (AudioStreamGeneratorPlayback)_voice.GetStreamPlayback();
@@ -138,6 +139,9 @@ public partial class SoundScreen : Control
         _voice.Stop();
         _playback?.Dispose();
         _playback = null;
+        _impactPlayer?.Stop();
+        _impactPlayer?.QueueFree();
+        _impactPlayer = null;
         _listenButton.Text = Ui.T("SND_LISTEN");
     }
 
@@ -145,11 +149,12 @@ public partial class SoundScreen : Control
     {
         if (!_listening || _engine is null) return;
         _synth.Mix = VoiceMix.From(_services.Settings.Audio);
+        double previous = _previewTime;
         _previewTime += delta;
-        var (parameters, impact) = SoundPreview.At(_previewTime, _engine, _spec);
-        _feeder.Push(_playback, parameters);
-        if (impact && !_impactPlaying) PlayImpact();
-        _impactPlaying = impact;
+        // Crossing detection over the elapsed span, not a sample inside a fixed window: sampling a boolean at a
+        // point can miss the impact entirely when a slow frame (or a low frame rate) jumps clean over the window.
+        if (SoundPreview.ImpactBetween(previous, _previewTime)) PlayImpact();
+        _feeder.Push(_playback, SoundPreview.At(_previewTime, _engine, _spec));
     }
 
     void PlayImpact()
@@ -157,6 +162,8 @@ public partial class SoundScreen : Control
         if (_impacts.Count == 0) return;
         double volume = ImpactMix.Linear(1.0, _services.Settings.Audio.Impacts);
         if (volume <= 0.001) return;
+        _impactPlayer?.Stop();
+        _impactPlayer?.QueueFree();
         var player = new AudioStreamPlayer
         {
             Bus = AudioBuses.Aircraft,
@@ -166,6 +173,7 @@ public partial class SoundScreen : Control
         AddChild(player);
         player.Finished += player.QueueFree;
         player.Play();
+        _impactPlayer = player;
     }
 
     // The generated voice never reaches a natural end, so it must be stopped explicitly before the tree tears
@@ -175,5 +183,8 @@ public partial class SoundScreen : Control
         _voice.Stop();
         _playback?.Dispose();
         _playback = null;
+        // Just stop it: it's a child of this screen, so the tree teardown frees it — QueueFree here would double-free.
+        _impactPlayer?.Stop();
+        _impactPlayer = null;
     }
 }

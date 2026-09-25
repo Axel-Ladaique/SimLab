@@ -75,6 +75,9 @@ public partial class AircraftAudio : Node3D
         _sample?.Stop();
         _playback?.Dispose();
         _playback = null;
+        // A flight left while paused leaves the Aircraft bus muted (see _Process); without this, leaving the
+        // scene keeps it muted for whatever plays on that bus next (e.g. the sound screen's preview).
+        AudioBuses.SetAircraftMuted(false);
     }
 
     AudioStreamPlayer3D Player(AudioStream? stream)
