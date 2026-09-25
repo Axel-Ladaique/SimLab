@@ -67,8 +67,7 @@ public partial class MenuAircraftView : ControlPreview
     public void Init(System.Func<AudioSettings> audio, FlightConditions conditions)
     {
         _conditions = conditions; // read by BuildScenery, which the base Init calls
-        Init(Vector2.Zero);
-        SetAnchorsPreset(LayoutPreset.FullRect);
+        Init(Vector2.Zero); // covers the parent's area in physical pixels: see FitToPixels
         _audio = audio;
         Camera.Fov = FovDeg;
         Camera.Near = 0.1f;
@@ -90,7 +89,25 @@ public partial class MenuAircraftView : ControlPreview
     }
 
     // The windsock builds its sock in its own _Ready, so its pose can only be applied once it is in the tree.
-    public override void _Ready() => ApplyConditions(_conditions);
+    public override void _Ready()
+    {
+        FitToPixels();
+        ApplyConditions(_conditions);
+    }
+
+    /// <summary>
+    /// Covers the parent's area with a scene rendered at the window's physical resolution. A stretched container
+    /// sizes its viewport in canvas units, which the window's canvas_items stretch then scales: on a window larger
+    /// than the 1600×900 base (full screen, Retina) the field would be upscaled and blurred under sharp UI text.
+    /// So the container is sized in physical pixels and scaled back down by the same factor.
+    /// </summary>
+    void FitToPixels()
+    {
+        var scale = GetViewport().GetFinalTransform().Scale;
+        var pixels = (GetParentAreaSize() * scale).Round();
+        if (Size != pixels) Size = pixels;
+        Scale = Vector2.One / scale;
+    }
 
     /// <summary>Re-aims the sun and the windsock (steady wind at the top of its pole, no gusts).</summary>
     public void ApplyConditions(FlightConditions conditions)
@@ -150,6 +167,7 @@ public partial class MenuAircraftView : ControlPreview
 
     public override void _Process(double delta)
     {
+        FitToPixels();
         if (_playback is null)
         {
             // Silent until the throttle first opens: no voice runs while the menu is only browsed. Nothing is heard
