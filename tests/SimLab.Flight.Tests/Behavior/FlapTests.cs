@@ -46,17 +46,29 @@ public class FlapTests
     [Fact]
     public void Landing_flaps_raise_the_maximum_lift()
     {
-        double LiftAt(double flap, double alphaDeg)
+        // Steady lift in a slow pull: alpha rises in half-degree steps on one aircraft, so each solve starts from the
+        // previous one (near the stall the lifting line has an attached and a separated solution, and a cold start can
+        // land on the separated one early), and the tail sees the wing's settled downwash (Advance), as in flight.
+        double MaxLift(double flap)
         {
             var def = Fleet.Load("p51");
             var aircraft = new Aircraft(def);
             var input = ControlInputs.Neutral with { Flap = flap };
             var deflections = def.Controls.Select(c => Aircraft.TargetDeflection(c, input)).ToArray();
-            double a = Angle.Rad(alphaDeg);
-            var ctx = new SimLab.Flight.Aero.AeroContext(new Vec3(-15 * Math.Cos(a), 0, -15 * Math.Sin(a)), Vec3.Zero, 1.225, 100, BodyAxes.Up, deflections, default);
-            return aircraft.Aero.Evaluate(ctx).Force.Z;
+            double max = 0;
+            for (double d = 0; d <= 20; d += 0.5)
+            {
+                double a = Angle.Rad(d);
+                var ctx = new SimLab.Flight.Aero.AeroContext(new Vec3(-15 * Math.Cos(a), 0, -15 * Math.Sin(a)), Vec3.Zero, 1.225, 100, BodyAxes.Up, deflections, default);
+                for (int k = 0; k < 9; k++)
+                {
+                    aircraft.Aero.Evaluate(ctx);
+                    aircraft.Aero.Advance(100);
+                }
+                max = Math.Max(max, aircraft.Aero.Evaluate(ctx).Force.Z);
+            }
+            return max;
         }
-        double MaxLift(double flap) => Enumerable.Range(0, 20).Max(d => LiftAt(flap, d));
         // Plain flaps of this size on a Clark Y: about 15-30% more maximum lift.
         Assert.InRange(MaxLift(1) / MaxLift(0), 1.1, 1.4);
     }
