@@ -73,4 +73,9 @@ public static class SwitchStates
         if (positions == 3) return three ? [0, 1, 2] : [0, null, 1];
         return three ? [0, 2] : [0, 1];
     }
+
+    /// <summary>The state after <paramref name="state"/> when the pilot clicks a position: the next state, "no
+    /// effect" (null) after the last one, the first state after "no effect".</summary>
+    public static int? Next(SwitchFunction function, int? state) =>
+        state is not int s ? 0 : s + 1 < Count(function) ? s + 1 : null;
 }
