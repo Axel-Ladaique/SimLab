@@ -22,13 +22,10 @@ public static class MountainPlanting
     static readonly Rgb Rock = new(0.42f, 0.41f, 0.39f);
     static readonly Noise2 Stands = new(MountainMap.Seed + 101);
 
-    /// <summary>How much of the ground at (x, y) the forest covers, 0…1: stands where a broad noise exceeds a
-    /// threshold that rises with height, so the forest thins toward +600 m and stops there. The shoulder between the
-    /// crest and <see cref="MeadowEnd"/> stays open meadow.</summary>
-    public static double ForestDensity(double x, double y) => ForestDensity(x, y, MountainRelief.Height(x, y));
-
-    /// <summary>The forest cover at (x, y) for ground at height <paramref name="z"/>: the planting and the needle
-    /// ground pass the grid height, so the forest floor lies exactly where the trees stand.</summary>
+    /// <summary>How much of the ground at (x, y) the forest covers, 0…1, for ground at height <paramref name="z"/>:
+    /// stands where a broad noise exceeds a threshold that rises with height, so the forest thins toward +600 m and
+    /// stops there. The shoulder between the crest and <see cref="MeadowEnd"/> stays open meadow. The planting and
+    /// the needle ground pass the grid height, so the forest floor lies exactly where the trees stand.</summary>
     public static double ForestDensity(double x, double y, double z)
     {
         if (z < ForestLow || z > ForestHigh) return 0;

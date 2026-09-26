@@ -249,7 +249,7 @@ public class MountainMapTests
             Assert.True(Slope(t.Base.X, t.Base.Y) <= 0.78, $"tree on slope {Slope(t.Base.X, t.Base.Y):F2} at ({t.Base.X:F0}, {t.Base.Y:F0})");
             Assert.InRange(t.Height, 12, 28);
         }
-        Assert.InRange(MountainPlanting.ForestDensity(trees[0].Base.X, trees[0].Base.Y), 0, 1);
+        Assert.InRange(MountainPlanting.ForestDensity(trees[0].Base.X, trees[0].Base.Y, H(trees[0].Base.X, trees[0].Base.Y)), 0, 1);
     }
 
     [Fact]
