@@ -81,7 +81,7 @@ public class MapModelTests
     [Fact]
     public void Map_terrain_samples_height_normal_and_obstacles()
     {
-        var terrain = new MapTerrain((x, _) => 0.1 * x,
+        var terrain = new MapTerrain(HeightGrid.Sample(30, 10, (x, _) => 0.1 * x),
             [new Obstacle(new VerticalCylinder(new Vec3(5, 5, 0.5), 1, 10), ObstacleKind.Structure)]);
         Assert.Equal(2, terrain.Height(20, 7), 9);
         var n = terrain.Normal(3, 4);

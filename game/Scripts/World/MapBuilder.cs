@@ -75,7 +75,8 @@ public static class MapBuilder
     /// (COLOR = grass, mowed, dirt, gravel; CUSTOM0 = wheat, ploughed) that the terrain shader blends.</summary>
     static MeshInstance3D TerrainMesh(FieldMap map)
     {
-        int n = (int)(2 * map.HalfSize / GridStep);
+        var grid = map.Grid;
+        int n = grid.Count - 1;
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
         st.SetCustomFormat(0, SurfaceTool.CustomFormat.RgbaFloat);
@@ -87,7 +88,7 @@ public static class MapBuilder
             st.SetColor(new Color((float)w.Grass, (float)w.MowedGrass, (float)w.Dirt, (float)w.Gravel));
             st.SetCustom(0, new Color((float)w.Wheat, (float)w.Ploughed, 0, 0));
             st.SetNormal(map.Terrain.Normal(x, y).WorldToGodot());
-            st.AddVertex(new Vec3(x, y, map.Terrain.Height(x, y)).WorldToGodot());
+            st.AddVertex(new Vec3(x, y, grid[i, j]).WorldToGodot());
         }
         for (int j = 0; j < n; j++)
         for (int i = 0; i < n; i++)

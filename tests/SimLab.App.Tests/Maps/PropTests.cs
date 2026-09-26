@@ -9,7 +9,7 @@ public class PropTests
 {
     static readonly Rgb Green = new(0.2f, 0.3f, 0.1f);
 
-    static MapTerrain Around(Prop prop) => new((_, _) => prop.Base.Z, prop.Collision());
+    static MapTerrain Around(Prop prop) => new(HeightGrid.Sample(10, 5, (_, _) => prop.Base.Z), prop.Collision());
 
     [Fact]
     public void Foliage_hitbox_sits_inside_the_drawn_foliage()
@@ -110,7 +110,7 @@ public class PropTests
     public void Field_map_collects_prop_collisions()
     {
         var tree = new BroadleafTree(new Vec3(10, 10, 0), 0, 12, 4, Green);
-        var map = new FieldMap("test", "FIELD_TEST", 100, (_, _) => 0, (_, _) => SurfaceWeights.Only(SurfaceKind.Grass),
+        var map = new FieldMap("test", "FIELD_TEST", HeightGrid.Sample(100, 10, (_, _) => 0), (_, _) => SurfaceWeights.Only(SurfaceKind.Grass),
             new MapLayout(Vec3.Zero, 1.7, Vec3.Zero, Vec3.Zero, 50, 10, 90),
             new MapAmbience(Green, Green, Green, Green, 0), [tree], []);
         Assert.Equal(2, map.Terrain.Obstacles.All.Count);

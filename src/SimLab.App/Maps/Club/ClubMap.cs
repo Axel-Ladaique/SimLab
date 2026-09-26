@@ -41,7 +41,7 @@ public static class ClubMap
         var props = new List<Prop>();
         props.AddRange(ClubPlanting.Plant(Seed));
         props.AddRange(ClubFurniture.Place());
-        return new FieldMap(Id, "FIELD_CLUB", HalfSize, Height, Surface, Layout, Ambience, props, Overlays);
+        return new FieldMap(Id, "FIELD_CLUB", HeightGrid.Sample(HalfSize, 5, Height), Surface, Layout, Ambience, props, Overlays);
     }
 
     /// <summary>Ground height at (x east, y north). The hill formula was authored with z = south, hence z = −y.</summary>
