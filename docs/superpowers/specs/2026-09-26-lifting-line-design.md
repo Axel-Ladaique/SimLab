@@ -16,122 +16,131 @@ causes of realism backlog #1 (hands-off bank), #5 (spin recovery too easy) and p
 
 ## Success criteria
 
-1. For the four aircraft (trainer, sport, wing, 3d), at the conditions of the AVL comparison (cruise airspeed, the
-   alpha where lift = weight with zero deflections, sea level, out of ground effect, power off, bodies off,
-   quasi-steady downwash), SimLab's stability-axis derivatives are within **±15 % of AVL** for CLα, Cmα, CYβ, Cnβ,
-   Clβ, Clp, Cnr, Clr, Clδa, Cmδe and Cnδr.
-2. The spiral criterion is on the same side of 1 as AVL's for every aircraft.
-3. Small derivatives (Cnp, Cnδa): same sign as AVL and within an absolute band (Cnp ±0.015, Cnδa ±0.0003 per degree).
-4. All behavior tests pass after section 5 (reverting compensating tunings, re-tuning with the user's approval).
-5. Aero evaluation cost below 10 % of real time at 500 Hz with four RK4 evaluations per step, for every aircraft.
+1. For the four aircraft (trainer, sport, wing, 3d), at the AVL fixture's conditions (per aircraft: airspeed and alpha
+   stored in the fixture, sea level, out of ground effect, power off, bodies off, downwash lag settled, zero
+   deflections), SimLab's stability-axis derivatives are within **±15 % of AVL** for CLα, CYβ, Cnβ, Clβ, Clp, Cnr, Clr,
+   Clδa, Cmδe and Cnδr (Cnδr only where the aircraft has a rudder).
+2. **Static margin** −Cmα/CLα (in fractions of the reference chord) within **±0.02 of AVL's** (±2 % MAC). This replaces
+   a ±15 % band on Cmα, which is meaningless near a neutral point: on the flying wing a 3 mm shift of the aerodynamic
+   centre is 26 % of Cmα (user decision, 2026-09-26).
+3. The spiral criterion Clβ·Cnr/(Clr·Cnβ) is on the same side of 1 as AVL's for every aircraft.
+4. Small derivatives: Cnp same sign as AVL and within ±0.015; Cnδa within ±0.0003 per degree of AVL.
+5. All behavior tests pass after section 5 (reverting compensating tunings, re-tuning with the user's approval).
+6. Aero evaluation cost below 10 % of real time at 500 Hz with four RK4 evaluations per step (mean `Evaluate` time
+   below 50 µs) for every aircraft.
 
-## 1. `LiftingLine` (new, `src/SimLab.Flight/Aero/LiftingLine.cs`)
+## 1. Method (validated with a throwaway prototype against AVL, 2026-09-26)
 
-Built once from the model's `SurfaceSegment`s. Pure computation, no Godot, no allocation per evaluation.
+A Weissinger-type lifting line with a nonlinear section polar:
 
-### Geometry
+- Each strip is a horseshoe vortex: a bound segment along its quarter-chord line (from `Position − HalfSpan` to
+  `Position + HalfSpan`, oriented so that the flow along +x over it lifts along the strip normal) and two trailing legs
+  from its ends to +∞ along body +x (frozen wake, as AVL).
+- **Control point at the three-quarter chord** (`Position − ChordAxis · c/2`, the point where the rotation velocity is
+  already taken). The influence of every horseshoe, the strip's own bound segment included, is summed there; the
+  two-dimensional self-induction of an infinite bound vortex at c/2, a normal velocity Γ/(π cₙ), is then removed,
+  because the section polar already contains it. With a 2π polar this is exactly Weissinger's flow tangency; with a
+  real polar the section keeps its own lift curve, stall included.
+- **cₙ = strip area / bound-segment length = c·cosΛ**, the chord normal to the bound vortex, is the chord used in
+  Γ = ½ v cₙ cl, so that the Kutta–Joukowski force on the bound segment equals the strip force of simple sweep theory.
+- **Forces use the induced velocity at the bound vortex** (own bound segment excluded), not at the control point: at
+  the control point the induced drag comes out 25 % too high (span efficiency 0.78 instead of AVL's 0.98 on a
+  rectangular wing).
+- **Chordwise trailing-leg couple**: over the chord (quarter chord to trailing edge, length 0.75 c) the trailing legs
+  carry Γ in the local flow. Their two forces are equal and opposite, a couple ρ Γ (0.75 c) (B − A) × (V_flow × x̂).
+  In sideslip it is the lift-dependent part of Clβ (an unswept rectangular wing at CL 0.3: Clβ −0.037 with it, AVL
+  −0.037; −0.000 without it).
+- Vortex core: Scully core of radius `CoreFraction` × the source strip's bound-segment length, `CoreFraction` = 0.05
+  (no measurable effect on the prototype's derivatives; it keeps the fin and tail finite near wing trailing legs).
 
-- Each strip i is a horseshoe vortex: a bound segment along its quarter-chord line from `Position − HalfSpan` to
-  `Position + HalfSpan`, and two trailing legs from those ends to +∞ along body +x (frozen wake along the body axis, as
-  AVL's default).
-- Control point: the strip's `Position` (mid bound segment, Phillips & Snyder 2000). The strip's own bound segment is
-  excluded from its own control point (collinear, no induced velocity); its own trailing legs are included.
-- Influence matrix `W[i, j]` (Vec3): velocity at control point i induced by a unit circulation on horseshoe j
-  (Biot–Savart for the three segments, semi-infinite legs in closed form).
-- Vortex core: every segment uses a finite core (Scully / Vatistas n = 2 profile) of radius `CoreFraction · c̄`, where
-  c̄ is the reference wing's mean chord and `CoreFraction` = 0.1 (a named constant), so the tail and fin strips that
-  sit near a wing trailing leg get a bounded velocity.
+Prototype results (linear 2π polar; AVL flat plate, 12 chordwise panels):
 
-### Solve
+| Case | Quantity | Prototype | AVL |
+|---|---|---|---|
+| Rectangular AR 6, 12 strips / side | CLα, Clp, Clβ at CL 0.3 | 4.286, −0.464, −0.037 | 4.190, −0.438, −0.037 |
+| Rectangular AR 6, 24 strips / side | CLα, Clp | 4.227, −0.448 | |
+| Same wing, 5° dihedral | Clβ at α 4° | −0.104 | −0.101 |
+| + fin (16 strips) behind and above | CYβ, Cnβ, Clβ | −0.162, 0.079, −0.112 | −0.158, 0.076, −0.107 |
+| Fin alone, 4 / 8 / 16 strips | CYβ | −0.170 / −0.155 / −0.148 | −0.143 |
+| Flying-wing planform (25° sweep, taper 0.5, 8 strips) | CLα, Clp, Clβ | 3.99, −0.393, −0.073 | 3.85, −0.361, −0.059 |
 
-Unknowns Γᵢ. For each strip:
+Phillips' control point at the bound vortex was rejected: CLα +10 % and Clp +27 % on the rectangular wing.
+Uniform strips converge slowly on low-aspect-ratio surfaces: a fin needs about 16 strips to be within 5 % of AVL, so
+the tail surfaces' `segments` are part of the section 5 proposal. The swept planform's Clβ (+25 %) is the known risk;
+it is measured on the complete flying wing at the stop gate of §6 step 2.
 
-- local velocity uᵢ = air velocity at the three-quarter-chord point (freestream + ω × r₃/₄, as today) + prop wash
-  (as today) + gᵢ · Σⱼ W[i, j] Γⱼ, where gᵢ is the McCormick ground-effect factor at strip i's height and the Γⱼ of a
-  wing strip seen by a tail strip is the lagged value (§2);
-- in-plane components on `FlowChordAxis` / `FlowNormalAxis` (simple sweep theory, as today) give vᵢ and αᵢ;
-- residual Rᵢ = ½ vᵢ cᵢ clᵢ(αᵢ + flap term, Reᵢ) − Γᵢ, where cl comes from the strip's polar exactly as today.
+## 2. `LiftingLine` (new, `src/SimLab.Flight/Aero/LiftingLine.cs`)
 
-Iteration: frozen-Jacobian Newton. With αᵢ perturbed by (nᵢ · W[i, j] Γⱼ)/vᵢ, the Jacobian of Γ ↦ ½ v c a α is
-J = I − diag(½ cᵢ aᵢ) · N, N[i, j] = nᵢ · W[i, j], which does not depend on the airspeed. aᵢ is the strip polar's
-attached lift slope (from the polar at its lowest-Reynolds table, finite difference around cl = 0). J is LU-factorized
-once at construction. Each iteration solves J ΔΓ = R and updates Γ ← Γ + λ ΔΓ.
+Built once from the model's `SurfaceSegment`s: bound-vortex ends, cₙ, each strip polar's attached lift slope aᵢ (cl at
+±2° of its lowest-Reynolds table), influence matrices at the control points and at the bound vortices, lag groups, and
+the LU factorization of the Jacobian. No allocation per evaluation.
 
-- Warm start from the previous solution (kept in the object; reset by `Reset()`).
-- At most `MaxIterations` = 8; stop when max |R| < 1e-6 · max(1, max |Γ|).
-- λ = 1 while the residual decreases, halved (down to 1/8) when it grows: stall (negative local slope) must not
-  diverge. After `MaxIterations` the last Γ is used (no exception); a counter exposes non-converged evaluations for
-  tests and diagnostics.
-- Strips with vᵢ < 0.1 m/s carry Γᵢ = 0 (as today they are skipped).
+Solve, per `Evaluate` (inputs per strip: the three-quarter-chord velocity relative to the air without induced flow,
+the flap angle offset and the ground-effect factor gᵢ):
 
-### Outputs
+- induced flow at the control point wᵢ = gᵢ (Σⱼ W[i, j] Γⱼ* + nᵢ Γᵢ/(π cₙᵢ)), where Γⱼ* is the lagged value when j is a
+  wing strip and i a tail strip (below), else Γⱼ;
+- residual Rᵢ = ½ vᵢ cₙᵢ clᵢ(αᵢ + flap offset, Reᵢ) − Γᵢ with vᵢ, αᵢ from uᵢ − wᵢ projected on the strip's
+  `FlowChordAxis` / `FlowNormalAxis`;
+- frozen-Jacobian Newton: J = I − diag(½ cₙᵢ aᵢ) · N, N[i, j] = nᵢ · W[i, j] + δᵢⱼ/(π cₙᵢ) (lagged pairs excluded), LU
+  once; Γ ← Γ + λ J⁻¹R, λ = 1, halved (not below 1/8) when the residual grows; at most 8 iterations; stop when
+  max |R| ≤ 1e-9 · max(1, max |Γ|); warm start from the last solution; non-converged solves are counted, never thrown;
+- strips whose in-plane speed is below 0.1 m/s carry Γ = 0.
 
-For every strip, its induced velocity and Γ, read by `SurfaceAeroModel`; the mean downwash angle over the horizontal
-tail strips (replaces `SurfaceAeroModel.Downwash` for tests and the diagnostics overlay).
+Downwash lag: every horizontal- or vertical-tail surface is a lag group with τ = max(0, x̄_surface − x̄_wing) / max(V, 1)
+(mean quarter-chord x). Its strips see the wing strips' Γ through a copy advanced by `Advance(dt, airspeed)` as a
+first-order lag; all other influences are instantaneous. `Evaluate` does not advance it (the `IAeroModel` contract);
+the warm start does not change the converged result. `Reset()` zeroes Γ and the lagged copies (the tail starts without
+downwash, as today).
 
-## 2. `SurfaceAeroModel` changes
+## 3. `SurfaceAeroModel` changes
 
-- The per-strip loop keeps its structure (sweep projection, flap, Reynolds, polar, lift ⟂ local velocity, drag along
-  it, section Cm and the pitch-rate camber moment). The local velocity now includes the lifting-line induced velocity;
-  the separate induced angle (`InducedFlow.SolveInducedAngle`, `SurfaceSegment.InducedFactor`) is removed. Lift is
-  perpendicular to the local velocity including the induced part, so induced drag comes out of the geometry.
-- The flap term keeps its current form (thin-airfoil effectiveness × DATCOM K' × 0.85 × coverage) as an angle added to
-  αᵢ inside the solve.
-- Removed: `DownwashGain`, `MaxDownwash`, the scalar `Downwash` state, the tail's `alphaGeo −= Downwash · groundEffect`.
-- Downwash lag: for each tail surface (roles `HorizontalTail`, `VerticalTail`), τ = max(0, x̄_tail − x̄_wing) / max(V, 1)
-  between the surfaces' mean quarter-chord x. The Γ of wing strips seen by that surface's strips is a copy advanced in
-  `Advance(dt)` as a first-order lag with time constant τ (as today's downwash). All other influences are
-  instantaneous. The flying wing's winglets sit at almost the wing's x, so their τ is near zero.
-- `Evaluate` must not advance lagged states (the `IAeroModel` contract); it may update the warm-start Γ, which only
-  changes the iteration's starting point, not the converged result.
-- Ground effect: `InducedFlow.GroundEffectFactor(height, span)` stays, applied per receiving strip to the induced
-  velocity. `InducedFlow.SolveInducedAngle` and its tests are deleted.
-- Format: `oswald` is removed from `SurfaceSpec`, the DTO and `aircraft/README.md`. No shipped aircraft sets it. The
-  loader rejects a surface that still has it: "oswald is no longer used: the lifting line computes the span
-  efficiency". (Waxwing's copy of the format is updated in a Waxwing session, not here.)
+- The strip loop keeps sweep projection, flap terms, Reynolds, polar, section Cm and the pitch-rate camber moment.
+  The section angle of attack now comes from the three-quarter-chord velocity minus the lifting line's control-point
+  induced flow; lift and drag directions and the dynamic pressure from the velocity minus the bound-vortex induced
+  flow; plus the chordwise trailing-leg couple.
+- Removed: `InducedFlow.SolveInducedAngle` and its test, `SurfaceSegment.InducedFactor`, `SurfaceSpec.Oswald`,
+  `DownwashGain`, `MaxDownwash`, the scalar `Downwash`, the tail's `− Downwash · groundEffect`, `_tailArm`.
+- Added: `TailDownwash` (mean change of the horizontal-tail strips' angle of attack due to the induced flow, from the
+  last `Evaluate`; for tests and diagnostics) and `Line` (the `LiftingLine`, read-only use).
+- Ground effect: `InducedFlow.GroundEffectFactor(height, span)` per strip, applied to the induced flow it receives.
+- Format: `oswald` is removed from `SurfaceSpec` and the DTO; the loader rejects a surface that still has it
+  ("oswald is no longer used: the lifting line computes the span efficiency"). No shipped aircraft and no README
+  entry use it. Waxwing's copy of the format is updated in a Waxwing session.
+- `StaticStability.Loads` settles the downwash lag (evaluate, advance by a long step, evaluate) instead of relying on
+  `Reset()`, so it is valid for tailed aircraft too.
 
-Risk: Phillips' control point at the bound vortex is known to be less accurate near the root of swept wings. The
-flying wing (25° sweep) is the check. If it misses criterion 1, stop after §4's first measurement and report before
-switching to Weissinger control points at the three-quarter chord with the 2D self-induction removed.
+## 4. Tests
 
-## 3. Unit tests (`tests/SimLab.Flight.Tests/Aero/LiftingLineTests.cs`)
+Unit (`tests/SimLab.Flight.Tests/Aero/`):
 
-With the linear 2π test polar:
+- `VortexMathTests`: a long segment gives the infinite-line velocity 1/(2πh); a semi-infinite line gives half; the core
+  bounds the velocity on the line.
+- `LuDecompositionTests`: solves a known system; throws on a singular matrix.
+- `LiftingLineTests`: bound-segment orientation (lift along the normal for wing and fin strips); a very high aspect
+  ratio wing tends to the 2D result Γ = ½ V c a α; one Newton step converges with a linear polar; symmetry; lag reaches
+  63 % after τ; robustness at 40°, in reversed flow and at 0.05 m/s (finite, at most 8 iterations); `Reset`.
+- `LiftingLineValidationTests` (through `SurfaceAeroModel`, linear 2π test polar, AVL references from the prototype
+  table): rectangular AR 6 (12 strips) CLα within 4 % and Clp within 8 %, 12 vs 24 strips within 2 %; span efficiency
+  of the rectangular wing between 0.9 and 1.1; 5° dihedral wing Clβ within 10 %; wing + 16-strip fin CYβ, Cnβ, Clβ
+  within 10 %; flying-wing planform CLα within 6 %.
+- Existing `SurfaceAeroModelTests` adapted where they encoded the old model: the finite-wing lift test uses Helmbold
+  (0.93–1.03), the pitch-rate lift test compares with the lift at α = q (c/2)/V, the downwash test uses `TailDownwash`,
+  the swept-elevon flap-moment test resets the model between its two evaluations.
 
-- Rectangular wing, AR 6: CLα within ±3 % of Helmbold, 2πA / (2 + √(A² + 4)), and converged in the strip count
-  (12 vs 24 strips per side within 1 %).
-- Induced drag: a wing with elliptic chords gives e = CL² / (π A CDi) between 0.95 and 1.02; a rectangular wing gives a
-  lower e.
-- Roll damping of the rectangular AR 6 wing below the old strip value (−a/6 per p b/2V) and within ±10 % of the
-  vortex-lattice reference for that wing (computed once with AVL and stored in the test with its source).
-- Downwash at a tail one semi-span behind the wing: positive, below 2 CL/(πA) and above half of it.
-- Sidewash: a wing (5° dihedral) with a fin behind and above it, in 5° sideslip: the fin's side force with the wing present
-  differs from the isolated fin's, and both are within ±15 % of AVL's for the same two configurations (values stored in
-  the test with their source).
-- Symmetry: β = 0 and ω = 0 give no roll, yaw or side force.
-- Robustness: α = 40°, reversed flow and 0.05 m/s give finite loads, no NaN, and at most `MaxIterations` iterations.
-- Lag: after an alpha step the tail downwash reaches 63 % of its change after τ = tail arm / V (±10 %).
-- Existing `SurfaceAeroModelTests` adapted where they encoded the old model (lift of the finite wing now from
-  Helmbold instead of the Oswald formula, downwash tests on the new output).
+Fleet (`tests/SimLab.Flight.Tests/Behavior/`):
 
-## 4. AVL comparison as a test
-
-- `tests/SimLab.Flight.Tests/Behavior/StabilityDerivatives.cs`: the finite-difference harness of the investigation
-  (`docs/investigations/2026-09-26-avl-comparison/Deriv.cs`) as a test utility: surfaces only, sea level, far from the
-  ground, downwash lag converged, AVL stability axes and signs.
-- `tests/SimLab.Flight.Tests/Behavior/Golden/avl-derivatives.json`: AVL's derivatives per aircraft with the airspeed,
-  alpha, references and the Waxwing / AVL versions, produced by `compare_avl.py` (extended with a `--write-fixture`
-  option). Tests do not need AVL.
-- `AvlDerivativeTests`: criteria 1–3 per aircraft; a report test prints the full ratio table.
-- A timing report test (no strict threshold except criterion 5, checked with a wide margin).
-- When a geometry change alters an aircraft (section 5), the fixture is regenerated with the script (needs Waxwing and
-  AVL locally); documented in the investigation note and the test's summary. An aircraft added later (e.g. from the
-  parallel `feat/jet-f16` work) needs its own fixture entry to join the test.
+- `StabilityDerivatives`: the investigation's finite-difference harness as a test utility.
+- `Golden/avl-derivatives.json`: AVL's derivatives, airspeed and alpha per aircraft (from the investigation's runs of
+  the main-branch data); regenerated with `compare_avl.py --write-fixture` when a geometry changes (needs Waxwing and
+  AVL locally). An aircraft added later (e.g. `feat/jet-f16`) needs its own entry to join the test.
+- `AvlDerivativeTests`: criteria 1–4 per aircraft, a report test with the full ratio table, and a timing test for
+  criterion 6.
 
 ## 5. Reverting compensating tunings
 
-After §1–§4 are in and measured with the current data, these values go back to their originals (from
-`docs/tuning-log.md`); the AVL fixture is regenerated because the geometry changes:
+After §2–§4 are in and measured with the current data, these values go back to their originals (from
+`docs/tuning-log.md`), and the AVL fixture is regenerated because the geometry changes:
 
 | Aircraft | Parameter | Current → original | Was changed for |
 |---|---|---|---|
@@ -147,21 +156,22 @@ Kept: data fixes (rudder signs, hull point positions, sport aileron span from th
 trainer's 12° elevator throw (a realistic trainer rate), test setups (cruise throttles, hand-launch pilot), the 3d's
 mass and inertia (estimation fixes).
 
-Every behavior test is then run. For the failing ones, the smallest data changes that pass are gathered into one
-proposal, **submitted to the user before they are applied**, then logged in `docs/tuning-log.md`.
+Every behavior test is then run. For the failing ones, the smallest data changes that pass (tail-surface strip counts
+included) are gathered into one proposal, **submitted to the user before they are applied**, then logged in
+`docs/tuning-log.md`.
 
 ## 6. Order of work
 
-1. `LiftingLine` + unit tests, nothing else touched.
-2. Integration in `SurfaceAeroModel` (removals, lag, ground effect, `oswald`), derivative utility, AVL fixture and
-   test; measure AVL criteria and behavior tests on the current data. Stop and report if the flying wing misses
-   criterion 1.
+1. Numerics (`VortexMath`, `LuDecomposition`), `LiftingLine` and their unit tests; nothing else touched.
+2. Integration in `SurfaceAeroModel` (removals, lag, ground effect, `oswald`), validation tests, derivative utility,
+   AVL fixture and test; measure criteria 1–4 and 6 and the behavior tests on the current data. **Stop and report to
+   the user** before step 3 (and before switching method if the flying wing misses criteria 1–3).
 3. Section 5 revert, fixture regeneration, behavior tests, re-tuning proposal → user approval → apply and log.
 4. Golden file `frame-invariance.json` regenerated (intended physics change); realism backlog #1, #3, #5, #11, #14
-   updated; investigation note with before/after ratios; `aircraft/README.md` without `oswald`.
+   updated; investigation note with before/after ratios.
 
 ## Out of scope
 
 Ground-effect image vortices (the McCormick factor stays), wake roll-up or a wake that follows the flow, unsteady
-(Theodorsen / Wagner) lift beyond the downwash lag, fuselage aerodynamics (side force, Munk moment), prop-wash changes,
-Waxwing changes.
+(Theodorsen / Wagner) lift beyond the downwash lag, fuselage aerodynamics (side force, Munk moment), several chordwise
+panels, prop-wash changes, Waxwing changes.
