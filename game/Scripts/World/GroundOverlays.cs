@@ -6,7 +6,7 @@ using SimLab.Flight.Geometry;
 namespace SimLab.Game.World;
 
 /// <summary>Flat features laid on the terrain: the runway's mowing stripes and thresholds, the pilot box, and the
-/// map's tracks and roads as ribbons that follow the relief.</summary>
+/// map's tracks, roads and streams as ribbons that follow the relief.</summary>
 public static class GroundOverlays
 {
     const float Lift = 0.03f;
@@ -87,7 +87,7 @@ public static class GroundOverlays
     {
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
-        double half = overlay.Width / 2;
+        double half = overlay.Width / 2, travelled = 0;
         for (int s = 0; s + 1 < overlay.Path.Count; s++)
         {
             var (x0, y0) = overlay.Path[s];
@@ -103,18 +103,28 @@ public static class GroundOverlays
                     double x = x0 + ux * t - uy * side, y = y0 + uy * t + ux * side;
                     return new Vec3(x, y, map.Terrain.Height(x, y)).WorldToGodot() + new Vector3(0, Lift, 0);
                 }
-                var a = V(t0, -half); var b = V(t0, half); var c = V(t1, half); var d = V(t1, -half);
-                st.SetNormal(Vector3.Up);
-                st.AddVertex(a); st.AddVertex(b); st.AddVertex(c);
-                st.AddVertex(a); st.AddVertex(c); st.AddVertex(d);
+                // UV in metres (x along the path, downstream for a stream; y across) and the depth tint, used only by the
+                // water shader.
+                void Add(double t, double side)
+                {
+                    st.SetNormal(Vector3.Up);
+                    st.SetColor(new Color(WaterMeshes.StreamDepth, 0, 0));
+                    st.SetUV(new Vector2((float)(travelled + t), (float)side));
+                    st.AddVertex(V(t, side));
+                }
+                Add(t0, -half); Add(t0, half); Add(t1, half);
+                Add(t0, -half); Add(t1, half); Add(t1, -half);
             }
+            travelled += length;
         }
+        if (overlay.Water) st.GenerateTangents();
         return new MeshInstance3D
         {
             Mesh = st.Commit(),
-            MaterialOverride = overlay.Kind == SurfaceKind.Gravel
-                ? OverlayMaterial("gravel", Gravel)
+            MaterialOverride = overlay.Water ? WaterMeshes.StreamMaterial(map.Ambience)
+                : overlay.Kind == SurfaceKind.Gravel ? OverlayMaterial("gravel", Gravel)
                 : OverlayMaterial("dirt", Dirt),
+            CastShadow = overlay.Water ? GeometryInstance3D.ShadowCastingSetting.Off : GeometryInstance3D.ShadowCastingSetting.On,
         };
     }
 }

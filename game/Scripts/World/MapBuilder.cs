@@ -9,7 +9,7 @@ namespace SimLab.Game.World;
 /// <summary>The map's nodes that change after it is built.</summary>
 public readonly record struct FieldNodes(WindsockNode Windsock, DirectionalLight3D Sun);
 
-/// <summary>Builds a map's scene: sky, sun, terrain, ground overlays, props and windsock.</summary>
+/// <summary>Builds a map's scene: sky, sun, terrain, ground overlays, water, props and windsock.</summary>
 public static class MapBuilder
 {
     const float ShadowDistance = 300f;
@@ -24,6 +24,7 @@ public static class MapBuilder
         TerrainChunks.Add(root, map, terrainMaterial);
         BackdropMesh.Add(root, map, terrainMaterial);
         GroundOverlays.Add(root, map);
+        WaterMeshes.Add(root, map);
         PropLayer.Add(root, map.Props);
         var w = map.Layout.WindsockPosition;
         var sock = new WindsockNode { Position = new Vec3(w.X, w.Y, map.Terrain.Height(w.X, w.Y)).WorldToGodot() };
