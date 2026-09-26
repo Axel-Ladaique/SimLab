@@ -11,6 +11,11 @@ namespace SimLab.Flight.Tests.Behavior;
 /// criteria 1–4 and 6). AVL values: Golden/avl-derivatives.json, regenerated with
 /// docs/investigations/2026-09-26-avl-comparison/compare_avl.py --write-fixture when an aircraft's geometry changes.
 /// </summary>
+/// <remarks>
+/// Runs alone, after the parallel tests (<see cref="TimingCollection"/>): <see cref="Aero_evaluation_is_cheap"/> times the
+/// solver, and the rest of the suite running at the same time would triple its measurement.
+/// </remarks>
+[Collection(TimingCollection.Name)]
 public class AvlDerivativeTests(ITestOutputHelper output)
 {
     static readonly string FixturePath = Path.Combine(Fleet.RepoRoot, "tests", "SimLab.Flight.Tests", "Behavior", "Golden", "avl-derivatives.json");
@@ -147,4 +152,10 @@ public class AvlDerivativeTests(ITestOutputHelper output)
         Assert.True(micro < 100, $"{micro:F1} µs per evaluation");
 #endif
     }
+}
+
+[CollectionDefinition(Name, DisableParallelization = true)]
+public class TimingCollection
+{
+    public const string Name = "Timing";
 }
