@@ -15,8 +15,13 @@ public class AvlDerivativeTests(ITestOutputHelper output)
 {
     static readonly string FixturePath = Path.Combine(Fleet.RepoRoot, "tests", "SimLab.Flight.Tests", "Behavior", "Golden", "avl-derivatives.json");
 
-    /// <summary>Derivatives held to ±15 % of AVL (criterion 1).</summary>
+    /// <summary>
+    /// Derivatives held to ±15 % of AVL (criterion 1). The control derivatives are compared without SimLab's viscous
+    /// <see cref="SurfaceAeroModel.FlapEfficiency"/>, which inviscid AVL does not have.
+    /// </summary>
     static readonly string[] Relative = ["CLa", "CYb", "Cnb", "Clb", "Clp", "Cnr", "Clr", "Cl_aileron", "Cm_elevator", "Cn_rudder"];
+
+    static readonly string[] Controls = ["Cl_aileron", "Cm_elevator", "Cn_rudder"];
 
     static readonly string[] Reported = ["CLa", "Cma", "CYb", "Clb", "Cnb", "Clp", "Cnp", "Clr", "Cnr", "CYr", "CLq", "Cmq",
         "Cl_aileron", "Cn_aileron", "Cm_elevator", "CL_elevator", "Cn_rudder", "Cl_rudder"];
@@ -49,6 +54,7 @@ public class AvlDerivativeTests(ITestOutputHelper output)
         foreach (var key in Relative)
         {
             if (!avl.TryGetProperty(key, out var value) || !sim.TryGetValue(key, out double s)) continue;
+            if (Controls.Contains(key)) s /= SurfaceAeroModel.FlapEfficiency;
             double ratio = s / value.GetDouble();
             if (ratio is < 0.85 or > 1.15) failures.Add($"{key} {s:F4} vs AVL {value.GetDouble():F4} (x{ratio:F2})");
         }

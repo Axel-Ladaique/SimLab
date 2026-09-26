@@ -11,7 +11,11 @@ namespace SimLab.Flight.Aero;
 /// </summary>
 public sealed class SurfaceAeroModel : IAeroModel
 {
-    const double FlapEfficiency = 0.85;
+    /// <summary>
+    /// Viscous efficiency of a plain control surface against thin-airfoil theory (DATCOM: plain flaps reach 80–90 % of
+    /// it). Inviscid methods such as AVL leave it out.
+    /// </summary>
+    public const double FlapEfficiency = 0.85;
     // High-lift flaps (driven by the flap channel): this share of the flap's equivalent alpha shift is applied as a lift
     // increment on top of the section polar, so the maximum lift rises and the stall angle drops only by the rest, as for
     // plain flaps (DATCOM section 6.1.1.3). Other controls stay a pure alpha shift.
