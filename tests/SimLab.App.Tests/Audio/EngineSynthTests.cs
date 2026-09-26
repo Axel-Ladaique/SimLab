@@ -172,7 +172,7 @@ public class EngineSynthTests
         Assert.Equal(expected, ImpactMix.Linear(intensity, impactsVolume), 6);
 
     [Fact]
-    public void Exhaust_voice_is_a_pulse_train_at_the_firing_frequency()
+    public void Exhaust_voice_pops_at_the_firing_frequency()
     {
         var synth = new EngineSynth(Rate);
         var buffer = new float[Rate];
@@ -182,6 +182,39 @@ public class EngineSynthTests
         double fundamental = Power(buffer, 120);
         Assert.True(fundamental > 10 * Power(buffer, 90));
         Assert.True(Power(buffer, 360) > 0.05 * fundamental, "rich in harmonics");
+    }
+
+    /// <summary>Coefficient of variation of the per-turn peaks of an exhaust-only render at 30 Hz firing.</summary>
+    static double FiringScatter(double exhaustGain)
+    {
+        var synth = new EngineSynth(Rate);
+        var bark = SynthParams.Silent with { ShaftHz = 30, ExhaustGain = exhaustGain };
+        var buffer = new float[2 * Rate];
+        synth.Render(buffer.AsSpan(0, 512), bark);
+        synth.Render(buffer, bark);
+        int period = Rate / 30;
+        var peaks = new List<double>();
+        for (int start = 0; start + period <= buffer.Length; start += period)
+            peaks.Add(buffer.AsSpan(start, period).ToArray().Max(v => Math.Abs(v)) / exhaustGain);
+        double mean = peaks.Average();
+        return Math.Sqrt(peaks.Average(p => (p - mean) * (p - mean))) / mean;
+    }
+
+    [Fact]
+    public void Exhaust_firings_scatter_at_idle_and_run_even_at_full_power()
+    {
+        double idle = FiringScatter(0.3), full = FiringScatter(1);
+        Assert.True(full < 0.05, $"full-power scatter {full:F3}");
+        Assert.True(idle > 3 * full + 0.1, $"idle scatter {idle:F3} vs full {full:F3}");
+    }
+
+    [Fact]
+    public void Exhaust_voice_is_silent_while_the_engine_is_muted()
+    {
+        var synth = new EngineSynth(Rate) { EngineMuted = true };
+        var buffer = new float[Rate / 4];
+        synth.Render(buffer, SynthParams.Silent with { ShaftHz = 120, ExhaustGain = 1, RoarGain = 1 });
+        Assert.All(buffer, v => Assert.Equal(0f, v));
     }
 
     [Fact]

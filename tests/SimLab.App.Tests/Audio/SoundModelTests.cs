@@ -79,6 +79,7 @@ public class SoundModelTests
         Assert.Equal(0, full.WhineGain);
         Assert.Equal(0, full.RoarGain);
         Assert.Equal(0, Piston.Evaluate(0, 0, 0).ExhaustGain);
+        Assert.True(full.PropGain < 0.5 * full.ExhaustGain, "the exhaust drowns the propeller");
     }
 
     [Fact]

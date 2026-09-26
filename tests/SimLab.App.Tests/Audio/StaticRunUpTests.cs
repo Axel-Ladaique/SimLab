@@ -43,4 +43,11 @@ public class StaticRunUpTests
         Assert.Equal(runUp.Engine.StaticRpm * 2 / 60, p.BladePassHz, 6);
         Assert.Equal(1, p.PropGain, 6);
     }
+
+    [Fact]
+    public void Piston_and_turbine_run_ups_carry_their_exhaust_and_roar()
+    {
+        Assert.True(For("p51").Synth(0.5).ExhaustGain > 0);
+        Assert.True(For("f18").Synth(0.5).RoarGain > 0);
+    }
 }

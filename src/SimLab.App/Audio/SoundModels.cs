@@ -15,7 +15,8 @@ public sealed class EngineSoundModel
     const double StoppedRpm = 50;
     const double PropIdleShare = 0.15;
 
-    const double ExhaustIdleShare = 0.3;
+    // A glow or gas engine's exhaust drowns its propeller: the prop voice is kept as a background swish.
+    const double ExhaustIdleShare = 0.3, PistonPropShare = 0.45;
     const double TurbineWhineIdle = 0.3, TurbineWhineRange = 0.5, RoarIdleShare = 0.15;
 
     readonly SoundSpec _spec;
@@ -51,7 +52,7 @@ public sealed class EngineSoundModel
                 RoarGain: RoarIdleShare + (1 - RoarIdleShare) * thrustShare);
         double prop = PropIdleShare * Math.Min(rpm / StaticRpm, 1) + (1 - PropIdleShare) * Math.Clamp(thrust / StaticThrust, 0, 1);
         if (_source == PowerSource.Piston)
-            return new EngineVoice(shaft * _spec.Blades, shaft, shaft * _spec.PolePairs, Math.Clamp(prop, 0, 1), 0,
+            return new EngineVoice(shaft * _spec.Blades, shaft, shaft * _spec.PolePairs, PistonPropShare * Math.Clamp(prop, 0, 1), 0,
                 ExhaustGain: ExhaustIdleShare + (1 - ExhaustIdleShare) * thrustShare);
         double whine = Math.Sqrt(Math.Clamp(motorCurrent / MaxCurrent, 0, 1));
         return new EngineVoice(shaft * _spec.Blades, shaft, shaft * _spec.PolePairs, Math.Clamp(prop, 0, 1), whine);

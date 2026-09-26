@@ -2,8 +2,9 @@ namespace SimLab.App.Audio;
 
 /// <summary>
 /// Aircraft voice synthesized sample by sample: propeller (blade-pass fundamental plus decaying harmonics, amplitude
-/// modulated at the shaft rate), brushless whine (electrical frequency and its second harmonic), piston exhaust (a pulse
-/// train at the shaft rate), turbine roar (low-passed noise), wind (low-passed noise) and rolling (band-limited noise with
+/// modulated at the shaft rate), brushless whine (electrical frequency and its second harmonic), piston exhaust (one
+/// combustion pop per turn: a ringing muffler resonance plus a noise burst over a low pulse-train body, with cycle-to-cycle
+/// loudness and timing scatter that grows towards idle), turbine roar (low-passed noise), wind (low-passed noise) and rolling (band-limited noise with
 /// random grain). Exhaust and roar share the motor level of the voice mix. Parameters ramp linearly across each buffer and
 /// oscillator phases carry over, so parameter changes never click.
 /// </summary>
@@ -11,15 +12,24 @@ public sealed class EngineSynth
 {
     // Mix levels, tuned by ear.
     const double PropLevel = 0.35, WhineLevel = 0.08, WindLevel = 0.25, RollLevel = 0.2;
-    const double ExhaustLevel = 0.12, RoarLevel = 0.5, RoarCutoffHz = 1800;
-    const int PropHarmonics = 5, ExhaustHarmonics = 12;
+    const double RoarLevel = 0.5, RoarCutoffHz = 1800;
+    const int PropHarmonics = 5, ExhaustHarmonics = 8;
     const double ShaftModulation = 0.15;
+
+    // Piston exhaust. Each firing rings the muffler (a damped sine whose pitch rises with load) and spits a short noise
+    // burst; a cosine pulse train underneath keeps a solid fundamental. ExhaustGain runs from the idle share (~0.3) to 1
+    // at full power, and doubles as the load: the lower it is, the more the firings scatter and the more often they miss.
+    const double ExhaustBodyLevel = 0.12, PopLevel = 0.8, BurstLevel = 0.5;
+    const double PopDecay = 0.0045, BurstDecay = 0.0015, PopAttack = 0.0002;
+    const double PopResonanceIdleHz = 160, PopResonanceRangeHz = 260, BurstCutoffHz = 3500;
+    const double IdleExhaustGain = 0.3, TimingScatter = 0.1, LoudnessScatter = 0.6, IdleMissChance = 0.08;
 
     readonly int _seed;
     SynthParams _last = SynthParams.Silent;
     VoiceMix _lastMix = VoiceMix.Full;
     double _bladePhase, _shaftPhase, _elecPhase;
     double _windState, _rollLow, _rollBand, _grain, _roarState;
+    double _firePhase, _fireStretch = 1, _popAge = double.MaxValue, _popAmp, _burstState;
     uint _rng;
 
     public EngineSynth(int sampleRate, int seed = 1)
@@ -42,6 +52,7 @@ public sealed class EngineSynth
         _lastMix = Mix;
         _bladePhase = _shaftPhase = _elecPhase = 0;
         _windState = _rollLow = _rollBand = _grain = _roarState = 0;
+        _firePhase = 0; _fireStretch = 1; _popAge = double.MaxValue; _popAmp = 0; _burstState = 0;
         _rng = (uint)_seed * 2654435761u | 1u;
     }
 
@@ -86,10 +97,30 @@ public sealed class EngineSynth
                 sample += WhineLevel * whine * (Math.Sin(_elecPhase) + 0.3 * Math.Sin(2 * _elecPhase)) * motorMix;
             if (exhaust > 0)
             {
-                // Sharp pulses once per turn: equal-weight cosine harmonics up to Nyquist, gently rolled off.
+                // Low body: equal-weight cosine harmonics of the firing rate, gently rolled off, below Nyquist.
                 double pulses = 0;
                 for (int k = 1; k <= ExhaustHarmonics && k * shaft < 0.5 * SampleRate; k++) pulses += Math.Cos(k * _shaftPhase) / Math.Sqrt(k);
-                sample += ExhaustLevel * exhaust * pulses * motorMix;
+                sample += ExhaustBodyLevel * exhaust * pulses * motorMix;
+
+                double roughness = Math.Clamp((1 - exhaust) / (1 - IdleExhaustGain), 0, 1);
+                _firePhase += shaft * dt / _fireStretch;
+                if (_firePhase >= 1)
+                {
+                    _firePhase -= Math.Floor(_firePhase);
+                    _popAge = 0;
+                    bool miss = Noise() * 0.5 + 0.5 < IdleMissChance * roughness;
+                    _popAmp = miss ? 0.25 : 1 + LoudnessScatter * roughness * 0.5 * Noise();
+                    _fireStretch = 1 + TimingScatter * roughness * Noise();
+                }
+                if (_popAge < 12 * PopDecay)
+                {
+                    double onset = 1 - Math.Exp(-_popAge / PopAttack);
+                    double ring = Math.Sin(2 * Math.PI * (PopResonanceIdleHz + PopResonanceRangeHz * exhaust) * _popAge) * Math.Exp(-_popAge / PopDecay);
+                    _burstState += (1 - Math.Exp(-2 * Math.PI * BurstCutoffHz * dt)) * (Noise() - _burstState);
+                    double burst = _burstState * Math.Exp(-_popAge / BurstDecay);
+                    sample += exhaust * _popAmp * onset * (PopLevel * ring + BurstLevel * burst) * motorMix;
+                    _popAge += dt;
+                }
             }
             if (roar > 0)
             {
@@ -111,7 +142,7 @@ public sealed class EngineSynth
             }
             buffer[i] = (float)Math.Tanh(sample);
         }
-        _last = EngineMuted ? target with { PropGain = 0, WhineGain = 0 } : target;
+        _last = EngineMuted ? target with { PropGain = 0, WhineGain = 0, ExhaustGain = 0, RoarGain = 0 } : target;
         _lastMix = toMix;
     }
 
