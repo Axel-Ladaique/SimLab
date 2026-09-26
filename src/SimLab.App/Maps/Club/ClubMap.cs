@@ -25,6 +25,7 @@ public static class ClubMap
         PilotPosition: new Vec3(0, -25, 0), EyeHeight: 1.7, WindsockPosition: new Vec3(20, -28, 0),
         RunwayCentre: Vec3.Zero, RunwayLength: 100, RunwayWidth: 15, RunwayHeadingDeg: 90);
 
+    // TerrainTints left unset: this flat farmland has no rock, snow or needles surfaces, so the defaults suffice.
     public static readonly MapAmbience Ambience = new(
         SkyTop: new Rgb(0.28f, 0.48f, 0.80f), SkyHorizon: new Rgb(0.66f, 0.76f, 0.88f),
         GroundHorizon: new Rgb(0.35f, 0.38f, 0.30f), GroundBottom: new Rgb(0.12f, 0.15f, 0.10f), FogDensity: 0.00008);

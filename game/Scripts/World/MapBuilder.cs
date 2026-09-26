@@ -72,7 +72,8 @@ public static class MapBuilder
     }
 
     /// <summary>A grid over the whole map; each vertex carries the ground normal and the surface weights
-    /// (COLOR = grass, mowed, dirt, gravel; CUSTOM0 = wheat, ploughed) that the terrain shader blends.</summary>
+    /// (COLOR = grass, mowed, dirt, gravel; CUSTOM0 = wheat, ploughed, rock, snow; CUSTOM1 = needles) that the
+    /// terrain shader blends. The shader ignores CUSTOM0.zw and CUSTOM1 until Task 6.</summary>
     static MeshInstance3D TerrainMesh(FieldMap map)
     {
         var grid = map.Grid;
@@ -80,13 +81,15 @@ public static class MapBuilder
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
         st.SetCustomFormat(0, SurfaceTool.CustomFormat.RgbaFloat);
+        st.SetCustomFormat(1, SurfaceTool.CustomFormat.RgbaFloat);
         for (int j = 0; j <= n; j++)
         for (int i = 0; i <= n; i++)
         {
             double x = -map.HalfSize + i * GridStep, y = -map.HalfSize + j * GridStep;
             var w = map.Surface(x, y);
             st.SetColor(new Color((float)w.Grass, (float)w.MowedGrass, (float)w.Dirt, (float)w.Gravel));
-            st.SetCustom(0, new Color((float)w.Wheat, (float)w.Ploughed, 0, 0));
+            st.SetCustom(0, new Color((float)w.Wheat, (float)w.Ploughed, (float)w.Rock, (float)w.Snow));
+            st.SetCustom(1, new Color((float)w.Needles, 0, 0, 0));
             st.SetNormal(map.Terrain.Normal(x, y).WorldToGodot());
             st.AddVertex(new Vec3(x, y, grid[i, j]).WorldToGodot());
         }

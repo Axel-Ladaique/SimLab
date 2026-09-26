@@ -79,6 +79,21 @@ public class MapModelTests
     }
 
     [Fact]
+    public void Surface_weights_cover_rock_snow_and_needles()
+    {
+        foreach (var kind in Enum.GetValues<SurfaceKind>())
+        {
+            var only = SurfaceWeights.Only(kind);
+            Assert.Equal(1, only[kind], 9);
+            Assert.Equal(1, only.Sum, 9);
+        }
+        var grass = SurfaceWeights.Only(SurfaceKind.Grass);
+        var half = grass.Toward(SurfaceKind.Rock, 0.5);
+        Assert.Equal(0.5, half[SurfaceKind.Grass], 9);
+        Assert.Equal(0.5, half[SurfaceKind.Rock], 9);
+    }
+
+    [Fact]
     public void Map_terrain_samples_height_normal_and_obstacles()
     {
         var terrain = new MapTerrain(HeightGrid.Sample(30, 10, (x, _) => 0.1 * x),
