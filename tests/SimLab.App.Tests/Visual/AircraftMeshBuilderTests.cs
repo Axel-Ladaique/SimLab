@@ -18,9 +18,9 @@ public class AircraftMeshBuilderTests
         part.HingePoint + Quat.FromAxisAngle(part.HingeAxis, angle).Rotate(p - part.HingePoint);
 
     [Theory]
-    [InlineData("trainer", new[] { "airframe", "aileronRight", "aileronLeft", "elevator", "rudder", "fuselage", "gear", "propeller" })]
+    [InlineData("trainer", new[] { "airframe", "aileronRight", "aileronLeft", "elevator", "elevator", "rudder", "fuselage", "gear", "propeller" })]
     [InlineData("wing", new[] { "airframe", "elevonRight", "elevonLeft", "fuselage", "propeller" })]
-    public void Builds_one_part_per_control_plus_fixed_parts(string id, string[] names)
+    public void Builds_one_part_per_control_panel_plus_fixed_parts(string id, string[] names)
     {
         var parts = Parts(id);
         Assert.Equal(names.OrderBy(n => n), parts.Select(p => p.Name).OrderBy(n => n));
@@ -50,8 +50,48 @@ public class AircraftMeshBuilderTests
     [Fact]
     public void Control_parts_sit_aft_of_their_hinge()
     {
-        var elevator = Parts("trainer").Single(p => p.Name == "elevator");
-        Assert.True(Centroid(elevator.Triangles).X > elevator.HingePoint.X);
+        Assert.All(Parts("trainer").Where(p => p.Name == "elevator"),
+            elevator => Assert.True(Centroid(elevator.Triangles).X > elevator.HingePoint.X));
+    }
+
+    static double DistanceToHingeLine(MeshPart part, Vec3 p)
+    {
+        var offset = p - part.HingePoint;
+        return (offset - part.HingeAxis * Vec3.Dot(offset, part.HingeAxis)).Length;
+    }
+
+    /// <summary>A control that spans both halves of a swept or dihedral surface (the F-16 and F-18 stabilators) must
+    /// turn each half about its own hinge line, not about the mirror image of the other half's. Washout twists each
+    /// strip's chord, so on twisted wings the strip hinges sit up to ~0.4 % of the control's span off the straight line
+    /// (tolerance 1 %); the mirrored-axis bug put them 5 to 100 mm off.</summary>
+    [Theory]
+    [InlineData("trainer")]
+    [InlineData("sport")]
+    [InlineData("3d")]
+    [InlineData("wing")]
+    [InlineData("p51")]
+    [InlineData("jet")]
+    [InlineData("f18")]
+    public void Every_control_panel_turns_about_its_own_hinge_line(string id)
+    {
+        foreach (var part in Parts(id).Where(p => p.ControlIndex >= 0))
+        {
+            var along = part.Triangles.Select(v => Vec3.Dot(v - part.HingePoint, part.HingeAxis)).ToList();
+            double tolerance = 0.01 * (along.Max() - along.Min());
+            for (int t = 0; t < part.Triangles.Count; t += 3)
+            {
+                double onHinge = Enumerable.Range(t, 3).Min(i => DistanceToHingeLine(part, part.Triangles[i]));
+                Assert.True(onHinge < tolerance, $"{id} {part.Name}: triangle {t / 3} is {onHinge:E2} m off its hinge line");
+            }
+        }
+    }
+
+    [Fact]
+    public void A_control_on_both_halves_of_a_surface_gets_one_part_per_half()
+    {
+        var elevators = Parts("jet").Where(p => p.Name == "elevator").ToList();
+        Assert.Equal(2, elevators.Count);
+        Assert.True(elevators[0].HingePoint.Y * elevators[1].HingePoint.Y < 0);
     }
 
     [Fact]
