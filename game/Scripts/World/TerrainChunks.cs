@@ -37,17 +37,29 @@ public static class TerrainChunks
         {
             int i1 = Math.Min(i0 + k, last), j1 = Math.Min(j0 + k, last);
             var chunk = new Chunk(grid, weights, i0, i1, j0, j1);
-            root.AddChild(Instance(chunk, chunk.Mesh(1), material, rangeBegin: 0, rangeEnd: DetailRange));
-            root.AddChild(Instance(chunk, chunk.Mesh(FarFactor), material, rangeBegin: DetailRange, rangeEnd: 0));
+            var lod0 = chunk.Mesh(1);
+            var lod1 = chunk.Mesh(FarFactor);
+            // Both LODs measure their visibility range from the same AABB (LOD0's, skirts included): see the note
+            // on CustomAabb in Instance() below.
+            var aabb = lod0.GetAabb();
+            root.AddChild(Instance(chunk, lod0, material, rangeBegin: 0, rangeEnd: DetailRange, aabb));
+            root.AddChild(Instance(chunk, lod1, material, rangeBegin: DetailRange, rangeEnd: 0, aabb));
         }
     }
 
-    static MeshInstance3D Instance(Chunk chunk, ArrayMesh mesh, Material material, float rangeBegin, float rangeEnd) => new()
+    static MeshInstance3D Instance(Chunk chunk, ArrayMesh mesh, Material material, float rangeBegin, float rangeEnd, Aabb aabb) => new()
     {
         Mesh = mesh,
         MaterialOverride = material,
-        // At the chunk centre, so the visibility range is measured from the chunk rather than the map origin.
+        // At the chunk centre, so the two LODs' meshes (and their shared CustomAabb below) sit at the same place
+        // rather than the map origin.
         Position = chunk.Centre,
+        // Godot measures visibility range from the instance's transformed AABB centre, not from the node's origin.
+        // LOD1's mesh samples every FarFactorth vertex, so on sloped ground its own AABB centre sits at a different
+        // height than LOD0's (up to a few metres on the mountain's steep chunks) — left to Godot's default (each
+        // mesh's own AABB) that mismatch opens a band near DetailRange where neither LOD is visible. Forcing both
+        // instances to LOD0's AABB (skirts included) makes them switch at the same measured distance.
+        CustomAabb = aabb,
         // A hard switch at DetailRange, no margins. A Self fade renders the fading chunks in the transparent pass,
         // which skips the depth pre-pass: the terrain behind shows through and the skirts become visible walls.
         // With fading disabled Godot uses the margins as hysteresis (show inside begin + margin … end − margin, hide
