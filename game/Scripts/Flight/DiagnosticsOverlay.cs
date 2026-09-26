@@ -26,10 +26,8 @@ public partial class DiagnosticsOverlay : CanvasLayer
         // Free-floating label: no word-wrap, otherwise it has no width and collapses to one pixel.
         _label = Ui.Text("", 14);
         _label.AutowrapMode = TextServer.AutowrapMode.Off;
-        _label.SetAnchorsPreset(Control.LayoutPreset.TopRight);
-        _label.GrowHorizontal = Control.GrowDirection.Begin;
-        _label.OffsetLeft = -20;
-        _label.OffsetRight = -20;
+        _label.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
+        _label.OffsetLeft = 24;
         _label.OffsetTop = 20;
         _label.Visible = _shown;
         AddChild(_label);

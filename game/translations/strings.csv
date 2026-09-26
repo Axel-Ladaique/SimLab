@@ -58,7 +58,7 @@ SET_SCREEN_HEIGHT,Hauteur de l'écran (cm),Screen height (cm)
 SET_VIEW_DISTANCE,Distance aux yeux (cm),Viewing distance (cm)
 SET_FOV_FROM_SCREEN,Calculer depuis l'écran,Compute from screen
 SET_AUTOZOOM,Zoom automatique limité,Limited auto-zoom
-SET_FLIGHT_DATA,Afficher les données de vol,Show flight data
+SET_FLIGHT_DATA,Afficher le HUD (H),Show the HUD (H)
 SET_RECORD,Enregistrer les vols (CSV),Record flights (CSV)
 SET_LANGUAGE,Langue,Language
 SET_VSYNC,Synchronisation verticale,Vertical sync
@@ -77,13 +77,14 @@ SND_LISTEN,Écouter,Listen
 SND_STOP,Arrêter,Stop
 SND_NO_AIRCRAFT,Aucun avion disponible pour l'écoute.,No aircraft available for the preview.
 SND_NO_POWER,"{0} : pas de groupe motopropulseur à écouter.","{0}: no power plant to preview."
-HUD_AIRSPEED,Vitesse,Airspeed
-HUD_ALTITUDE,Hauteur,Height
-HUD_THROTTLE,Gaz,Throttle
-HUD_BATTERY,Batterie,Battery
-HUD_TIMER,Chrono,Timer
 HUD_PAUSED,PAUSE,PAUSED
-HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent, C vue","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind, C view"
+OSD_THROTTLE,GAZ,THR
+VIEW_GROUND,Sol,Ground
+VIEW_FPV,FPV,FPV
+VIEW_CHASE,3e pers.,Chase
+HUD_VIEW_BUTTON,Vue : {0},View: {0}
+HUD_BUTTON,HUD,HUD
+HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent, C vue, H HUD","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind, C view, H HUD"
 HUD_LATENCY,Latence estimée,Estimated latency
 HUD_FPS,Images/s,FPS
 HUD_INPUT,Commande,Input

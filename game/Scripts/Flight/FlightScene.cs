@@ -4,6 +4,7 @@ using SimLab.App.Audio;
 using SimLab.App.Cameras;
 using SimLab.App.Field;
 using SimLab.App.Session;
+using SimLab.App.Ui;
 using SimLab.App.Visual;
 using SimLab.Flight.Airframe;
 using SimLab.Flight.Controls;
@@ -44,6 +45,9 @@ public partial class FlightScene : Node3D
     public int LastSteps { get; private set; }
     public CameraView CameraView => _cameras.Current;
 
+    /// <summary>Whether the OSD is on: the pilot's choice, always on in scripted runs (screenshots, smoke tests).</summary>
+    public bool HudShown => _script is not null || _services.Settings.ShowFlightData;
+
     public void Init(Services services, string aircraftId, System.Action exit, System.Func<double, ControlInputs>? script = null)
     {
         _services = services;
@@ -81,6 +85,7 @@ public partial class FlightScene : Node3D
         _camera = new Camera3D { Current = true, Near = 0.1f, Far = 4000f, Fov = (float)services.Settings.FovDeg };
         AddChild(_camera);
         _hud = new FlightHud();
+        _hud.Init(ToggleHud, NextCamera, manageMouse: script is null);
         AddChild(_hud);
         _crash = new CrashOverlay();
         AddChild(_crash);
@@ -110,6 +115,14 @@ public partial class FlightScene : Node3D
     {
         _cameras.Select(view, Context());
         _retrackDoppler = true;
+    }
+
+    /// <summary>Shows or hides the OSD and remembers it (H key, HUD button). Scripted runs keep it on.</summary>
+    public void ToggleHud()
+    {
+        if (_script is not null) return;
+        _services.Settings = _services.Settings with { ShowFlightData = !_services.Settings.ShowFlightData };
+        _services.SaveSettings();
     }
 
     void RememberCamera()
@@ -159,13 +172,21 @@ public partial class FlightScene : Node3D
             _retrackDoppler = false;
         }
         _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
-        _hud.UpdateHud(_session, LastInput, _services.Settings.ShowFlightData);
+        var osd = OsdData.From(_session.Aircraft, _session.DisplayState, _session.HeightAgl, _session.FlightTime,
+            LastInput.Controls.Throttle, ClubField.PilotPosition);
+        _hud.UpdateHud(_session, LastInput, osd, HudShown, _cameras.Current);
         _crash.UpdateCrash(_session.Aircraft.Crash);
         _diagnostics.UpdateDiagnostics(this);
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (@event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.H })
+        {
+            GetViewport().SetInputAsHandled();
+            ToggleHud();
+            return;
+        }
         if (!@event.IsActionPressed("ui_cancel")) return;
         GetViewport().SetInputAsHandled();
         _exit();

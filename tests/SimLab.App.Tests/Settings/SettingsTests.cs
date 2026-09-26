@@ -178,5 +178,20 @@ public sealed class SettingsTests : IDisposable
             new AppSettings { CameraView = (SimLab.App.Cameras.CameraView)42 }.Sanitized().CameraView);
     }
 
+    [Fact]
+    public void The_hud_is_shown_by_default()
+        => Assert.True(new AppSettings().ShowFlightData);
+
+    [Fact]
+    public void Existing_settings_without_show_flight_data_default_to_shown_and_a_saved_choice_is_kept()
+    {
+        var path = Path.Combine(_dir, "settings.json");
+        File.WriteAllText(path, """{ "FovDeg": 50 }""");
+        Assert.True(AppSettings.Load(path).ShowFlightData);
+
+        new AppSettings { ShowFlightData = false }.Save(path);
+        Assert.False(AppSettings.Load(path).ShowFlightData);
+    }
+
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 }

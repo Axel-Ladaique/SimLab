@@ -19,7 +19,8 @@ public sealed record AppSettings
     public bool AutoZoom { get; init; } = true;
     /// <summary>Flight camera view, remembered from the last flight.</summary>
     public CameraView CameraView { get; init; } = CameraView.Ground;
-    public bool ShowFlightData { get; init; }
+    /// <summary>Flight OSD on (H key, HUD button, Settings screen).</summary>
+    public bool ShowFlightData { get; init; } = true;
     public bool RecordFlights { get; init; } = true;
     public bool VSync { get; init; } = true;
     public bool Fullscreen { get; init; } = true;

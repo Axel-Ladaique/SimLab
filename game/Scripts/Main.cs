@@ -60,10 +60,7 @@ public partial class Main : Node
         _quitting = true;
         // Called from the Quit button's Pressed signal: let that emission finish before freeing the button's screen.
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        _current?.Free();
-        _current = null;
-        for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        GetTree().Quit();
+        QuitAfterTeardown(0);
     }
 
     public void ShowRadio()
@@ -130,11 +127,19 @@ public partial class Main : Node
         var inv = CultureInfo.InvariantCulture;
         var p = session.Aircraft.State.Position;
         GD.Print($"SIMLAB_SMOKE_OK aircraft={_smokeAircraft} t={session.Simulation.Time.ToString("0.00", inv)} x={p.X.ToString("0.0", inv)} y={p.Y.ToString("0.0", inv)} z={p.Z.ToString("0.00", inv)} crash={session.Aircraft.Crash}");
-        // Free the scene (rather than relying on the engine's own teardown order) so its still-playing
-        // AudioStreamPlayers are stopped before Quit(); otherwise Godot reports their playback objects as leaked.
+        QuitAfterTeardown(0);
+    }
+
+    /// <summary>Frees the current scene (rather than relying on the engine's own teardown order) so its still-playing
+    /// AudioStreamPlayers are stopped before Quit(); then waits a few frames for the audio thread to release their
+    /// playback, so nothing is reported leaked at exit, before quitting with the given code. Shared by the smoke and
+    /// screenshot exit paths, and by the interactive Quit().</summary>
+    async void QuitAfterTeardown(int exitCode)
+    {
         _current?.Free();
         _current = null;
-        GetTree().Quit(0);
+        for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        GetTree().Quit(exitCode);
     }
 
     bool RunCommandLine(string[] args)
@@ -311,14 +316,7 @@ public partial class Main : Node
         for (int i = 0; i < frames; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         var error = GetViewport().GetTexture().GetImage().SavePng(path);
         GD.Print($"SIMLAB_SCREENSHOT path={path} error={error}");
-        // Free the current scene (rather than relying on the engine's own teardown order) so any AudioStreamPlayer
-        // that is still playing is stopped before Quit(); otherwise Godot reports its playback objects as leaked.
-        _current?.Free();
-        _current = null;
-        // A stopped generator playback is only released once the audio thread has mixed again; quitting in the same
-        // frame intermittently reports it as leaked (seen with the main menu's live-view voice).
-        for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        GetTree().Quit(error == Error.Ok ? 0 : 1);
+        QuitAfterTeardown(error == Error.Ok ? 0 : 1);
     }
 
     void Switch(Node next)
