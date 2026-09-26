@@ -1,3 +1,5 @@
+using SimLab.Flight.Geometry;
+
 namespace SimLab.App.Maps.Mountain;
 
 /// <summary>
@@ -13,6 +15,9 @@ public sealed class MountainRoad
     const double SampleStep = 2;
     const double CornerReach = 20;
     const double CellSize = 16;
+
+    /// <summary>The road stays level this far beyond each end of the bridge deck.</summary>
+    const double BridgeLanding = 4;
 
     /// <summary>
     /// The authored corners. The eight legs were laid out in face coordinates (distance below the crest, y): each
@@ -37,7 +42,9 @@ public sealed class MountainRoad
     public MountainRoad()
     {
         _path = Resample(Chaikin(WithCornerPoints(Waypoints), 5), SampleStep);
-        _profile = Profile(_path);
+        var (ck, ct, cx, cy, cyaw) = Crossing(_path, MountainRelief.Stream);
+        _profile = Profile(_path, Level(_path, ck, ct));
+        StreamCrossing = (cx, cy, cyaw, _profile[ck] + ct * (_profile[ck + 1] - _profile[ck]));
 
         _minX = _path.Min(p => p.X) - CellSize;
         _minY = _path.Min(p => p.Y) - CellSize;
@@ -54,6 +61,10 @@ public sealed class MountainRoad
                 (_cells[j * _cols + i] ??= []).Add(k);
         }
     }
+
+    /// <summary>Where the road crosses <see cref="MountainRelief.Stream"/>: the point, the road's heading there (a
+    /// <see cref="PlanarYaw"/> along the road) and the road surface height.</summary>
+    public (double X, double Y, double YawDeg, double Profile) StreamCrossing { get; }
 
     /// <summary>The centre line, a point every <see cref="SampleStep"/> m from the valley to the car park.</summary>
     public IReadOnlyList<(double X, double Y)> Path => _path;
@@ -125,22 +136,54 @@ public sealed class MountainRoad
         return found ? (Math.Sqrt(bestD2), bestProfile) : null;
     }
 
+    /// <summary>The first point where the path crosses <paramref name="line"/>: the path segment, the fraction
+    /// along it, the point and the path's heading there.</summary>
+    static (int K, double T, double X, double Y, double YawDeg) Crossing((double X, double Y)[] path, IReadOnlyList<(double X, double Y)> line)
+    {
+        for (int k = 0; k + 1 < path.Length; k++)
+        for (int m = 0; m + 1 < line.Count; m++)
+        {
+            var (a, b) = (path[k], path[k + 1]);
+            var (c, d) = (line[m], line[m + 1]);
+            double ex = b.X - a.X, ey = b.Y - a.Y, fx = d.X - c.X, fy = d.Y - c.Y;
+            double den = ex * fy - ey * fx;
+            if (Math.Abs(den) < 1e-12) continue;
+            double t = ((c.X - a.X) * fy - (c.Y - a.Y) * fx) / den, u = ((c.X - a.X) * ey - (c.Y - a.Y) * ex) / den;
+            if (t < 0 || t > 1 || u < 0 || u > 1) continue;
+            return (k, t, a.X + t * ex, a.Y + t * ey, PlanarYaw.Of(ex, ey));
+        }
+        throw new InvalidOperationException("The road does not cross the line.");
+    }
+
+    /// <summary>The segments that must stay level: every one overlapping the bridge deck, centred at fraction
+    /// <paramref name="t"/> of segment <paramref name="k"/>, and its <see cref="BridgeLanding"/> at each end.</summary>
+    static bool[] Level((double X, double Y)[] path, int k, double t)
+    {
+        var s = new double[path.Length];
+        for (int i = 1; i < path.Length; i++) s[i] = s[i - 1] + Distance(path[i - 1], path[i]);
+        double centre = s[k] + t * (s[k + 1] - s[k]), half = MountainRelief.BridgeLength / 2 + BridgeLanding;
+        var level = new bool[path.Length - 1];
+        for (int i = 0; i + 1 < path.Length; i++) level[i] = s[i + 1] > centre - half && s[i] < centre + half;
+        return level;
+    }
+
     int Col(double x) => Math.Clamp((int)((x - _minX) / CellSize), 0, _cols - 1);
 
     int Row(double y) => Math.Clamp((int)((y - _minY) / CellSize), 0, _rows - 1);
 
     /// <summary>
-    /// The natural height along the path, made monotonic and grade-limited: the mean of a forward pass (never above
+    /// The natural height along the path, made monotonic and grade-limited (and level where <paramref name="level"/>
+    /// says so: over the bridge): the mean of a forward pass (never above
     /// the ground, lagging where it climbs too fast) and a backward pass (never below it, leading), so cuts and fills
     /// are shared around each steep spot.
     /// </summary>
-    static double[] Profile((double X, double Y)[] path)
+    static double[] Profile((double X, double Y)[] path, bool[] level)
     {
         int n = path.Length;
         var ground = new double[n];
         for (int k = 0; k < n; k++) ground[k] = MountainRelief.Height(path[k].X, path[k].Y);
         var rise = new double[n - 1];
-        for (int k = 0; k < n - 1; k++) rise[k] = GradeLimit(path, k) * Distance(path[k], path[k + 1]);
+        for (int k = 0; k < n - 1; k++) rise[k] = level[k] ? 0 : GradeLimit(path, k) * Distance(path[k], path[k + 1]);
         var up = new double[n];
         var down = new double[n];
         up[0] = ground[0];
