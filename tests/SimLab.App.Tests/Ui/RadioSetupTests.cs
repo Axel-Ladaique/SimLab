@@ -25,6 +25,32 @@ public class RadioSetupTests
         Assert.False(RadioSetup.IsDone(RadioStep.Calibrate, false, true, 3));
     }
 
+    [Fact]
+    public void Auto_select_stops_once_the_pilot_has_chosen()
+    {
+        Assert.False(RadioSetup.ShouldAutoSelect(userChose: true, secondsOpen: 0, padJustAppeared: true, RadioStep.Connect));
+        Assert.False(RadioSetup.ShouldAutoSelect(userChose: true, secondsOpen: 0.1, padJustAppeared: false, RadioStep.Connect));
+    }
+
+    [Fact]
+    public void Auto_select_keeps_re_evaluating_during_the_settling_window()
+    {
+        Assert.True(RadioSetup.ShouldAutoSelect(userChose: false, secondsOpen: 0, padJustAppeared: false, RadioStep.Connect));
+        Assert.True(RadioSetup.ShouldAutoSelect(userChose: false, secondsOpen: RadioSetup.SettlingSeconds, padJustAppeared: false, RadioStep.Connect));
+        Assert.False(RadioSetup.ShouldAutoSelect(userChose: false, secondsOpen: RadioSetup.SettlingSeconds + 0.01, padJustAppeared: false, RadioStep.Calibrate));
+    }
+
+    [Fact]
+    public void Auto_select_fires_once_more_when_a_pad_shows_up_late_on_connect()
+    {
+        // Past the settling window, stuck on Connect (no device yet): a pad appearing must still be picked up.
+        Assert.True(RadioSetup.ShouldAutoSelect(userChose: false, secondsOpen: 5, padJustAppeared: true, RadioStep.Connect));
+        // Same, but already on a different step (the pilot browsed there): no surprise jump.
+        Assert.False(RadioSetup.ShouldAutoSelect(userChose: false, secondsOpen: 5, padJustAppeared: true, RadioStep.Switches));
+        // Past the window, no new pad: stay put.
+        Assert.False(RadioSetup.ShouldAutoSelect(userChose: false, secondsOpen: 5, padJustAppeared: false, RadioStep.Connect));
+    }
+
     [Theory]
     [InlineData(CalibrationWizard.Stage.Center, null, 1)]
     [InlineData(CalibrationWizard.Stage.Extremes, null, 2)]

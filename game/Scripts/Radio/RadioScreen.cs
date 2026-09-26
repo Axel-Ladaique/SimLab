@@ -34,7 +34,11 @@ public partial class RadioScreen : Control
     ConnectStep _connect = null!;
     SwitchesStep _switches = null!;
     RadioStep _step = RadioStep.Connect;
+    /// <summary>Set only by a real pilot choice (a step click, a primary action, or a screenshot mode's own
+    /// <see cref="SelectStep"/>); the automatic step-on-open logic in <see cref="_Process"/> never sets it.</summary>
     bool _stepChosen;
+    double _secondsOpen;
+    bool _hadPad;
     Button _primary = null!;
     LearnDialog _dialog = null!;
 
@@ -250,6 +254,7 @@ public partial class RadioScreen : Control
 
     public override void _Process(double delta)
     {
+        _secondsOpen += delta;
         _pads = _demoPad is { } demo ? [demo] : JoypadReader.Poll();
         var pad = Selected;
         if (_profileStale || pad?.Guid != _profileGuid)
@@ -258,11 +263,10 @@ public partial class RadioScreen : Control
             _profileGuid = pad?.Guid;
             _profile = pad is { } p ? _profiles.Load(p.Guid) : null;
         }
-        if (!_stepChosen)
-        {
-            _stepChosen = true;
+        bool padJustAppeared = pad is not null && !_hadPad;
+        _hadPad = pad is not null;
+        if (RadioSetup.ShouldAutoSelect(_stepChosen, _secondsOpen, padJustAppeared, _step))
             ShowStep(RadioSetup.InitialStep(pad is not null, _profile is not null));
-        }
 
         var output = pad is { } selected ? _router.Update(delta, [selected], default, default) : default;
         bool radio = output.Source == InputSource.Radio && pad is not null;

@@ -45,8 +45,8 @@ ten raw bars, drop-downs for switch states, a grey 3D box, a full-width Back bar
 ```
 
 Primary action per step: Connect → *Calibrate* (or *Continue* when already calibrated); Calibrate → *Start
-calibration* / during a run *Next* (Cancel as a flat button beside it) / after it *Continue*; Switches → none (cards
-act directly).
+calibration* / during a run *Next*, with *Cancel* a flat button on the progress row above (not beside the primary) /
+after it *Continue*; Switches → none (cards act directly).
 
 Initial step: no radio → Connect; radio without profile → Calibrate; calibrated → Switches.
 

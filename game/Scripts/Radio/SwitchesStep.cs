@@ -15,6 +15,7 @@ public partial class SwitchesStep : VBoxContainer, IRadioStep
 {
     RadioProfiles _profiles = null!;
     LearnDialog _dialog = null!;
+    Label _chipHint = null!;
     VBoxContainer _cards = null!;
     Label _empty = null!, _addTitle = null!;
     HFlowContainer _add = null!;
@@ -38,6 +39,10 @@ public partial class SwitchesStep : VBoxContainer, IRadioStep
         _empty = Ui.Text("", 17);
         _empty.AddThemeColorOverride("font_color", Ui.Muted);
         AddChild(_empty);
+        _chipHint = Ui.Text(Ui.T("RADIO_CHIP_HINT"), 14);
+        _chipHint.AddThemeColorOverride("font_color", Ui.Muted);
+        _chipHint.Visible = false;
+        AddChild(_chipHint);
         _cards = new VBoxContainer();
         _cards.AddThemeConstantOverride("separation", 10);
         AddChild(_cards);
@@ -95,7 +100,11 @@ public partial class SwitchesStep : VBoxContainer, IRadioStep
         _empty.Text = frame.Pad is null ? Ui.T("RADIO_EMPTY_TITLE") : profile is null ? Ui.T("RADIO_DEVICE_UNCALIBRATED") : "";
         _empty.Visible = _empty.Text != "";
         _addTitle.Visible = _add.Visible = profile is not null;
-        if (profile is null) return;
+        if (profile is null)
+        {
+            _chipHint.Visible = false;
+            return;
+        }
 
         foreach (var function in SwitchStates.All)
         {
@@ -110,6 +119,7 @@ public partial class SwitchesStep : VBoxContainer, IRadioStep
             _cards.AddChild(card);
             _shownCards[function] = card;
         }
+        _chipHint.Visible = _shownCards.Count > 0;
     }
 
     void CycleState(SwitchFunction function, int position) => Edit(p =>

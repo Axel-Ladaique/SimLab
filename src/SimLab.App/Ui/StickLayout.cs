@@ -23,6 +23,9 @@ public static class StickLayout
             : (new StickPoint(s.Rudder, elevator), new StickPoint(s.Aileron, throttle));
     }
 
+    /// <summary>The calibration gesture to draw for the current stage: both gimbals ringed at center (Center), both
+    /// circling through their extremes (Extremes and any other non-Identify stage), or, at Identify, the named
+    /// stick's gimbal pushed to its target while the other one dims.</summary>
     public static StickGesture Gesture(CalibrationWizard.Stage stage, StickFunction? function, StickMode mode)
     {
         if (stage == CalibrationWizard.Stage.Center) return new StickGesture(true, true, false, new StickPoint(0, 0));

@@ -171,7 +171,7 @@ public partial class CalibrateStep : VBoxContainer, IRadioStep
             if (active.Guid is null)
             {
                 _wizard = null;
-                Say(Ui.T("RADIO_CANCEL") + " — " + Ui.T("RADIO_EMPTY_TITLE"), false);
+                Say(Ui.T("RADIO_CAL_UNPLUGGED"), false);
             }
             else _wizard.Feed(active.Frame);
             ShowRun();

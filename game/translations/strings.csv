@@ -169,6 +169,8 @@ RADIO_LEARN_WAITING,Aucune position détectée pour l'instant.,No position found
 RADIO_POSITION,Position {0},Position {0}
 RADIO_ADD_SWITCH,Ajouter un interrupteur,Add a switch
 RADIO_CALIBRATED_HINT,"Radio calibrée. Vérifiez les manches ci-dessous, ou relancez la calibration.","Radio calibrated. Check the sticks below, or calibrate again."
+RADIO_CAL_UNPLUGGED,Calibration interrompue : radio débranchée.,Calibration stopped: radio unplugged.
+RADIO_CHIP_HINT,Cliquez une position pour changer son effet.,Click a position to change what it does.
 SWITCH_NO_EFFECT,—,—
 STICK_THROTTLE,Gaz,Throttle
 STICK_AILERON,Ailerons,Aileron

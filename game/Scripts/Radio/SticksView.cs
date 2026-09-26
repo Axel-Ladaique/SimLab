@@ -15,6 +15,21 @@ public partial class SticksView : Control
 
     StickPoint _left, _right;
     StickGesture? _gesture;
+    readonly StyleBoxFlat _frameNormal, _frameDim;
+
+    public SticksView()
+    {
+        _frameNormal = BuildFrame(1);
+        _frameDim = BuildFrame(Dim);
+    }
+
+    static StyleBoxFlat BuildFrame(float alpha)
+    {
+        var frame = new StyleBoxFlat { BgColor = Faded(Back, alpha), BorderColor = Faded(Frame, alpha) };
+        frame.SetBorderWidthAll(2);
+        frame.SetCornerRadiusAll(12);
+        return frame;
+    }
 
     public void Init(Vector2 size)
     {
@@ -42,10 +57,7 @@ public partial class SticksView : Control
     void DrawGimbal(Rect2 box, StickPoint stick, bool dim, StickGesture? gesture)
     {
         float alpha = dim ? Dim : 1;
-        var frame = new StyleBoxFlat { BgColor = Faded(Back, alpha), BorderColor = Faded(Frame, alpha) };
-        frame.SetBorderWidthAll(2);
-        frame.SetCornerRadiusAll(12);
-        DrawStyleBox(frame, box);
+        DrawStyleBox(dim ? _frameDim : _frameNormal, box);
 
         var c = box.GetCenter();
         float half = box.Size.X / 2, travel = Mathf.Max(0, half - RingRadius - 6);

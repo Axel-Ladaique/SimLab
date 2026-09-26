@@ -171,7 +171,7 @@ public partial class Main : Node
             GetTree().Quit(0);
             return true;
         }
-                if (ArgValue(args, "--screen") == "radio")
+        if (ArgValue(args, "--screen") == "radio")
         {
             ShowRadio();
             return true;
