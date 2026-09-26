@@ -37,7 +37,7 @@ public class TranslationTests
         var t = Shipped();
         var keys = t.Keys.ToHashSet();
         foreach (CrashCause cause in Enum.GetValues<CrashCause>()) Assert.Contains(FlightDataFormatter.CrashKey(cause), keys);
-        foreach (var k in new[] { "OSD_THROTTLE", "VIEW_GROUND", "VIEW_FPV", "VIEW_CHASE", "HUD_VIEW_BUTTON", "HUD_BUTTON",
+        foreach (var k in new[] { "OSD_THROTTLE", "OSD_THROTTLE_CUT", "VIEW_GROUND", "VIEW_FPV", "VIEW_CHASE", "HUD_VIEW_BUTTON", "HUD_BUTTON",
                      "CAL_CENTER", "CAL_EXTREMES", "CAL_ID_THROTTLE", "CAL_ID_AILERON", "CAL_ID_ELEVATOR", "CAL_ID_RUDDER",
                      "CAL_DONE", "STICK_LEFT", "STICK_RIGHT" })
             Assert.Contains(k, keys);

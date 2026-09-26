@@ -81,6 +81,7 @@ SND_NO_AIRCRAFT,Aucun avion disponible pour l'écoute.,No aircraft available for
 SND_NO_POWER,"{0} : pas de groupe motopropulseur à écouter.","{0}: no power plant to preview."
 HUD_PAUSED,PAUSE,PAUSED
 OSD_THROTTLE,GAZ,THR
+OSD_THROTTLE_CUT,GAZ COUPÉS,THROTTLE CUT
 OSD_FUEL,CARBURANT,FUEL
 OSD_FLAPS_UP,VOLETS RENTRÉS,FLAPS UP
 OSD_FLAPS_HALF,VOLETS MI-COURSE,FLAPS HALF

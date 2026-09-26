@@ -175,7 +175,10 @@ public partial class FlightHud : CanvasLayer
                 $"{v.ToString("0.0", Inv)} V  {osd.CurrentAmps!.Value.ToString("0.0", Inv)} A  {osd.ConsumedMah!.Value.ToString("0", Inv)} mAh",
             _ => "— V",
         };
-        _throttle.Text = $"{Ui.T("OSD_THROTTLE")} {osd.ThrottlePercent.ToString("0", Inv)} %";
+        _throttle.Text = osd.ThrottleCut
+            ? Ui.T("OSD_THROTTLE_CUT")
+            : $"{Ui.T("OSD_THROTTLE")} {osd.ThrottlePercent.ToString("0", Inv)} %";
+        _throttle.Modulate = osd.ThrottleCut ? new Color(0.95f, 0.40f, 0.35f) : Colors.White;
         _gear.Text = osd.Gear switch
         {
             GearIndicator.Down => Ui.T("OSD_GEAR_DOWN"),
