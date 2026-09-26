@@ -33,6 +33,13 @@ public sealed class SurfaceSegment
     /// <inheritdoc cref="FlowChordAxis"/>
     public required Vec3 FlowNormalAxis { get; init; }
     public required double Chord { get; init; }
+
+    /// <summary>Chord at the strip's inner end (m), at <see cref="Position"/> − <see cref="HalfSpan"/>.</summary>
+    public required double InnerChord { get; init; }
+
+    /// <summary>Chord at the strip's outer end (m), at <see cref="Position"/> + <see cref="HalfSpan"/>.</summary>
+    public required double OuterChord { get; init; }
+
     public required double Area { get; init; }
 
     /// <summary>Mid-strip position along the panel span, 0 at the root and 1 at the tip.</summary>

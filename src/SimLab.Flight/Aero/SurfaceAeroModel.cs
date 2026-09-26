@@ -151,11 +151,22 @@ public sealed class SurfaceAeroModel : IAeroModel
             double pitchRate = Vec3.Dot(ctx.AngularVelocityBody, seg.PitchAxis);
             double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap - Math.PI / 4 * pitchRate * seg.Chord / (2 * vBlown);
             moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * cm);
-            // The trailing legs over the chord carry the circulation in the local flow: equal and opposite forces at the
-            // strip's two ends, a couple. In sideslip it is the lift-dependent part of the dihedral effect. It uses the
-            // lifting line's (freestream-driven) Γ with the local blown flow.
-            double legs = ctx.Density * _line.Circulation(i) * ChordwiseLegFraction * seg.Chord;
-            moment += Vec3.Cross(_line.BoundVector(i), Vec3.Cross(-uForce, Vec3.UnitX)) * legs;
+            // The trailing legs over the chord carry the circulation in the local flow. Each end of the strip has its own
+            // leg, as long as the chord there: with taper the two legs differ, so the forces are summed leg by leg (a pure
+            // couple only for a constant chord), and where surfaces meet (a winglet on a wing tip) the legs sit at the
+            // junction with each surface's own chord. In sideslip it is the lift-dependent part of the dihedral effect.
+            // It uses the lifting line's (freestream-driven) Γ with the local blown flow.
+            var legForce = Vec3.Cross(-uForce, Vec3.UnitX) * (ctx.Density * _line.Circulation(i) * ChordwiseLegFraction);
+            bool outerIsEnd = Vec3.Dot(_line.BoundVector(i), seg.HalfSpan) > 0;
+            var outer = seg.Position + seg.HalfSpan;
+            var inner = seg.Position - seg.HalfSpan;
+            // A leg's force acts at its middle, from the quarter chord halfway to the trailing edge.
+            var outerForce = legForce * (outerIsEnd ? seg.OuterChord : -seg.OuterChord);
+            var innerForce = legForce * (outerIsEnd ? -seg.InnerChord : seg.InnerChord);
+            var outerAt = outer - seg.ChordAxis * (0.5 * ChordwiseLegFraction * seg.OuterChord);
+            var innerAt = inner - seg.ChordAxis * (0.5 * ChordwiseLegFraction * seg.InnerChord);
+            force += outerForce + innerForce;
+            moment += Vec3.Cross(outerAt, outerForce) + Vec3.Cross(innerAt, innerForce);
         }
         TailDownwash = tailStrips > 0 ? downwash / tailStrips : 0;
 

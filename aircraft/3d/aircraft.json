@@ -10,7 +10,7 @@
     { "name": "stab", "role": "horizontalTail", "root": [1.15, 0, 0], "span": 0.26, "rootChord": 0.24, "tipChord": 0.2,
       "incidenceDeg": -0.75, "airfoil": "naca0012", "segments": 12, "mirror": true },
     { "name": "fin", "role": "verticalTail", "root": [1.17, 0, 0.02], "span": 0.26, "rootChord": 0.28, "tipChord": 0.2,
-      "sweepDeg": 10, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 12, "mirror": false }
+      "sweepDeg": 10, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 16, "mirror": false }
   ],
   "controls": [
     { "name": "aileronRight", "surface": "wing", "side": "right", "chordFraction": 0.35, "spanStart": 0.05, "spanEnd": 1.0,

@@ -40,10 +40,10 @@ public static class SurfaceGeometry
             // From mid-strip to the strip's outer end along the quarter-chord line (the prop wash is spread over the strip).
             var halfSpan = dihedral.Rotate(new Vec3(tanSweep, 1, 0) * (0.5 * spec.Span * (t1 - t0)));
 
-            segments.Add(Make(spec, Side.Right, position, chordAxis, normal, spanAxis, halfSpan, chord, area, tm, airfoil));
+            segments.Add(Make(spec, Side.Right, position, chordAxis, normal, spanAxis, halfSpan, chord, c0, c1, area, tm, airfoil));
             if (spec.Mirror)
                 segments.Add(Make(spec, Side.Left, Mirror(position), Mirror(chordAxis), Mirror(normal), Mirror(spanAxis), Mirror(halfSpan),
-                    chord, area, tm, airfoil));
+                    chord, c0, c1, area, tm, airfoil));
         }
         return segments;
     }
@@ -106,7 +106,7 @@ public static class SurfaceGeometry
     static Vec3 Mirror(Vec3 v) => new(v.X, -v.Y, v.Z);
 
     static SurfaceSegment Make(SurfaceSpec spec, Side side, Vec3 position, Vec3 chordAxis, Vec3 normal, Vec3 spanAxis, Vec3 halfSpan,
-        double chord, double area, double spanFraction, Airfoil airfoil)
+        double chord, double innerChord, double outerChord, double area, double spanFraction, Airfoil airfoil)
     {
         // The section plane of simple sweep theory is perpendicular to the swept span line; its normal is
         // perpendicular to the plane that holds the streamwise chord and the swept span line.
@@ -124,6 +124,8 @@ public static class SurfaceGeometry
             ChordAxis = chordAxis,
             NormalAxis = normal,
             Chord = chord,
+            InnerChord = innerChord,
+            OuterChord = outerChord,
             Area = area,
             SpanFraction = spanFraction,
             SpanFractionHalfWidth = 0.5 / spec.Segments,
