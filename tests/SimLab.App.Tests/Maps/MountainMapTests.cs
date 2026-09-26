@@ -297,6 +297,102 @@ public class MountainMapTests
         }
     }
 
+    [Fact]
+    public void Surface_weights_sum_to_one_over_the_grid_and_the_backdrop()
+    {
+        var far = Mountain.BackdropSurface!;
+        for (double y = -2000; y <= 2000; y += 50)
+        for (double x = -2000; x <= 2000; x += 50)
+        {
+            var w = Mountain.Surface(x, y);
+            Assert.True(Math.Abs(w.Sum - 1) < 1e-9, $"grid weights sum {w.Sum} at ({x}, {y})");
+        }
+        for (double y = -15000; y <= 15000; y += 50)
+        for (double x = -15000; x <= 15000; x += 50)
+        {
+            if (Math.Max(Math.Abs(x), Math.Abs(y)) < 2000 || x * x + y * y > 15000.0 * 15000) continue;
+            var w = far(x, y);
+            Assert.True(Math.Abs(w.Sum - 1) < 1e-9, $"backdrop weights sum {w.Sum} at ({x}, {y})");
+        }
+    }
+
+    [Fact]
+    public void Strip_is_mowed_and_the_car_park_gravelled()
+    {
+        var l = MountainMap.Layout;
+        for (double x = l.RunwayCentre.X - l.RunwayLength / 2; x <= l.RunwayCentre.X + l.RunwayLength / 2; x += 5)
+        for (double y = -l.RunwayWidth / 2; y <= l.RunwayWidth / 2; y += 2)
+            Assert.True(Mountain.Surface(x, y).MowedGrass > 0.9, $"strip not mowed at ({x}, {y})");
+        Assert.True(Mountain.Surface(210, -70).Gravel > 0.9, "car park");
+    }
+
+    [Fact]
+    public void Cliffs_are_rock_and_the_summit_snow()
+    {
+        int cliffs = 0;
+        for (double y = -1800; y <= 1800; y += 100)
+        for (double x = MountainRelief.CrestX(y) - 900; x < MountainRelief.CrestX(y); x += 2)
+        {
+            if (Slope(x, y) <= 1.2) continue;
+            cliffs++;
+            Assert.True(Mountain.Surface(x, y).Rock > 0.6, $"cliff at ({x}, {y}) is {Mountain.Surface(x, y)}");
+        }
+        Assert.True(cliffs > 10, $"only {cliffs} points steeper than 1.2 on the face");
+
+        var g = Mountain.Grid;
+        double max = double.MinValue, mx = 0, my = 0;
+        for (int j = 0; j < g.Count; j++)
+        for (int i = 0; i < g.Count; i++)
+            if (g[i, j] > max) (max, mx, my) = (g[i, j], g.MinX + i * g.Step, g.MinY + j * g.Step);
+        Assert.True(Mountain.Surface(mx, my).Snow > 0.7, $"summit ({mx}, {my}) is {Mountain.Surface(mx, my)}");
+    }
+
+    [Fact]
+    public void Dense_forest_floor_is_needles()
+    {
+        int checkedPoints = 0;
+        for (double y = -1900; y <= 1900; y += 37)
+        for (double x = -1900; x <= 1900; x += 37)
+        {
+            if (MountainPlanting.ForestDensity(x, y, H(x, y)) <= 0.8 || Slope(x, y) > 0.5) continue;
+            checkedPoints++;
+            Assert.True(Mountain.Surface(x, y).Needles > 0.6, $"forest floor at ({x}, {y}) is {Mountain.Surface(x, y)}");
+        }
+        Assert.True(checkedPoints > 100, $"only {checkedPoints} dense forest points");
+    }
+
+    [Fact]
+    public void Road_and_stream_are_overlays()
+    {
+        var road = Assert.Single(Mountain.Overlays, o => o.Kind == SurfaceKind.Dirt);
+        Assert.Equal(5, road.Width);
+        Assert.Equal(MountainMap.Road.Path, road.Path);
+        var stream = Assert.Single(Mountain.Overlays, o => o.Kind == SurfaceKind.Gravel);
+        Assert.Equal(3, stream.Width);
+        Assert.Equal(MountainRelief.Stream, stream.Path);
+    }
+
+    [Fact]
+    public void Backdrop_joins_the_grid_edge_and_rises_to_peaks()
+    {
+        var backdrop = Mountain.Backdrop!;
+        var far = Mountain.BackdropSurface!;
+        for (double s = -2000; s <= 2000; s += 50)
+        foreach (var (x, y) in new[] { (s, -2000.0), (s, 2000.0), (-2000.0, s), (2000.0, s) })
+        {
+            Assert.True(Math.Abs(backdrop(x, y) - Mountain.Grid.Height(x, y)) <= 0.5,
+                $"backdrop {backdrop(x, y):F2} vs grid edge {Mountain.Grid.Height(x, y):F2} at ({x}, {y})");
+            var (a, b) = (far(x, y), Mountain.Surface(x, y));
+            foreach (var kind in Enum.GetValues<SurfaceKind>())
+                Assert.True(Math.Abs(a[kind] - b[kind]) < 1e-6, $"{kind} seam at ({x}, {y}): {a[kind]} vs {b[kind]}");
+        }
+        double east = double.MinValue;
+        for (double y = -6000; y <= 6000; y += 100)
+        for (double x = 2500; x <= 14000; x += 100)
+            east = Math.Max(east, backdrop(x, y));
+        Assert.True(east > 1100, $"highest backdrop to the east {east:F0}");
+    }
+
     /// <summary>On the road over the bridge deck (within its length).</summary>
     static bool OnDeck(MountainRoad road, double x, double y)
     {

@@ -27,7 +27,9 @@ public static class MountainPlanting
     /// crest and <see cref="MeadowEnd"/> stays open meadow.</summary>
     public static double ForestDensity(double x, double y) => ForestDensity(x, y, MountainRelief.Height(x, y));
 
-    static double ForestDensity(double x, double y, double z)
+    /// <summary>The forest cover at (x, y) for ground at height <paramref name="z"/>: the planting and the needle
+    /// ground pass the grid height, so the forest floor lies exactly where the trees stand.</summary>
+    public static double ForestDensity(double x, double y, double z)
     {
         if (z < ForestLow || z > ForestHigh) return 0;
         double meadow = x < MountainRelief.CrestX(y) ? 1 : SmoothStep((x - MeadowEnd) / 200);

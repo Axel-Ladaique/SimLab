@@ -38,10 +38,18 @@ public static class MountainMap
         var props = new List<Prop>();
         props.AddRange(MountainPlanting.Plant(Seed, grid, Road));
         props.AddRange(MountainFurniture.Place(grid, Road));
-        return new FieldMap(Id, "FIELD_MOUNTAIN", grid, (_, _) => SurfaceWeights.Only(SurfaceKind.Grass),
-            Layout, Ambience, props, [], [MountainRelief.Lake])
+        var surface = new MountainSurface(grid);
+        var backdrop = new MountainBackdrop(grid, surface);
+        MapOverlay[] overlays =
+        [
+            new(SurfaceKind.Dirt, Road.Path, Road.Width),
+            new(SurfaceKind.Gravel, MountainRelief.Stream, 3), // drawn as water on top
+        ];
+        return new FieldMap(Id, "FIELD_MOUNTAIN", grid, surface.At, Layout, Ambience, props, overlays, [MountainRelief.Lake])
         {
             DatumElevationM = DatumElevationM,
+            Backdrop = backdrop.Height,
+            BackdropSurface = backdrop.Surface,
         };
     }
 
