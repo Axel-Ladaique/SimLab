@@ -1,0 +1,17 @@
+{
+  "position": [0, 0, 0],
+  "thrustAxis": [-0.9994, 0.0349, 0],
+  "spinDirection": 1,
+  "pFactor": 0.1,
+  "piston": {
+    "maxPowerW": 5000, "peakPowerRpm": 8300, "idleRpm": 1800, "maxRpm": 9000, "rotorInertia": 0.008,
+    "tankMl": 700, "fuelFlowMaxMlMin": 75, "fuelFlowIdleMlMin": 8
+  },
+  "propeller": {
+    "diameterM": 0.5842, "pitchM": 0.2286,
+    "j":  [0.0, 0.1152, 0.2304, 0.3457, 0.4609, 0.5761],
+    "ct": [0.0763, 0.05723, 0.03815, 0.01908, 0.0, -0.01908],
+    "cp": [0.02952, 0.0292, 0.02694, 0.0208, 0.00886, -0.01084]
+  },
+  "sound": { "blades": 2, "polePairs": 1 }
+}

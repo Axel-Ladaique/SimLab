@@ -18,7 +18,7 @@ public class FlightSessionTests
     {
         var list = AircraftCatalog.List(Path.Combine(TestData.RepoRoot, "aircraft"), out var errors);
         Assert.Empty(errors);
-        Assert.Equal(new[] { "3d", "jet", "sport", "trainer", "wing" }, list.Select(a => a.Id));
+        Assert.Equal(new[] { "3d", "f18", "jet", "p51", "sport", "trainer", "wing" }, list.Select(a => a.Id));
         Assert.All(list, a => Assert.False(string.IsNullOrWhiteSpace(a.Name)));
     }
 

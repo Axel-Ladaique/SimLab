@@ -160,4 +160,15 @@ public class GroundContactTests
         var slam = sunk with { Velocity = new Vec3(0, 0, -5) };
         Assert.Equal(CrashCause.None, model.DetectCrash(slam, new FlatTerrain(), Limits));
     }
+
+    [Fact]
+    public void Brakes_stop_a_rolling_aircraft_much_sooner_than_rolling_friction()
+    {
+        WheelSpec[] braked = [.. Tricycle.Select(w => w.Name == "nose" ? w : w with { BrakeFriction = 0.5 })];
+        var start = new RigidBodyState(new Vec3(0, 0, 0.0967), new Vec3(3, 0, 0), Level, Vec3.Zero);
+        var free = Simulate(new GroundContactModel(braked, [], Cart.Mass), start, 1);
+        var stopped = Simulate(new GroundContactModel(braked, [], Cart.Mass) { BrakeCommand = 1 }, start, 1);
+        Assert.InRange(free.Velocity.X, 2.5, 3.0);
+        Assert.True(stopped.Velocity.X < 0.2, $"braked speed {stopped.Velocity.X:F2}");
+    }
 }

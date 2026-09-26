@@ -62,7 +62,7 @@ public class OsdDataTests
     {
         var aircraft = new Aircraft(TestData.Aircraft("trainer"));
         var osd = Osd(State(new Vec3(0, 75, 20), 0, 0, 0), aircraft);
-        Assert.Equal(aircraft.Power!.Spec.Battery.OpenCircuitVoltage(1.0), osd.BatteryVolts!.Value, 9);
+        Assert.Equal(aircraft.Power!.Spec.Battery!.OpenCircuitVoltage(1.0), osd.BatteryVolts!.Value, 9);
         Assert.Equal(0, osd.ConsumedMah!.Value, 9);
         Assert.Equal(0, osd.CurrentAmps!.Value, 9);
     }
@@ -109,5 +109,25 @@ public class OsdDataTests
         Assert.Equal(GearIndicator.Moving, Osd(level, jet).Gear);
         jet.StepControls(10.0, up);
         Assert.Equal(GearIndicator.Up, Osd(level, jet).Gear);
+    }
+
+    [Fact]
+    public void Fuel_engines_show_the_fuel_left_instead_of_the_battery()
+    {
+        var def = TestData.Aircraft("trainer");
+        var gas = def with
+        {
+            Power = SimLab.Flight.Propulsion.PowerPlantSpec.WithPiston(
+                new SimLab.Flight.Propulsion.PistonEngineSpec(5500, 8200, 1800, 9000, 0.012, TankMl: 700, FuelFlowMaxMlMin: 110, FuelFlowIdleMlMin: 10),
+                SimLab.Flight.Propulsion.PropellerSpec.Generic(23, 9), new Vec3(-1, 0, 0), BodyAxes.Forward),
+        };
+        var aircraft = new Aircraft(gas);
+        var level = State(new Vec3(0, 0, 50), 0, 0, 0);
+        var full = Osd(level, aircraft);
+        Assert.Null(full.BatteryVolts);
+        Assert.Null(full.CurrentAmps);
+        Assert.Equal(100, full.FuelPercent!.Value, 6);
+        Assert.Equal(700, full.FuelMl!.Value, 6);
+        Assert.Null(Osd(level).FuelPercent);
     }
 }

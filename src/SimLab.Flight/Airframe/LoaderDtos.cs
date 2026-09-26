@@ -85,6 +85,7 @@ internal sealed class WheelDto
     public double LateralFriction { get; set; } = 0.8;
     public double MaxSteerDeg { get; set; }
     public Dictionary<string, double> SteerMix { get; set; } = new();
+    public double BrakeFriction { get; set; }
 }
 
 internal sealed class HullDto
@@ -128,7 +129,37 @@ internal sealed class PowerDto
     public BatteryDto? Battery { get; set; }
     public EscDto? Esc { get; set; }
     public PropellerDto? Propeller { get; set; }
+    public PistonDto? Piston { get; set; }
+    public TurbineDto? Turbine { get; set; }
     public string? ThrustStand { get; set; }
+}
+
+internal sealed class PistonDto
+{
+    public double MaxPowerW { get; set; }
+    public double PeakPowerRpm { get; set; }
+    public double IdleRpm { get; set; }
+    public double MaxRpm { get; set; }
+    public double RotorInertia { get; set; }
+    public double TankMl { get; set; }
+    public double FuelFlowMaxMlMin { get; set; }
+    public double FuelFlowIdleMlMin { get; set; }
+}
+
+internal sealed class TurbineDto
+{
+    public double MaxThrustN { get; set; }
+    public double IdleThrustN { get; set; }
+    public double MaxRpm { get; set; }
+    public double IdleRpm { get; set; }
+    public double SpoolUpSeconds { get; set; }
+    public double SpoolDownSeconds { get; set; }
+    public double MassFlowKgS { get; set; }
+    public double NozzleDiameterM { get; set; }
+    public double RotorInertia { get; set; }
+    public double TankMl { get; set; }
+    public double FuelFlowMaxMlMin { get; set; }
+    public double FuelFlowIdleMlMin { get; set; }
 }
 
 internal sealed class MotorDto

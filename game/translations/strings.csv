@@ -80,6 +80,7 @@ SND_NO_AIRCRAFT,Aucun avion disponible pour l'écoute.,No aircraft available for
 SND_NO_POWER,"{0} : pas de groupe motopropulseur à écouter.","{0}: no power plant to preview."
 HUD_PAUSED,PAUSE,PAUSED
 OSD_THROTTLE,GAZ,THR
+OSD_FUEL,CARBURANT,FUEL
 OSD_GEAR_DOWN,TRAIN SORTI,GEAR DOWN
 OSD_GEAR_UP,TRAIN RENTRÉ,GEAR UP
 OSD_GEAR_MOVING,TRAIN EN MOUVEMENT,GEAR IN TRANSIT
@@ -138,6 +139,8 @@ SHEET_WING_AREA,Surface alaire,Wing area
 SHEET_WING_LOADING,Charge alaire,Wing loading
 SHEET_POWER,Motorisation,Power
 SHEET_GLIDER,Planeur (sans moteur),Glider (no motor)
+SHEET_TURBINE,Turbine,Turbine
+SHEET_PISTON,Moteur thermique,Piston engine
 SHEET_TAKEOFF,Décollage,Take-off
 SHEET_CHANNELS,Voies,Channels
 TAKEOFF_TRICYCLE,Roues (train tricycle),Wheels (tricycle gear)

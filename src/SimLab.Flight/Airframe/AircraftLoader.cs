@@ -100,7 +100,7 @@ public static class AircraftLoader
             bodies,
             dto.Power is null ? null : Shift(LoadPower(Path.Combine(folder, dto.Power)), cg),
             dto.Gear.Select(w => new WheelSpec(w.Name, w.Position - cg, w.Stiffness, w.Damping, w.RollingFriction,
-                w.LateralFriction, w.MaxSteerDeg, w.SteerMix)).ToList(),
+                w.LateralFriction, w.MaxSteerDeg, w.SteerMix, w.BrakeFriction)).ToList(),
             dto.Hull.Select(h => new HullPointSpec(h.Name, h.Position - cg, h.Tag)).ToList(),
             new CrashLimits(dto.Crash.MaxGearSinkRate, dto.Crash.MaxHullImpactSpeed, dto.Crash.MaxBellyImpactSpeed),
             dto.Provenance,
@@ -149,15 +149,46 @@ public static class AircraftLoader
     public static PowerPlantSpec LoadPower(string path)
     {
         var dto = Read<PowerDto>(path);
-        if (dto.Motor is null || dto.Battery is null || dto.Propeller is null)
-            throw Invalid(path, "motor, battery and propeller are required.");
+        bool electric = dto.Motor is not null || dto.Battery is not null;
+        int sources = (electric ? 1 : 0) + (dto.Piston is null ? 0 : 1) + (dto.Turbine is null ? 0 : 1);
+        if (sources != 1) throw Invalid(path, "give exactly one power source: motor + battery, piston, or turbine.");
+        var esc = dto.Esc is null ? EscSpec.Linear() : new EscSpec(dto.Esc.ThrottleIn, dto.Esc.ThrottleOut, dto.Esc.Brake);
+        Interpolation.RequireIncreasing(esc.ThrottleIn, "esc.throttleIn");
+        var axis = dto.ThrustAxis.Normalized();
+        int spin = dto.SpinDirection >= 0 ? 1 : -1;
+
+        if (dto.Turbine is { } t)
+        {
+            if (dto.Propeller is not null) throw Invalid(path, "a turbine has no propeller.");
+            if (t.MaxThrustN <= 0 || t.IdleThrustN < 0 || t.IdleThrustN >= t.MaxThrustN)
+                throw Invalid(path, "turbine thrusts need 0 <= idleThrustN < maxThrustN.");
+            if (t.IdleRpm <= 0 || t.IdleRpm >= t.MaxRpm) throw Invalid(path, "turbine rpm needs 0 < idleRpm < maxRpm.");
+            if (t.SpoolUpSeconds <= 0 || t.SpoolDownSeconds <= 0) throw Invalid(path, "turbine spool times must be positive.");
+            if (t.MassFlowKgS < 0 || t.NozzleDiameterM <= 0 || t.RotorInertia <= 0)
+                throw Invalid(path, "turbine massFlowKgS, nozzleDiameterM and rotorInertia must be positive.");
+            RequireFuel(path, "turbine", t.TankMl, t.FuelFlowMaxMlMin, t.FuelFlowIdleMlMin);
+            return new PowerPlantSpec(null, null, esc, null, dto.Position, axis, spin, dto.PFactor, dto.DuctStatorRecovery,
+                Turbine: new TurbineSpec(t.MaxThrustN, t.IdleThrustN, t.MaxRpm, t.IdleRpm, t.SpoolUpSeconds, t.SpoolDownSeconds,
+                    t.MassFlowKgS, t.NozzleDiameterM, t.RotorInertia, t.TankMl, t.FuelFlowMaxMlMin, t.FuelFlowIdleMlMin));
+        }
+
+        if (dto.Propeller is null) throw Invalid(path, "a motor or piston engine needs a propeller.");
+        if (dto.Piston is { } e)
+        {
+            if (e.MaxPowerW <= 0 || e.RotorInertia <= 0) throw Invalid(path, "piston maxPowerW and rotorInertia must be positive.");
+            if (e.IdleRpm <= 0 || e.IdleRpm >= e.PeakPowerRpm || e.PeakPowerRpm > e.MaxRpm)
+                throw Invalid(path, "piston rpm needs 0 < idleRpm < peakPowerRpm <= maxRpm.");
+            RequireFuel(path, "piston", e.TankMl, e.FuelFlowMaxMlMin, e.FuelFlowIdleMlMin);
+            return new PowerPlantSpec(null, null, esc, Propeller(path, dto.Propeller), dto.Position, axis, spin, dto.PFactor,
+                dto.DuctStatorRecovery, Piston: new PistonEngineSpec(e.MaxPowerW, e.PeakPowerRpm, e.IdleRpm, e.MaxRpm, e.RotorInertia,
+                    e.TankMl, e.FuelFlowMaxMlMin, e.FuelFlowIdleMlMin));
+        }
+
+        if (dto.Motor is null || dto.Battery is null) throw Invalid(path, "an electric power plant needs motor and battery.");
         if (dto.Motor.Kv <= 0 || dto.Motor.RotorInertia <= 0) throw Invalid(path, "motor kv and rotorInertia must be positive.");
         if (dto.Battery.Cells < 1) throw Invalid(path, "battery cells must be at least 1.");
         if (dto.Battery.CapacityAh <= 0) throw Invalid(path, "battery capacityAh must be positive.");
         if (dto.DuctStatorRecovery is < 0 or > 1) throw Invalid(path, "ductStatorRecovery must be between 0 and 1.");
-
-        var esc = dto.Esc is null ? EscSpec.Linear() : new EscSpec(dto.Esc.ThrottleIn, dto.Esc.ThrottleOut, dto.Esc.Brake);
-        Interpolation.RequireIncreasing(esc.ThrottleIn, "esc.throttleIn");
 
         var spec = new PowerPlantSpec(
             new MotorSpec(dto.Motor.Kv, dto.Motor.ResistanceOhm, dto.Motor.NoLoadCurrentA, dto.Motor.MaxCurrentA, dto.Motor.RotorInertia),
@@ -165,14 +196,21 @@ public static class AircraftLoader
             esc,
             Propeller(path, dto.Propeller),
             dto.Position,
-            dto.ThrustAxis.Normalized(),
-            dto.SpinDirection >= 0 ? 1 : -1,
+            axis,
+            spin,
             dto.PFactor,
             dto.DuctStatorRecovery);
 
         if (dto.ThrustStand is null) return spec;
         var csv = Path.Combine(Path.GetDirectoryName(path)!, dto.ThrustStand);
         return ThrustStand.Calibrate(spec, ThrustStand.ParseCsv(File.ReadAllText(csv)));
+    }
+
+    static void RequireFuel(string path, string engine, double tankMl, double maxFlow, double idleFlow)
+    {
+        if (tankMl <= 0) throw Invalid(path, $"{engine} tankMl must be positive.");
+        if (maxFlow <= 0 || idleFlow < 0 || idleFlow > maxFlow)
+            throw Invalid(path, $"{engine} fuel flows need 0 <= fuelFlowIdleMlMin <= fuelFlowMaxMlMin, with a positive max.");
     }
 
     static PropellerSpec Propeller(string path, PropellerDto p)

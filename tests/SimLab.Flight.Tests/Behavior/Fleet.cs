@@ -53,6 +53,8 @@ internal static class Fleet
         "wing" => (14, 0.6),
         "3d" => (14, 0.45),
         "jet" => (30, 0.55),
+        "p51" => (25, 0.35),
+        "f18" => (40, 0.15),
         _ => throw new ArgumentException(id),
     };
 

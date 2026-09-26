@@ -13,6 +13,8 @@ public class FleetDefinitionTests
     [InlineData("wing", 1.1, 0.2475)]
     [InlineData("3d", 1.3, 0.336)]
     [InlineData("jet", 2.73, 0.289)]
+    [InlineData("p51", 12.5, 0.904)]
+    [InlineData("f18", 24.5, 1.190)]
     public void Definition_loads_with_expected_mass_and_wing_area(string id, double mass, double wingArea)
     {
         var def = Fleet.Load(id);
@@ -26,6 +28,8 @@ public class FleetDefinitionTests
     [InlineData("wing", 0.5)]
     [InlineData("3d", 1.8)]
     [InlineData("jet", 1.1)]
+    [InlineData("p51", 1.2)]
+    [InlineData("f18", 0.9)]
     public void Static_thrust_to_weight_matches_the_aircraft_type(string id, double minimum)
     {
         var def = Fleet.Load(id);
@@ -40,7 +44,7 @@ public class FleetDefinitionTests
         var def = Fleet.Load("trainer");
         var half = new PowerPlant(def.Power!).SteadyState(0.5, 0, Isa.SeaLevelDensity);
         double batteryCurrent = half.Current * def.Power!.Esc.Map(0.5);
-        double minutes = def.Power.Battery.CapacityAh / batteryCurrent * 60;
+        double minutes = def.Power.Battery!.CapacityAh / batteryCurrent * 60;
         Assert.InRange(minutes, 10, 45);
     }
 
@@ -50,6 +54,8 @@ public class FleetDefinitionTests
     [InlineData("wing")]
     [InlineData("3d")]
     [InlineData("jet")]
+    [InlineData("p51")]
+    [InlineData("f18")]
     public void Wingtip_hull_points_sit_at_the_wing_tip_height(string id)
     {
         var def = Fleet.Load(id);

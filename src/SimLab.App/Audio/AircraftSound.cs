@@ -48,7 +48,7 @@ public sealed class AircraftSound
         double groundSpeed = Math.Sqrt(v.X * v.X + v.Y * v.Y);
 
         var target = new SynthParams(engine.BladePassHz, engine.ShaftHz, engine.ElectricalHz, engine.PropGain, engine.WhineGain,
-            windGain, cutoff, RollingSoundModel.Gain(touching, groundSpeed));
+            windGain, cutoff, RollingSoundModel.Gain(touching, groundSpeed), engine.ExhaustGain, engine.RoarGain);
         var synth = _smoother.Update(target, dt);
         return new SoundFrame(synth, rpm, _impacts.Update(contacts, aircraft.Crash, _clock), reset);
     }

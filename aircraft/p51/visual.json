@@ -1,0 +1,44 @@
+{
+  // P-51D outline at 1/5 scale. Datum: spinner tip, thrust line at z = 0. Natural-metal finish, red spinner.
+  "surfaceColor": [0.80, 0.82, 0.85],
+  "controlColor": [0.70, 0.72, 0.75],
+  "shapes": [
+    { "name": "spinner", "color": [0.78, 0.12, 0.10], "sides": 20,
+      "stations": [ { "x": 0.0, "width": 0 }, { "x": 0.03, "width": 0.06 }, { "x": 0.09, "width": 0.13 } ] },
+    { "name": "fuselage", "color": [0.76, 0.78, 0.81], "sides": 24, "roundness": 2.3,
+      "stations": [
+        { "x": 0.09, "z": 0.0, "width": 0.15, "height": 0.16 },
+        { "x": 0.25, "z": 0.0, "width": 0.17, "height": 0.20 },
+        { "x": 0.45, "z": 0.01, "width": 0.18, "height": 0.22 },
+        { "x": 0.70, "z": 0.0, "width": 0.18, "height": 0.23 },
+        { "x": 0.95, "z": -0.005, "width": 0.16, "height": 0.22 },
+        { "x": 1.25, "z": 0.0, "width": 0.12, "height": 0.18 },
+        { "x": 1.55, "z": 0.01, "width": 0.08, "height": 0.14 },
+        { "x": 1.85, "z": 0.03, "width": 0.04, "height": 0.08 },
+        { "x": 1.97, "z": 0.04, "width": 0.01, "height": 0.02 }
+      ] },
+    { "name": "antiGlare", "color": [0.30, 0.33, 0.20], "sides": 16, "roundness": 2.3,
+      "stations": [
+        { "x": 0.10, "z": 0.035, "width": 0.10, "height": 0.10 },
+        { "x": 0.60, "z": 0.06, "width": 0.11, "height": 0.11 }
+      ] },
+    { "name": "canopy", "color": [0.36, 0.46, 0.56], "sides": 20,
+      "stations": [
+        { "x": 0.62, "z": 0.11, "width": 0 },
+        { "x": 0.68, "z": 0.13, "width": 0.08, "height": 0.06 },
+        { "x": 0.78, "z": 0.16, "width": 0.11, "height": 0.12 },
+        { "x": 0.90, "z": 0.155, "width": 0.10, "height": 0.11 },
+        { "x": 1.00, "z": 0.14, "width": 0.06, "height": 0.06 },
+        { "x": 1.05, "z": 0.12, "width": 0 }
+      ] },
+    { "name": "radiatorScoop", "color": [0.76, 0.78, 0.81], "sides": 16, "roundness": 2.6,
+      "stations": [
+        { "x": 0.85, "z": -0.12, "width": 0.10, "height": 0.08 },
+        { "x": 1.05, "z": -0.13, "width": 0.12, "height": 0.10 },
+        { "x": 1.25, "z": -0.11, "width": 0.10, "height": 0.07 },
+        { "x": 1.40, "z": -0.08, "width": 0.05, "height": 0.03 }
+      ] },
+    { "name": "scoopMouth", "color": [0.06, 0.06, 0.07], "sides": 16, "roundness": 2.6,
+      "stations": [ { "x": 0.852, "z": -0.12, "width": 0.09, "height": 0.07 }, { "x": 0.88, "z": -0.12, "width": 0 } ] }
+  ]
+}

@@ -75,6 +75,12 @@ and a wheel is below the CG datum line so it normally has negative z. A steerabl
 (nosewheel, tailwheel) gets a non-zero `maxSteerDeg` and a `steerMix` (see Controls below);
 a free or fixed wheel uses `"steerMix": {}`.
 
+### Wheel brakes (optional)
+
+`"brakeFriction": 0.5` on a wheel fits it with a brake: its rolling friction coefficient when fully braked. Brakes are
+mixed to the throttle stick, like a common jet radio setup: on with the throttle closed (≤ 2 %), off as soon as it
+opens. Aircraft with a fuel engine need them, because the engine keeps idling and pushing on the ground.
+
 ## Retractable gear (optional)
 
 ```json
@@ -165,6 +171,33 @@ About the **CG**, in body axes:
   - a **down** thrust offset adds a small **−z** component.
   - the trainer combines both: `[-0.9988, 0.0349, -0.0349]` (about 2° right, 2° down thrust).
 
+### Fuel engines: `piston` or `turbine`
+
+`power.json` holds exactly one power source: `motor` + `battery` (electric, above), `piston` or `turbine`. Both fuel
+engines start already running at idle (no start sequence); throttle 0 is idle, not off; an empty tank stops them. The
+OSD then shows the fuel left instead of the battery.
+
+```json
+"piston": { "maxPowerW": 5000, "peakPowerRpm": 8300, "idleRpm": 1800, "maxRpm": 9000, "rotorInertia": 0.008,
+            "tankMl": 700, "fuelFlowMaxMlMin": 75, "fuelFlowIdleMlMin": 8 }
+```
+
+A glow or gas engine turning the `propeller` (required). Full-throttle power follows `maxPowerW · (x + x² − x³)`,
+`x = rpm / peakPowerRpm`, with the ignition cut above `maxRpm`; the idle throttle opening is worked out so the engine
+idles at `idleRpm` on its propeller. `rotorInertia` is crank plus propeller. Torque roll, prop wash and P-factor act as
+for an electric motor. Fuel flow grows linearly with power from idle to max. See `p51/power.json`.
+
+```json
+"turbine": { "maxThrustN": 220, "idleThrustN": 9, "maxRpm": 117000, "idleRpm": 33000,
+             "spoolUpSeconds": 4.5, "spoolDownSeconds": 3.0, "massFlowKgS": 0.45, "nozzleDiameterM": 0.1,
+             "rotorInertia": 6e-5, "tankMl": 4500, "fuelFlowMaxMlMin": 750, "fuelFlowIdleMlMin": 120 }
+```
+
+A kerosene micro-turbine, no `propeller`; `position` is the nozzle exit. The throttle sets the share of the idle-to-max
+thrust range; the spool follows it no faster than a full idle→max sweep in `spoolUpSeconds` (down: `spoolDownSeconds`).
+Thrust drops with airspeed by the ram drag `massFlowKgS · V`. No torque roll; the spool's gyroscopic moment remains.
+See `f18/power.json` and docs/superpowers/specs/2026-09-26-fuel-engines-design.md.
+
 ### Ducted fans (EDF)
 
 A ducted fan is entered as a propeller of the fan's diameter with explicit `j` / `ct` / `cp` tables (the generic
@@ -188,7 +221,7 @@ See `jet/power.json`.
 
 | Field | Default | Meaning |
 |-------|---------|---------|
-| `blades` | 2 | Propeller or fan blade count (1–16); sets the blade-pass frequency rpm × blades / 60 |
+| `blades` | 2 | Propeller or fan blade count (1–16); sets the blade-pass frequency rpm × blades / 60 (a turbine's spool whine) |
 | `polePairs` | 7 | Motor magnetic pole pairs (1–20); sets the motor whine frequency rpm × polePairs / 60 |
 | `sample`, `sampleRpm` | none | Recorded motor loop (relative to the aircraft folder) and the rpm it was recorded at; when given, the loop replaces the synthesized motor and propeller, pitched by rpm / sampleRpm. Give both or neither. |
 

@@ -1,6 +1,7 @@
 using System.Globalization;
 using SimLab.Flight.Aero;
 using SimLab.Flight.Airframe;
+using SimLab.Flight.Propulsion;
 
 namespace SimLab.App.Ui;
 
@@ -8,7 +9,10 @@ public enum TakeoffKind { Tricycle, TailDragger, HandLaunch }
 
 public enum SheetChannel { Ailerons, Elevons, Elevator, Rudder, Throttle }
 
-public sealed record PowerSummary(double Kv, int Cells, double CapacityMah, double PropDiameterIn, double PropPitchIn);
+/// <summary>Power plant facts: Kv and pack for electric motors, peak power for piston engines, thrust for turbines;
+/// propeller size when there is one, tank size for fuel engines.</summary>
+public sealed record PowerSummary(double Kv, int Cells, double CapacityMah, double PropDiameterIn, double PropPitchIn,
+    PowerSource Source = PowerSource.Electric, double MaxPowerW = 0, double MaxThrustN = 0, double TankMl = 0);
 
 public readonly record struct SheetLine(string Key, string Value);
 
@@ -36,8 +40,9 @@ public sealed record AircraftSheet(
         var wings = definition.Surfaces.Where(s => s.Role == SurfaceRole.Wing).ToList();
         var hullX = definition.Hull.Select(h => h.Position.X).DefaultIfEmpty(0).ToList();
         var power = definition.Power is { } p
-            ? new PowerSummary(p.Motor.Kv, p.Battery.Cells, p.Battery.CapacityAh * 1000,
-                p.Propeller.DiameterM / MetersPerInch, p.Propeller.PitchM / MetersPerInch)
+            ? new PowerSummary(p.Motor?.Kv ?? 0, p.Battery?.Cells ?? 0, (p.Battery?.CapacityAh ?? 0) * 1000,
+                (p.Propeller?.DiameterM ?? 0) / MetersPerInch, (p.Propeller?.PitchM ?? 0) / MetersPerInch,
+                p.Source, p.Piston?.MaxPowerW ?? 0, p.Turbine?.MaxThrustN ?? 0, p.TankMl ?? 0)
             : null;
         return new AircraftSheet(
             wings.Select(s => s.TotalSpan).DefaultIfEmpty(0).Max(),
@@ -76,10 +81,17 @@ public sealed record AircraftSheet(
     public IReadOnlyList<SheetLine> Lines(Func<string, string> translate)
     {
         var inv = CultureInfo.InvariantCulture;
-        string power = Power is { } p
-            ? $"{p.Kv.ToString("0", inv)} kV · {p.Cells}S {p.CapacityMah.ToString("0", inv)} mAh · " +
-              $"{p.PropDiameterIn.ToString("0.#", inv)}×{p.PropPitchIn.ToString("0.#", inv)} in"
-            : translate("SHEET_GLIDER");
+        string power = Power switch
+        {
+            null => translate("SHEET_GLIDER"),
+            { Source: PowerSource.Turbine } t =>
+                $"{translate("SHEET_TURBINE")} {t.MaxThrustN.ToString("0", inv)} N · {(t.TankMl / 1000).ToString("0.0", inv)} L",
+            { Source: PowerSource.Piston } g =>
+                $"{translate("SHEET_PISTON")} {(g.MaxPowerW / 1000).ToString("0.0", inv)} kW · " +
+                $"{g.PropDiameterIn.ToString("0.#", inv)}×{g.PropPitchIn.ToString("0.#", inv)} in · {g.TankMl.ToString("0", inv)} ml",
+            var e => $"{e.Kv.ToString("0", inv)} kV · {e.Cells}S {e.CapacityMah.ToString("0", inv)} mAh · " +
+                     $"{e.PropDiameterIn.ToString("0.#", inv)}×{e.PropPitchIn.ToString("0.#", inv)} in",
+        };
         return
         [
             new("SHEET_SPAN", SpanM.ToString("0.00", inv) + " m"),

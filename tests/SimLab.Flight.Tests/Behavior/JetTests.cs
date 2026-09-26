@@ -27,7 +27,7 @@ public class JetTests
         // Reviews of the E-flite F-16 80mm: about 3.5 min at most on a 6S 5000 mAh pack.
         var def = Fleet.Load("jet");
         var plant = new PowerPlant(def.Power!);
-        double minutes = def.Power!.Battery.CapacityAh / plant.SteadyState(1.0, 35, Isa.SeaLevelDensity).Current * 60;
+        double minutes = def.Power!.Battery!.CapacityAh / plant.SteadyState(1.0, 35, Isa.SeaLevelDensity).Current * 60;
         Assert.InRange(minutes, 2.8, 4.5);
     }
 
