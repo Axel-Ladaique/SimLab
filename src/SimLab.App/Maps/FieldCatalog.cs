@@ -1,4 +1,5 @@
 using SimLab.App.Maps.Club;
+using SimLab.App.Maps.Mountain;
 
 namespace SimLab.App.Maps;
 
@@ -8,7 +9,11 @@ public sealed record FieldEntry(string Id, string NameKey, Func<FieldMap> Create
 /// <summary>The flying fields the game offers.</summary>
 public static class FieldCatalog
 {
-    public static IReadOnlyList<FieldEntry> All { get; } = [new(ClubMap.Id, "FIELD_CLUB", ClubMap.Create)];
+    public static IReadOnlyList<FieldEntry> All { get; } =
+    [
+        new(ClubMap.Id, "FIELD_CLUB", ClubMap.Create),
+        new(MountainMap.Id, "FIELD_MOUNTAIN", MountainMap.Create),
+    ];
 
     static readonly Dictionary<string, Lazy<FieldMap>> Maps = All.ToDictionary(f => f.Id, f => new Lazy<FieldMap>(f.Create));
 

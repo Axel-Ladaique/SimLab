@@ -15,4 +15,7 @@ public interface ITerrain
 
     /// <summary>Kind of the first obstacle crossed by the world segment a→b, or null.</summary>
     ObstacleKind? HitObstacle(Vec3 a, Vec3 b);
+
+    /// <summary>Level (world z) of the water surface at (x, y), or null where there is no water.</summary>
+    double? WaterSurface(double x, double y);
 }

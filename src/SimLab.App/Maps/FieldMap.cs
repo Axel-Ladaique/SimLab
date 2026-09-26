@@ -9,19 +9,19 @@ public sealed class FieldMap
 {
     readonly Func<double, double, SurfaceWeights> _surface;
 
-    public FieldMap(string id, string nameKey, double halfSize, Func<double, double, double> height,
-        Func<double, double, SurfaceWeights> surface, MapLayout layout, MapAmbience ambience,
-        IReadOnlyList<Prop> props, IReadOnlyList<MapOverlay> overlays)
+    public FieldMap(string id, string nameKey, HeightGrid grid, Func<double, double, SurfaceWeights> surface,
+        MapLayout layout, MapAmbience ambience, IReadOnlyList<Prop> props, IReadOnlyList<MapOverlay> overlays,
+        IReadOnlyList<WaterBody>? water = null)
     {
         Id = id;
         NameKey = nameKey;
-        HalfSize = halfSize;
         _surface = surface;
         Layout = layout;
         Ambience = ambience;
         Props = props;
         Overlays = overlays;
-        Terrain = new MapTerrain(height, props.SelectMany(p => p.Collision()));
+        Water = water ?? [];
+        Terrain = new MapTerrain(grid, props.SelectMany(p => p.Collision()), Water);
     }
 
     public string Id { get; }
@@ -30,13 +30,24 @@ public sealed class FieldMap
     public string NameKey { get; }
 
     /// <summary>The terrain covers [−HalfSize, HalfSize]² (m).</summary>
-    public double HalfSize { get; }
+    public double HalfSize => Terrain.Grid.HalfSize;
 
     public MapTerrain Terrain { get; }
+    public HeightGrid Grid => Terrain.Grid;
     public MapLayout Layout { get; }
     public MapAmbience Ambience { get; }
     public IReadOnlyList<Prop> Props { get; }
     public IReadOnlyList<MapOverlay> Overlays { get; }
+    public IReadOnlyList<WaterBody> Water { get; }
+
+    /// <summary>Real altitude (m above sea level) of world z = 0; sets the air density.</summary>
+    public double DatumElevationM { get; init; }
+
+    /// <summary>Height of the far scenery ring beyond the grid (world x, y → z), drawn only; null for none.</summary>
+    public Func<double, double, double>? Backdrop { get; init; }
+
+    /// <summary>Ground mix of the far ring; defaults to the map's own surface function.</summary>
+    public Func<double, double, SurfaceWeights>? BackdropSurface { get; init; }
 
     public SurfaceWeights Surface(double x, double y) => _surface(x, y);
 }

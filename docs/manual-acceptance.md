@@ -100,7 +100,20 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Flying into the hangar, a car or a power-line pole shows « Contre un obstacle »; into the wires, « Dans les câbles ».
 - [ ] The club shows textured grass, a striped runway, farmland, groves, poplars along the road and the power line.
 - [ ] F3 shows ≥ 60 fps in the pilot view and in the chase view over the groves.
-- [ ] The « Terrain » chip on the home screen rebuilds the background view (only the club for now).
+- [ ] The « Terrain » chip on the home screen rebuilds the background view; « Montagne » loads the mountain map.
+
+## Mountain map
+
+- [ ] F3 shows ≥ 60 fps in the pilot view and in the chase view over the ridge/valley, on this Mac, on both the club
+  and the mountain map.
+- [ ] Slope soaring: hand-launch the wing at the brow with wind from the west (270°) and cut the motor; it stays up
+  along the ridge.
+- [ ] Rotor: with wind from the east (90°, behind the crest), feel the sink and the stronger turbulence at the pilot
+  position.
+- [ ] Flying into the lake shows a crash with cause « Dans l'eau ».
+- [ ] Flying into the chairlift cables shows « Dans les câbles ».
+- [ ] The take-off run at 1 500 m (density altitude) feels different from the club at sea level (longer ground roll,
+  softer control response at the same airspeed).
 
 ## HUD
 

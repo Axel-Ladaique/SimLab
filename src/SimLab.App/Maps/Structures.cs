@@ -5,21 +5,43 @@ using SimLab.Flight.Terrain;
 namespace SimLab.App.Maps;
 
 /// <summary>A hangar (closed walls and a gable roof) or, when <see cref="Open"/>, a shelter (four posts and a flat
-/// roof). Its length runs along local x. Collides as the box around it.</summary>
+/// roof). Its length runs along local x. A closed building with <see cref="SteepRoof"/> (a chalet) has a slate roof of
+/// <see cref="RoofThickness"/> laid over its gable, overhanging the walls by <see cref="Eaves"/> on every side.
+/// Collides as the box around it, eaves included.</summary>
 public sealed record Building(Vec3 Base, double YawDeg, double Length, double Width, double WallHeight, double RoofHeight,
-    bool Open, Rgb Walls, Rgb RoofTint) : Prop(Base, YawDeg)
+    bool Open, Rgb Walls, Rgb RoofTint, bool SteepRoof = false) : Prop(Base, YawDeg)
 {
     const double PostSize = 0.2;
+    public const double Eaves = 0.4;
+    public const double RoofThickness = 0.2;
 
-    public double TotalHeight => WallHeight + RoofHeight;
+    bool HasSteepRoof => SteepRoof && !Open;
 
-    public override IEnumerable<Obstacle> Collision() =>
-    [
-        new(new OrientedBox(Base + new Vec3(0, 0, TotalHeight / 2), new Vec3(Length / 2, Width / 2, TotalHeight / 2), YawDeg), ObstacleKind.Structure),
-    ];
+    public double TotalHeight => WallHeight + RoofHeight + (HasSteepRoof ? RoofThickness : 0);
+
+    public override IEnumerable<Obstacle> Collision()
+    {
+        double overhang = HasSteepRoof ? Eaves : 0;
+        return
+        [
+            new(new OrientedBox(Base + new Vec3(0, 0, TotalHeight / 2),
+                new Vec3(Length / 2 + overhang, Width / 2 + overhang, TotalHeight / 2), YawDeg), ObstacleKind.Structure),
+        ];
+    }
 
     public override IEnumerable<PropPart> Parts()
     {
+        if (HasSteepRoof)
+        {
+            // The slab's outer slope continues the gable's pitch past the walls, so the eaves hang below the wall top.
+            double eavesDrop = RoofHeight / (Width / 2) * Eaves, slab = RoofHeight + eavesDrop;
+            return
+            [
+                Part(PartMesh.Box, 0, 0, WallHeight / 2, Length, Width, WallHeight, Walls),
+                Part(PartMesh.Roof, 0, 0, WallHeight + RoofHeight / 2, Length, Width, RoofHeight, Walls),
+                Part(PartMesh.SteepRoof, 0, 0, TotalHeight - slab / 2, Length + 2 * Eaves, Width + 2 * Eaves, slab, RoofTint),
+            ];
+        }
         if (!Open)
             return
             [
@@ -36,6 +58,28 @@ public sealed record Building(Vec3 Base, double YawDeg, double Length, double Wi
             Part(PartMesh.Box, 0, 0, WallHeight + RoofHeight / 2, Length, Width, RoofHeight, RoofTint),
         ];
     }
+}
+
+/// <summary>A road bridge: a <see cref="DeckThickness"/> deck whose top is <see cref="Prop.Base"/>, with a
+/// <see cref="RailHeight"/> side rail along each edge. Its length runs along local x. Collides as its three boxes.</summary>
+public sealed record Bridge(Vec3 Base, double YawDeg, double Length, double Width, Rgb Tint) : Prop(Base, YawDeg)
+{
+    public const double DeckThickness = 0.6;
+    public const double RailHeight = 0.8;
+    const double RailThickness = 0.1;
+
+    IEnumerable<(Vec3 Centre, Vec3 Size)> Boxes()
+    {
+        yield return (new Vec3(0, 0, -DeckThickness / 2), new Vec3(Length, Width, DeckThickness));
+        foreach (int side in new[] { -1, 1 })
+            yield return (new Vec3(0, side * (Width - RailThickness) / 2, RailHeight / 2), new Vec3(Length, RailThickness, RailHeight));
+    }
+
+    public override IEnumerable<Obstacle> Collision() =>
+        Boxes().Select(b => new Obstacle(new OrientedBox(At(b.Centre.X, b.Centre.Y, b.Centre.Z), b.Size * 0.5, YawDeg), ObstacleKind.Structure));
+
+    public override IEnumerable<PropPart> Parts() =>
+        Boxes().Select(b => Part(PartMesh.Box, b.Centre.X, b.Centre.Y, b.Centre.Z, b.Size.X, b.Size.Y, b.Size.Z, Tint));
 }
 
 /// <summary>A parked car, 4.2 × 1.8 × 1.5 m, its length along local x.</summary>
@@ -125,19 +169,25 @@ public sealed record PowerLine(IReadOnlyList<Vec3> Poles) : Prop(RequireAtLeastT
     /// local −y or +y) of span <paramref name="span"/>, following the sag.</summary>
     public Vec3 WirePoint(int span, int side, double t)
     {
+        var (a, b) = Attachments(span, side);
+        return SaggingWire.Point(a, b, Sag, t);
+    }
+
+    (Vec3 A, Vec3 B) Attachments(int span, int side)
+    {
         var (ox, oy) = PlanarYaw.ToWorld(0, side * ArmHalfLength, SpanYaw(span));
         var offset = new Vec3(ox, oy, AttachHeight);
-        var a = Poles[span] + offset;
-        var b = Poles[span + 1] + offset;
-        return a + (b - a) * t - new Vec3(0, 0, 4 * Sag * t * (1 - t));
+        return (Poles[span] + offset, Poles[span + 1] + offset);
     }
 
     IEnumerable<(Vec3 A, Vec3 B)> WireSegments()
     {
         for (int span = 0; span < Poles.Count - 1; span++)
         foreach (int side in new[] { -1, 1 })
-        for (int k = 0; k < SegmentsPerSpan; k++)
-            yield return (WirePoint(span, side, k / (double)SegmentsPerSpan), WirePoint(span, side, (k + 1) / (double)SegmentsPerSpan));
+        {
+            var (a, b) = Attachments(span, side);
+            foreach (var segment in SaggingWire.Segments(a, b, Sag, SegmentsPerSpan)) yield return segment;
+        }
     }
 
     public override IEnumerable<Obstacle> Collision()
@@ -154,12 +204,30 @@ public sealed record PowerLine(IReadOnlyList<Vec3> Poles) : Prop(RequireAtLeastT
             yield return new(PartMesh.Post, p + new Vec3(0, 0, PoleHeight / 2), new Vec3(2 * PoleRadius, 2 * PoleRadius, PoleHeight), 0, 0, Wood);
             yield return new(PartMesh.Box, p + new Vec3(0, 0, AttachHeight + 0.1), new Vec3(0.12, 2 * ArmHalfLength + 0.2, 0.12), SpanYaw(i), 0, Wood);
         }
-        foreach (var (a, b) in WireSegments())
-        {
-            var d = b - a;
-            double horizontal = Math.Sqrt(d.X * d.X + d.Y * d.Y);
-            yield return new(PartMesh.Wire, (a + b) * 0.5, new Vec3(d.Length, WireDrawDiameter, WireDrawDiameter),
-                PlanarYaw.Of(d.X, d.Y), Angle.Deg(Math.Atan2(d.Z, horizontal)), Cable);
-        }
+        foreach (var segment in WireSegments()) yield return SaggingWire.Part(segment, WireDrawDiameter, Cable);
+    }
+}
+
+/// <summary>A wire hung between two attachment points, sagging as a parabola, drawn and hit as straight segments.</summary>
+static class SaggingWire
+{
+    /// <summary>Point at <paramref name="t"/> (0…1) from <paramref name="a"/> to <paramref name="b"/>,
+    /// <paramref name="sag"/> below the chord at mid-span.</summary>
+    public static Vec3 Point(Vec3 a, Vec3 b, double sag, double t) => a + (b - a) * t - new Vec3(0, 0, 4 * sag * t * (1 - t));
+
+    public static IEnumerable<(Vec3 A, Vec3 B)> Segments(Vec3 a, Vec3 b, double sag, int count)
+    {
+        for (int k = 0; k < count; k++)
+            yield return (Point(a, b, sag, k / (double)count), Point(a, b, sag, (k + 1) / (double)count));
+    }
+
+    /// <summary>A <see cref="PartMesh.Wire"/> drawing one segment.</summary>
+    public static PropPart Part((Vec3 A, Vec3 B) segment, double diameter, Rgb tint)
+    {
+        var (a, b) = segment;
+        var d = b - a;
+        double horizontal = Math.Sqrt(d.X * d.X + d.Y * d.Y);
+        return new(PartMesh.Wire, (a + b) * 0.5, new Vec3(d.Length, diameter, diameter),
+            PlanarYaw.Of(d.X, d.Y), Angle.Deg(Math.Atan2(d.Z, horizontal)), tint);
     }
 }

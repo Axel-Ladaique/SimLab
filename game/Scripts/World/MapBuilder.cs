@@ -9,10 +9,9 @@ namespace SimLab.Game.World;
 /// <summary>The map's nodes that change after it is built.</summary>
 public readonly record struct FieldNodes(WindsockNode Windsock, DirectionalLight3D Sun);
 
-/// <summary>Builds a map's scene: sky, sun, terrain, ground overlays, props and windsock.</summary>
+/// <summary>Builds a map's scene: sky, sun, terrain, ground overlays, water, props and windsock.</summary>
 public static class MapBuilder
 {
-    const float GridStep = 5f;
     const float ShadowDistance = 300f;
 
     public static FieldNodes Build(Node3D root, FieldMap map, FlightConditions conditions)
@@ -21,8 +20,11 @@ public static class MapBuilder
         var sun = new DirectionalLight3D { ShadowEnabled = true, LightEnergy = 1.0f, DirectionalShadowMaxDistance = ShadowDistance };
         AimSun(sun, conditions);
         root.AddChild(sun);
-        root.AddChild(TerrainMesh(map));
+        var terrainMaterial = TerrainMaterial.Create(map.Ambience);
+        TerrainChunks.Add(root, map, terrainMaterial);
+        BackdropMesh.Add(root, map, terrainMaterial);
         GroundOverlays.Add(root, map);
+        WaterMeshes.Add(root, map);
         PropLayer.Add(root, map.Props);
         var w = map.Layout.WindsockPosition;
         var sock = new WindsockNode { Position = new Vec3(w.X, w.Y, map.Terrain.Height(w.X, w.Y)).WorldToGodot() };
@@ -69,49 +71,5 @@ public static class MapBuilder
             FogSkyAffect = 0f,
         };
         return new WorldEnvironment { Environment = environment };
-    }
-
-    /// <summary>A grid over the whole map; each vertex carries the ground normal and the surface weights
-    /// (COLOR = grass, mowed, dirt, gravel; CUSTOM0 = wheat, ploughed) that the terrain shader blends.</summary>
-    static MeshInstance3D TerrainMesh(FieldMap map)
-    {
-        int n = (int)(2 * map.HalfSize / GridStep);
-        var st = new SurfaceTool();
-        st.Begin(Mesh.PrimitiveType.Triangles);
-        st.SetCustomFormat(0, SurfaceTool.CustomFormat.RgbaFloat);
-        for (int j = 0; j <= n; j++)
-        for (int i = 0; i <= n; i++)
-        {
-            double x = -map.HalfSize + i * GridStep, y = -map.HalfSize + j * GridStep;
-            var w = map.Surface(x, y);
-            st.SetColor(new Color((float)w.Grass, (float)w.MowedGrass, (float)w.Dirt, (float)w.Gravel));
-            st.SetCustom(0, new Color((float)w.Wheat, (float)w.Ploughed, 0, 0));
-            st.SetNormal(map.Terrain.Normal(x, y).WorldToGodot());
-            st.AddVertex(new Vec3(x, y, map.Terrain.Height(x, y)).WorldToGodot());
-        }
-        for (int j = 0; j < n; j++)
-        for (int i = 0; i < n; i++)
-        {
-            int a = j * (n + 1) + i, b = a + 1, c = a + n + 1, d = c + 1;
-            // Wound so the up-facing side is the front face seen from above (a,b,d / a,d,c would put it on the
-            // back face for this grid): with cull_disabled the shader mirrors the normal on back-facing triangles,
-            // which would flip our upward per-vertex normals downward and leave the terrain unlit.
-            st.AddIndex(a); st.AddIndex(d); st.AddIndex(b);
-            st.AddIndex(a); st.AddIndex(c); st.AddIndex(d);
-        }
-        return new MeshInstance3D
-        {
-            Mesh = st.Commit(),
-            MaterialOverride = TerrainMaterial(),
-        };
-    }
-
-    static ShaderMaterial TerrainMaterial()
-    {
-        var material = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/terrain.gdshader") };
-        foreach (var name in new[] { "grass", "dirt", "gravel", "soil" })
-        foreach (var map in new[] { "albedo", "normal" })
-            material.SetShaderParameter($"{name}_{map}", GD.Load<Texture2D>($"res://Textures/terrain/{name}_{map}.jpg"));
-        return material;
     }
 }

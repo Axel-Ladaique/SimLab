@@ -310,7 +310,7 @@ public partial class Main : Node
         MapBuilder.Build(preview, map, _services.Settings.Conditions);
         var pilot = map.Layout.PilotPosition;
         var eye = new Vec3(pilot.X, pilot.Y, map.Terrain.Height(pilot.X, pilot.Y) + map.Layout.EyeHeight).WorldToGodot();
-        var camera = new Camera3D { Current = true, Fov = (float)_services.Settings.FovDeg, Far = 4000f };
+        var camera = new Camera3D { Current = true, Fov = (float)_services.Settings.FovDeg, Far = 16000f };
         preview.AddChild(camera);
         // Aim between the runway's east half and the windsock so the screenshot keeps both in frame
         // (the windsock sits close to the pilot, well off the runway's own axis).
@@ -336,7 +336,7 @@ public partial class Main : Node
         var p = start.Position.WorldToGodot();
         var forward = start.Orientation.Rotate(BodyAxes.Forward).WorldToGodot();
         var left = -start.Orientation.Rotate(BodyAxes.Right).WorldToGodot();
-        var camera = new Camera3D { Current = true, Fov = 50f, Near = 0.05f, Far = 4000f };
+        var camera = new Camera3D { Current = true, Fov = 50f, Near = 0.05f, Far = 16000f };
         preview.AddChild(camera);
         camera.LookAtFromPosition(p + forward * 2.5f + left * 3f + Vector3.Up * 1.2f, p, Vector3.Up);
         CaptureAfterFrames(20, path);

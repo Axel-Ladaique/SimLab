@@ -83,7 +83,7 @@ public partial class FlightScene : Node3D
         _cameras.Reset(Context());
         _resetCount = _session.ResetCount;
         _retrackDoppler = true;
-        _camera = new Camera3D { Current = true, Near = 0.1f, Far = 4000f, Fov = (float)services.Settings.FovDeg };
+        _camera = new Camera3D { Current = true, Near = 0.1f, Far = 16000f, Fov = (float)services.Settings.FovDeg };
         AddChild(_camera);
         _hud = new FlightHud();
         _hud.Init(ToggleHud, NextCamera, manageMouse: script is null);
@@ -180,7 +180,9 @@ public partial class FlightScene : Node3D
             _camera.DopplerTracking = Camera3D.DopplerTrackingEnum.IdleStep;
             _retrackDoppler = false;
         }
-        _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
+        var w = _session.Map.Layout.WindsockPosition;
+        double ground = _session.Terrain.Height(w.X, w.Y);
+        _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(new Vec3(w.X, w.Y, ground + WindsockNode.PoleHeight), WindsockNode.PoleHeight)));
         var osd = OsdData.From(_session.Aircraft, _session.DisplayState, _session.HeightAgl, _session.FlightTime,
             LastInput.Controls.Throttle, _session.Map.Layout.PilotPosition, LastInput.Controls.Flap, LastInput.Controls.ThrottleCut);
         _hud.UpdateHud(_session, LastInput, osd, HudShown, _cameras.Current);

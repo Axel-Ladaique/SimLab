@@ -4,7 +4,8 @@ namespace SimLab.Flight.Atmosphere;
 
 /// <summary>
 /// Steady wind with a logarithmic ground profile plus low-altitude Dryden turbulence
-/// (MIL-F-8785C), implemented as seeded first-order shaping filters.
+/// (MIL-F-8785C), implemented as seeded first-order shaping filters. With a <see cref="TerrainWind"/>, the wind at a
+/// position also rises over windward slopes and weakens, sinks and churns in the lee of crests.
 /// </summary>
 public sealed class WindField
 {
@@ -14,16 +15,18 @@ public sealed class WindField
     Random _random;
     double _u, _v, _w;
 
-    public WindField(WindSettings settings, int seed)
+    public WindField(WindSettings settings, int seed, TerrainWind? terrain = null)
     {
         if (settings.RoughnessLength <= 0)
             throw new ArgumentOutOfRangeException(nameof(settings), settings.RoughnessLength, "RoughnessLength must be positive.");
         Settings = settings;
         _seed = seed;
         _random = new Random(seed);
+        Terrain = terrain;
     }
 
     public WindSettings Settings { get; }
+    public TerrainWind? Terrain { get; }
     public Vec3 Turbulence { get; private set; }
 
     /// <summary>World (ENU) unit vector the wind blows toward: from D means toward (−sin D, −cos D, 0).</summary>
@@ -53,7 +56,26 @@ public sealed class WindField
         Turbulence = Vec3.Zero;
     }
 
+    /// <summary>Wind at a height above ground, ignoring the terrain's shape.</summary>
     public Vec3 At(double heightAgl) => SteadyAt(heightAgl) + Turbulence;
+
+    /// <summary>
+    /// Wind at a world position <paramref name="heightAgl"/> above the ground: slope lift that fades with height over
+    /// the lift layer, and in the lee of a crest a weakened, sinking flow whose turbulence grows up to threefold.
+    /// </summary>
+    public Vec3 At(Vec3 position, double heightAgl)
+    {
+        var steady = SteadyAt(heightAgl);
+        if (Terrain is null || Settings.SpeedAt10m <= 0) return steady + Turbulence;
+        var s = Terrain.Sample(position.X, position.Y);
+        double u = steady.Length;
+        double lift = Math.Clamp(s.Slope, 0, 1) * Math.Exp(-heightAgl / s.LayerDepth);
+        double horizontal = (1 + 0.3 * lift) * (1 - 0.9 * s.Shelter);
+        double above = (position.Z - s.CrestHeight) / s.LayerDepth;
+        double sink = 0.3 * s.Shelter * (1 - SmoothStep(above));      // full below the crest, gone one layer above it
+        double vertical = u * (lift - sink);
+        return steady * horizontal + Vec3.UnitZ * vertical + Turbulence * (1 + 2 * s.Shelter);
+    }
 
     public void Advance(double dt, double heightAgl, double airspeed)
     {
@@ -85,6 +107,12 @@ public sealed class WindField
     {
         double a = Math.Exp(-speed * dt / length);
         return a * x + sigma * Math.Sqrt(1 - a * a) * Gaussian();
+    }
+
+    static double SmoothStep(double x)
+    {
+        x = Math.Clamp(x, 0, 1);
+        return x * x * (3 - 2 * x);
     }
 
     double Gaussian()

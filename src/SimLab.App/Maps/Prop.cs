@@ -7,8 +7,9 @@ namespace SimLab.App.Maps;
 /// <summary>Unit meshes the game draws prop parts with. Each fills a 1 m cube centred on its origin (local x, local
 /// y, up): <see cref="Trunk"/> a tapered upright cylinder, <see cref="Post"/> an upright cylinder, <see cref="Wire"/>
 /// a cylinder along local x, <see cref="Box"/> a box, <see cref="Roof"/> a gable prism with its ridge along local x,
-/// <see cref="BroadleafCrown"/> a lumpy sphere and <see cref="ConiferCrown"/> a tiered cone (base down).</summary>
-public enum PartMesh { Trunk, BroadleafCrown, ConiferCrown, Box, Roof, Post, Wire }
+/// <see cref="BroadleafCrown"/> a lumpy sphere, <see cref="ConiferCrown"/> a tiered cone (base down), <see cref="Rock"/>
+/// a deformed sphere and <see cref="SteepRoof"/> a gable of two slabs (Λ) with its ridge along local x.</summary>
+public enum PartMesh { Trunk, BroadleafCrown, ConiferCrown, Box, Roof, Post, Wire, Rock, SteepRoof }
 
 /// <param name="Size">Extent along the part's local x, local y and up (m), before rotation.</param>
 /// <param name="YawDeg">See <see cref="PlanarYaw"/>.</param>
