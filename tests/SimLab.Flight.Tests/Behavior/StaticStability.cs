@@ -9,8 +9,7 @@ namespace SimLab.Flight.Tests.Behavior;
 /// <summary>
 /// Static longitudinal stability from the aircraft's own aero model (power off, zero rates, out of ground effect):
 /// neutral point and static margin by finite differences, and the level-flight trim point.
-/// Tailless aircraft only: every evaluation calls <c>Aero.Reset()</c>, which zeroes the lagged wing downwash at the tail,
-/// so for a tailed aircraft the tail would see no downwash and the margin and trim would be wrong.
+/// The lifting line's downwash lag is settled before each load evaluation, so tailed aircraft are valid too.
 /// </summary>
 internal static class StaticStability
 {
@@ -32,8 +31,14 @@ internal static class StaticStability
         var deflections = controls.Select(c => Aircraft.TargetDeflection(c, input)).ToArray();
         var air = new Vec3(-airspeed * Math.Cos(alpha), 0, -airspeed * Math.Sin(alpha));
         var up = new Vec3(0, 0, 1);
+        var ctx = new AeroContext(air, Vec3.Zero, Isa.SeaLevelDensity, FarFromGround, up, deflections, default);
         aircraft.Aero.Reset();
-        var load = aircraft.Aero.Evaluate(new AeroContext(air, Vec3.Zero, Isa.SeaLevelDensity, FarFromGround, up, deflections, default));
+        for (int i = 0; i < 3; i++)
+        {
+            aircraft.Aero.Evaluate(ctx);
+            aircraft.Aero.Advance(100); // the tail's downwash straight to its steady value
+        }
+        var load = aircraft.Aero.Evaluate(ctx);
         var liftDir = new Vec3(-Math.Sin(alpha), 0, Math.Cos(alpha));
         return (Vec3.Dot(load.Force, liftDir), load.Moment.Y);
     }

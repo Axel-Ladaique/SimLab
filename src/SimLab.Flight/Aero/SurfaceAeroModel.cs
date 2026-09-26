@@ -5,22 +5,28 @@ using SimLab.Flight.Geometry;
 namespace SimLab.Flight.Aero;
 
 /// <summary>
-/// Strip-theory aerodynamics: every surface is cut into spanwise segments, each evaluated with its
-/// own local flow (including rotation, prop wash, downwash and ground effect) and airfoil polar.
+/// Strip-theory aerodynamics on a lifting line: every surface is cut into spanwise strips, each with its own local flow
+/// (rotation, prop wash, ground effect) and airfoil polar; the induced flow of all strips on each other (span loading,
+/// the wing's downwash on the tail, sidewash on the fin) comes from <see cref="LiftingLine"/>.
 /// </summary>
 public sealed class SurfaceAeroModel : IAeroModel
 {
-    const double DownwashGain = 1.6;
-    const double FlapEfficiency = 0.85;
+    /// <summary>
+    /// Viscous efficiency of a plain control surface against thin-airfoil theory (DATCOM: plain flaps reach 80–90 % of
+    /// it). Inviscid methods such as AVL leave it out.
+    /// </summary>
+    public const double FlapEfficiency = 0.85;
     // High-lift flaps (driven by the flap channel): this share of the flap's equivalent alpha shift is applied as a lift
     // increment on top of the section polar, so the maximum lift rises and the stall angle drops only by the rest, as for
     // plain flaps (DATCOM section 6.1.1.3). Other controls stay a pure alpha shift.
     const double HighLiftIncrementShare = 0.6;
     const double SectionLiftSlope = 5.7;
-    const double MaxDownwash = 0.3;
 
     /// <summary>Points per strip at which the prop wash is sampled (overlap weighting).</summary>
     const int WashSamples = 8;
+
+    /// <summary>Length of the trailing legs over the chord, quarter chord to trailing edge, as a fraction of the chord.</summary>
+    const double ChordwiseLegFraction = 0.75;
 
     readonly SurfaceSegment[] _segments;
     readonly bool[] _inWash;
@@ -29,9 +35,10 @@ public sealed class SurfaceAeroModel : IAeroModel
     bool _washValid;
     readonly BodySpec[] _bodies;
     readonly List<ControlSurfaceSpec> _assigned = [];
-    readonly double _wingAspectRatio;
-    readonly double _tailArm;
-    double _lastWingCl;
+    readonly LiftingLine _line;
+    readonly StripState[] _states;
+    readonly Vec3[] _blown;
+    readonly double[] _meanSquare;
     double _lastAirspeed;
 
     public SurfaceAeroModel(
@@ -49,27 +56,32 @@ public sealed class SurfaceAeroModel : IAeroModel
         var wings = specs.Where(s => s.Role == SurfaceRole.Wing).ToArray();
         WingSpan = wings.Length > 0 ? wings.Max(s => s.TotalSpan) : 0;
         WingArea = wings.Sum(s => s.TotalArea);
-        _wingAspectRatio = WingArea > 0 ? WingSpan * WingSpan / WingArea : 0;
-
-        var wingSegments = _segments.Where(s => s.Role == SurfaceRole.Wing).ToArray();
-        var tailSegments = _segments.Where(s => s.Role == SurfaceRole.HorizontalTail).ToArray();
-        _tailArm = wingSegments.Length > 0 && tailSegments.Length > 0
-            ? Math.Max(0.1, Math.Abs(wingSegments.Average(s => s.Position.X) - tailSegments.Average(s => s.Position.X)))
-            : 0.1;
 
         for (int i = 0; i < controls.Count; i++) AssignControl(controls[i], i);
+
+        _line = new LiftingLine(_segments);
+        _states = new StripState[_segments.Length];
+        _blown = new Vec3[_segments.Length];
+        _meanSquare = new double[_segments.Length];
     }
 
     public IReadOnlyList<SurfaceSegment> Segments => _segments;
     public double WingSpan { get; }
     public double WingArea { get; }
-    public double Downwash { get; private set; }
+
+    /// <summary>The lifting line (read it; <see cref="Evaluate"/>, <see cref="Advance"/> and <see cref="Reset"/> drive it).</summary>
+    public LiftingLine Line => _line;
+
+    /// <summary>
+    /// Mean reduction of the horizontal-tail strips' angle of attack by the induced flow in the last <see cref="Evaluate"/>
+    /// (rad; 0 without a horizontal tail). For tests and diagnostics.
+    /// </summary>
+    public double TailDownwash { get; private set; }
 
     public BodyLoad Evaluate(in AeroContext ctx)
     {
         var force = Vec3.Zero;
         var moment = Vec3.Zero;
-        double wingLift = 0, wingQa = 0;
 
         bool blown = ctx.Wash.IsActive;
         if (blown) UpdateWashSamples(ctx.Wash);
@@ -78,38 +90,61 @@ public sealed class SurfaceAeroModel : IAeroModel
         {
             var seg = _segments[i];
             // The rotation is taken at the three-quarter-chord point (Pistolesi): a section pitching about its quarter
-            // chord lifts as if at the angle of attack seen there, so strips carry the wing's own pitch-rate lift.
-            var threeQuarterChord = seg.Position - seg.ChordAxis * (0.5 * seg.Chord);
-            var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, threeQuarterChord);
-            var c = seg.FlowChordAxis;
-            var n = seg.FlowNormalAxis;
+            // chord lifts as if at the angle of attack seen there. It is also the lifting line's control point.
+            var onset = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, LiftingLine.ControlPoint(seg));
+            // The lifting line sees the onset flow only; the prop wash is applied strip-wise on top of its induced flow.
+            // The lifting line carries the freestream-driven span loading, the slipstream stays strip theory: a blown
+            // band in a jet is not an isolated low-aspect-ratio wing (static deflected-slipstream tests, NACA TR 1263,
+            // turn the jet far more than such a wing would).
             // Mean in-plane speed squared over the strip; differs from v² only where the prop wash varies across it.
             double meanSquare = -1;
-            if (blown) u = Blow(i, u, c, n, out meanSquare);
-            double uc = Vec3.Dot(u, c);
-            double un = Vec3.Dot(u, n);
+            _blown[i] = blown ? Blow(i, onset, seg.FlowChordAxis, seg.FlowNormalAxis, out meanSquare) : onset;
+            _meanSquare[i] = meanSquare;
+            double height = ctx.HeightAboveGround + Vec3.Dot(seg.Position, ctx.UpBody);
+            double shift = seg.FlapEffectiveness * Flap(seg, ctx, out _);
+            double increment = seg.HighLift ? HighLiftIncrementShare * shift : 0;
+            _states[i] = new StripState(onset, shift - increment, InducedFlow.GroundEffectFactor(height, WingSpan),
+                SectionLiftSlope * increment);
+        }
+
+        _line.Solve(_states, ctx.Density);
+
+        double downwash = 0;
+        int tailStrips = 0;
+        for (int i = 0; i < _segments.Length; i++)
+        {
+            var seg = _segments[i];
+            var c = seg.FlowChordAxis;
+            var n = seg.FlowNormalAxis;
+            // Onset flow with the prop wash (strip theory); the lifting line's induced flow is subtracted below.
+            var u = _blown[i];
+            double ubc = Vec3.Dot(u, c), ubn = Vec3.Dot(u, n);
+            double vBlown = Math.Sqrt(ubc * ubc + ubn * ubn);
+
+            // Section angle of attack at the control point, with the lifting line's induced flow.
+            var uSection = u - _line.InducedAtControlPoint(i);
+            double sc = Vec3.Dot(uSection, c), sn = Vec3.Dot(uSection, n);
+            if (vBlown < 0.1 || sc * sc + sn * sn < 0.01) continue;
+            double alphaSection = Math.Atan2(-sn, sc);
+            double reynolds = ctx.Density * vBlown * seg.Chord / Isa.DynamicViscosity;
+            var coeff = seg.Airfoil.Evaluate(alphaSection + _states[i].AlphaOffset, reynolds);
+            if (seg.Role == SurfaceRole.HorizontalTail)
+            {
+                downwash += Math.Atan2(-ubn, ubc) - alphaSection;
+                tailStrips++;
+            }
+
+            // Lift and drag directions from the flow at the bound vortex; the dynamic pressure from the onset speed with the
+            // wash, as the circulation (the induced flow turns the force, it does not feed its magnitude).
+            var uForce = u - _line.InducedAtBoundVortex(i);
+            double uc = Vec3.Dot(uForce, c), un = Vec3.Dot(uForce, n);
             double v = Math.Sqrt(uc * uc + un * un);
             if (v < 0.1) continue;
-
-            double q = 0.5 * ctx.Density * Math.Max(v * v, meanSquare);
-            double alpha = Math.Atan2(-un, uc);
-            double height = ctx.HeightAboveGround + Vec3.Dot(seg.Position, ctx.UpBody);
-            double groundEffect = InducedFlow.GroundEffectFactor(height, WingSpan);
-            double delta = seg.ControlIndex >= 0 ? ctx.Deflections[seg.ControlIndex] : 0;
-            // Plain flaps lose effectiveness at large deflections as the flow separates on the flap.
-            double flap = delta == 0 ? 0 : seg.ControlCoverage * FlapEfficiency * SurfaceGeometry.LargeDeflectionFactor(delta, seg.ControlChordFraction) * delta;
-
-            double shift = seg.FlapEffectiveness * flap;
-            double increment = seg.HighLift ? HighLiftIncrementShare * shift : 0;
-            double alphaGeo = alpha + shift - increment;
-            if (seg.Role == SurfaceRole.HorizontalTail) alphaGeo -= Downwash * groundEffect;
-
-            double reynolds = ctx.Density * v * seg.Chord / Isa.DynamicViscosity;
-            double ai = InducedFlow.SolveInducedAngle(seg.Airfoil, reynolds, alphaGeo, seg.InducedFactor * groundEffect);
-            var coeff = seg.Airfoil.Evaluate(alphaGeo - ai, reynolds);
+            double q = 0.5 * ctx.Density * Math.Max(vBlown * vBlown, _meanSquare[i]);
+            double flap = Flap(seg, ctx, out double delta);
             double sinDelta = Math.Sin(delta);
-            double cl = (coeff.Cl + SectionLiftSlope * increment) * Math.Cos(ai);
-            double cd = coeff.Cd + coeff.Cl * Math.Sin(ai) + seg.ControlCoverage * seg.ControlChordFraction * sinDelta * sinDelta;
+            double cl = coeff.Cl + _states[i].ClIncrement;
+            double cd = coeff.Cd + seg.ControlCoverage * seg.ControlChordFraction * sinDelta * sinDelta;
 
             var liftDir = (c * -un + n * uc) / v;
             var dragDir = (c * uc + n * un) / -v;
@@ -118,15 +153,26 @@ public sealed class SurfaceAeroModel : IAeroModel
             force += f;
             // The linear normal wash of a pitching section is a parabolic camber: ΔCm_c/4 = −(π/4)·q c / (2V) (thin airfoil).
             double pitchRate = Vec3.Dot(ctx.AngularVelocityBody, seg.PitchAxis);
-            double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap - Math.PI / 4 * pitchRate * seg.Chord / (2 * v);
+            double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap - Math.PI / 4 * pitchRate * seg.Chord / (2 * vBlown);
             moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * cm);
-
-            if (seg.Role == SurfaceRole.Wing)
-            {
-                wingLift += qa * cl;
-                wingQa += qa;
-            }
+            // The trailing legs over the chord carry the circulation in the local flow. Each end of the strip has its own
+            // leg, as long as the chord there: with taper the two legs differ, so the forces are summed leg by leg (a pure
+            // couple only for a constant chord), and where surfaces meet (a winglet on a wing tip) the legs sit at the
+            // junction with each surface's own chord. In sideslip it is the lift-dependent part of the dihedral effect.
+            // It uses the lifting line's (freestream-driven) Γ with the local blown flow.
+            var legForce = Vec3.Cross(-uForce, Vec3.UnitX) * (ctx.Density * _line.Circulation(i) * ChordwiseLegFraction);
+            bool outerIsEnd = Vec3.Dot(_line.BoundVector(i), seg.HalfSpan) > 0;
+            var outer = seg.Position + seg.HalfSpan;
+            var inner = seg.Position - seg.HalfSpan;
+            // A leg's force acts at its middle, from the quarter chord halfway to the trailing edge.
+            var outerForce = legForce * (outerIsEnd ? seg.OuterChord : -seg.OuterChord);
+            var innerForce = legForce * (outerIsEnd ? -seg.InnerChord : seg.InnerChord);
+            var outerAt = outer - seg.ChordAxis * (0.5 * ChordwiseLegFraction * seg.OuterChord);
+            var innerAt = inner - seg.ChordAxis * (0.5 * ChordwiseLegFraction * seg.InnerChord);
+            force += outerForce + innerForce;
+            moment += Vec3.Cross(outerAt, outerForce) + Vec3.Cross(innerAt, innerForce);
         }
+        TailDownwash = tailStrips > 0 ? downwash / tailStrips : 0;
 
         foreach (var body in _bodies)
         {
@@ -135,7 +181,6 @@ public sealed class SurfaceAeroModel : IAeroModel
             moment += drag.Moment;
         }
 
-        _lastWingCl = wingQa > 0 ? wingLift / wingQa : 0;
         _lastAirspeed = ctx.AirVelocityBody.Length;
         return new BodyLoad(force, moment);
     }
@@ -149,19 +194,21 @@ public sealed class SurfaceAeroModel : IAeroModel
         return new BodyLoad(f, Vec3.Cross(position, f));
     }
 
-    public void Advance(double dt)
-    {
-        if (_wingAspectRatio <= 0) return;
-        double target = Math.Clamp(DownwashGain * _lastWingCl / (Math.PI * _wingAspectRatio), -MaxDownwash, MaxDownwash);
-        double tau = _tailArm / Math.Max(_lastAirspeed, 1.0);
-        Downwash += (target - Downwash) * Math.Min(1.0, dt / tau);
-    }
+    public void Advance(double dt) => _line.Advance(dt, _lastAirspeed);
 
     public void Reset()
     {
-        Downwash = 0;
-        _lastWingCl = 0;
+        _line.Reset();
         _lastAirspeed = 0;
+        TailDownwash = 0;
+    }
+
+    /// <summary>Effective flap angle of a strip (rad; 0 without a control) and its raw deflection.</summary>
+    static double Flap(SurfaceSegment seg, in AeroContext ctx, out double delta)
+    {
+        delta = seg.ControlIndex >= 0 ? ctx.Deflections[seg.ControlIndex] : 0;
+        // Plain flaps lose effectiveness at large deflections as the flow separates on the flap.
+        return delta == 0 ? 0 : seg.ControlCoverage * FlapEfficiency * SurfaceGeometry.LargeDeflectionFactor(delta, seg.ControlChordFraction) * delta;
     }
 
     /// <summary>

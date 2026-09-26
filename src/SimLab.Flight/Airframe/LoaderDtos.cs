@@ -51,7 +51,8 @@ internal sealed class SurfaceDto
     public string Airfoil { get; set; } = "";
     public int Segments { get; set; } = 4;
     public bool Mirror { get; set; }
-    public double Oswald { get; set; } = 0.85;
+    /// <summary>No longer used (the lifting line computes the span efficiency); kept only to reject old files with a clear message.</summary>
+    public double? Oswald { get; set; }
 }
 
 internal sealed class ControlDto
