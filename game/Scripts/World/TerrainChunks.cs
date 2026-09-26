@@ -9,8 +9,7 @@ namespace SimLab.Game.World;
 
 /// <summary>
 /// Draws the map's height grid as square chunks, each with a full-resolution mesh near the camera and a mesh using
-/// every <see cref="FarFactor"/>th grid point beyond <see cref="DetailRange"/>, cross-fading over
-/// <see cref="FadeMargin"/>. Neighbouring chunks share their edge vertices; skirts hanging <see cref="SkirtDepth"/>
+/// every <see cref="FarFactor"/>th grid point beyond <see cref="DetailRange"/>. Neighbouring chunks share their edge vertices; skirts hanging <see cref="SkirtDepth"/>
 /// below every chunk border hide the cracks where a coarse chunk meets a detailed one.
 /// Each vertex carries a smooth normal and the surface weights the terrain shader blends
 /// (COLOR = grass, mowed, dirt, gravel; CUSTOM0 = wheat, ploughed, rock, snow; CUSTOM1 = needles).
@@ -20,7 +19,6 @@ public static class TerrainChunks
     const float ChunkSize = 256f;
     const int FarFactor = 4;
     const float DetailRange = 700f;
-    const float FadeMargin = 60f;
     const float SkirtDepth = 10f;
 
     /// <summary>The custom-array format for COLOR/CUSTOM0/CUSTOM1 packed as RGBA floats; shared with
@@ -50,11 +48,14 @@ public static class TerrainChunks
         MaterialOverride = material,
         // At the chunk centre, so the visibility range is measured from the chunk rather than the map origin.
         Position = chunk.Centre,
+        // A hard switch at DetailRange, no margins. A Self fade renders the fading chunks in the transparent pass,
+        // which skips the depth pre-pass: the terrain behind shows through and the skirts become visible walls.
+        // With fading disabled Godot uses the margins as hysteresis (show inside begin + margin … end − margin, hide
+        // outside begin − margin … end + margin), which from a standing start leaves chunks within a margin of
+        // DetailRange hidden at both levels of detail.
         VisibilityRangeBegin = rangeBegin,
-        VisibilityRangeBeginMargin = rangeBegin > 0 ? FadeMargin : 0,
         VisibilityRangeEnd = rangeEnd,
-        VisibilityRangeEndMargin = rangeEnd > 0 ? FadeMargin : 0,
-        VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self,
+        VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Disabled,
     };
 
     /// <summary>The surface weights at every grid vertex, sampled once and shared by both levels of detail.</summary>
