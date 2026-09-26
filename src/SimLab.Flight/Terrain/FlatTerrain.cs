@@ -20,4 +20,6 @@ public sealed class FlatTerrain : ITerrain
     public ObstacleKind? HitObstacle(Vec3 p) => _obstacles.Hit(p);
 
     public ObstacleKind? HitObstacle(Vec3 a, Vec3 b) => _obstacles.Hit(a, b);
+
+    public double? WaterSurface(double x, double y) => null;
 }

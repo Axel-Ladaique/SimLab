@@ -97,6 +97,7 @@ public sealed class GroundContactModel
             var p = ProbePoint(h.Position, s, terrain);
             points[i] = p.Point;
             if (terrain.HitObstacle(p.Point) is { } kind) return CauseFor(kind);
+            if (terrain.WaterSurface(p.Point.X, p.Point.Y) is { } level && p.Point.Z < level) return CrashCause.WaterImpact;
             if (p.Depth <= 0) continue;
             bool belly = h.Tag == "belly";
             double limit = belly ? limits.MaxBellyImpactSpeed : limits.MaxHullImpactSpeed;

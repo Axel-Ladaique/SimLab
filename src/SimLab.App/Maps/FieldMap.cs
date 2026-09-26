@@ -10,7 +10,8 @@ public sealed class FieldMap
     readonly Func<double, double, SurfaceWeights> _surface;
 
     public FieldMap(string id, string nameKey, HeightGrid grid, Func<double, double, SurfaceWeights> surface,
-        MapLayout layout, MapAmbience ambience, IReadOnlyList<Prop> props, IReadOnlyList<MapOverlay> overlays)
+        MapLayout layout, MapAmbience ambience, IReadOnlyList<Prop> props, IReadOnlyList<MapOverlay> overlays,
+        IReadOnlyList<WaterBody>? water = null)
     {
         Id = id;
         NameKey = nameKey;
@@ -19,7 +20,8 @@ public sealed class FieldMap
         Ambience = ambience;
         Props = props;
         Overlays = overlays;
-        Terrain = new MapTerrain(grid, props.SelectMany(p => p.Collision()));
+        Water = water ?? [];
+        Terrain = new MapTerrain(grid, props.SelectMany(p => p.Collision()), Water);
     }
 
     public string Id { get; }
@@ -36,6 +38,7 @@ public sealed class FieldMap
     public MapAmbience Ambience { get; }
     public IReadOnlyList<Prop> Props { get; }
     public IReadOnlyList<MapOverlay> Overlays { get; }
+    public IReadOnlyList<WaterBody> Water { get; }
 
     public SurfaceWeights Surface(double x, double y) => _surface(x, y);
 }

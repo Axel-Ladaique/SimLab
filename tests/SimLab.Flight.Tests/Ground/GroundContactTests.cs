@@ -204,4 +204,38 @@ public class GroundContactTests
         Assert.InRange(free.Velocity.X, 2.5, 3.0);
         Assert.True(stopped.Velocity.X < 0.2, $"braked speed {stopped.Velocity.X:F2}");
     }
+
+    /// <summary>Ground −5 m everywhere; a water surface at level 0, x ∈ [−50, 50], y ∈ [−50, 50].</summary>
+    sealed class WaterTerrain : ITerrain
+    {
+        public double Height(double x, double y) => -5;
+        public Vec3 Normal(double x, double y) => Vec3.UnitZ;
+        public ObstacleKind? HitObstacle(Vec3 p) => null;
+        public ObstacleKind? HitObstacle(Vec3 a, Vec3 b) => null;
+        public double? WaterSurface(double x, double y) => Math.Abs(x) <= 50 && Math.Abs(y) <= 50 ? 0 : null;
+    }
+
+    [Fact]
+    public void Sinking_below_the_water_surface_is_a_crash()
+    {
+        var model = new GroundContactModel([], [new HullPointSpec("belly", new Vec3(0, 0, -0.5), "belly")], 1.0);
+        var s = new RigidBodyState(new Vec3(0, 0, 0.3), Vec3.Zero, Quat.Identity, Vec3.Zero);
+        Assert.Equal(CrashCause.WaterImpact, model.DetectCrash(s, new WaterTerrain(), Limits));
+    }
+
+    [Fact]
+    public void Staying_above_the_water_surface_is_not_a_crash()
+    {
+        var model = new GroundContactModel([], [new HullPointSpec("belly", new Vec3(0, 0, -0.5), "belly")], 1.0);
+        var s = new RigidBodyState(new Vec3(0, 0, 2.3), Vec3.Zero, Quat.Identity, Vec3.Zero);
+        Assert.Equal(CrashCause.None, model.DetectCrash(s, new WaterTerrain(), Limits));
+    }
+
+    [Fact]
+    public void The_same_depth_outside_the_water_body_is_not_a_water_crash()
+    {
+        var model = new GroundContactModel([], [new HullPointSpec("belly", new Vec3(0, 0, -0.5), "belly")], 1.0);
+        var s = new RigidBodyState(new Vec3(100, 0, 0.3), Vec3.Zero, Quat.Identity, Vec3.Zero);
+        Assert.NotEqual(CrashCause.WaterImpact, model.DetectCrash(s, new WaterTerrain(), Limits));
+    }
 }
