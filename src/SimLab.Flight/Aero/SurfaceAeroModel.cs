@@ -72,7 +72,10 @@ public sealed class SurfaceAeroModel : IAeroModel
         for (int i = 0; i < _segments.Length; i++)
         {
             var seg = _segments[i];
-            var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, seg.Position);
+            // The rotation is taken at the three-quarter-chord point (Pistolesi): a section pitching about its quarter
+            // chord lifts as if at the angle of attack seen there, so strips carry the wing's own pitch-rate lift.
+            var threeQuarterChord = seg.Position - seg.ChordAxis * (0.5 * seg.Chord);
+            var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, threeQuarterChord);
             var c = seg.FlowChordAxis;
             var n = seg.FlowNormalAxis;
             // Mean in-plane speed squared over the strip; differs from v² only where the prop wash varies across it.
@@ -106,7 +109,9 @@ public sealed class SurfaceAeroModel : IAeroModel
             double qa = q * seg.Area;
             var f = (liftDir * cl + dragDir * cd) * qa;
             force += f;
-            double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap;
+            // The linear normal wash of a pitching section is a parabolic camber: ΔCm_c/4 = −(π/4)·q c / (2V) (thin airfoil).
+            double pitchRate = Vec3.Dot(ctx.AngularVelocityBody, seg.PitchAxis);
+            double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap - Math.PI / 4 * pitchRate * seg.Chord / (2 * v);
             moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * cm);
 
             if (seg.Role == SurfaceRole.Wing)
