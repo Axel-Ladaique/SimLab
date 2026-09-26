@@ -23,6 +23,8 @@ public class ControlResponseTests
         Assert.True(response > minimum, $"{id}: response {response:F3} (minimum {minimum})");
     }
 
+    static double Pitch(Simulation sim) => Attitude.FromOrientation(sim.Aircraft.State.Orientation).Pitch;
+
     static double Heading(Simulation sim) => Attitude.FromOrientation(sim.Aircraft.State.Orientation).Heading;
 
     /// <summary>Signed heading difference a - b wrapped to (-π, π].</summary>
@@ -42,7 +44,9 @@ public class ControlResponseTests
     [InlineData("wing")]
     [InlineData("3d")]
     public void Up_elevator_pitches_up(string id) =>
-        AssertResponse(id, u => u with { Elevator = 0.5 }, s => PilotFrame.PitchUpRate(s.Aircraft.State.AngularVelocity), 0.2);
+        // Pitch attitude, not the pitch rate at the end of the input: the rate oscillates with the short period, so a snapshot
+        // depends on its phase (the flying wing's well-damped short period is already past its peak at 0.4 s).
+        AssertResponse(id, u => u with { Elevator = 0.5 }, Pitch, 5 * Math.PI / 180);
 
     [Theory]
     [InlineData("trainer")]

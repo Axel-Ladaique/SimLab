@@ -19,6 +19,33 @@ internal static class Fleet
 
     public static AircraftDefinition Load(string id) => AircraftLoader.Load(Path.Combine(RepoRoot, "aircraft", id));
 
+    /// <summary>
+    /// The aircraft with its CG moved to <paramref name="cgX"/> (m from the datum, body x back): the aircraft.json is
+    /// rewritten into a temporary folder next to a copy of the airfoils, so the loader measures every position from the new CG.
+    /// </summary>
+    public static AircraftDefinition LoadWithCgX(string id, double cgX)
+    {
+        var source = Path.Combine(RepoRoot, "aircraft", id);
+        var root = Directory.CreateTempSubdirectory("simlab-cg-");
+        try
+        {
+            var folder = Directory.CreateDirectory(Path.Combine(root.FullName, id)).FullName;
+            foreach (var file in Directory.GetFiles(source, "*.json")) File.Copy(file, Path.Combine(folder, Path.GetFileName(file)));
+            var airfoils = Directory.CreateDirectory(Path.Combine(root.FullName, "airfoils")).FullName;
+            foreach (var file in Directory.GetFiles(Path.Combine(RepoRoot, "aircraft", "airfoils"), "*.json"))
+                File.Copy(file, Path.Combine(airfoils, Path.GetFileName(file)));
+            var path = Path.Combine(folder, "aircraft.json");
+            var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+            json["cg"]![0] = cgX;
+            File.WriteAllText(path, json.ToJsonString());
+            return AircraftLoader.Load(folder);
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
+
     public static (double Airspeed, double Throttle) Cruise(string id) => id switch
     {
         "trainer" => (15, 0.65),
@@ -28,9 +55,12 @@ internal static class Fleet
         _ => throw new ArgumentException(id),
     };
 
-    public static Simulation InFlight(string id, double altitude, double airspeed, double pitchDeg = 0, double rollDeg = 0)
+    public static Simulation InFlight(string id, double altitude, double airspeed, double pitchDeg = 0, double rollDeg = 0) =>
+        InFlight(Load(id), altitude, airspeed, pitchDeg, rollDeg);
+
+    public static Simulation InFlight(AircraftDefinition def, double altitude, double airspeed, double pitchDeg = 0, double rollDeg = 0)
     {
-        var sim = new Simulation(new Aircraft(Load(id)), FlightEnvironment.Calm());
+        var sim = new Simulation(new Aircraft(def), FlightEnvironment.Calm());
         sim.Reset(InitialConditions.InFlight(new Vec3(0, 0, altitude), 0, airspeed, pitchDeg, rollDeg));
         return sim;
     }

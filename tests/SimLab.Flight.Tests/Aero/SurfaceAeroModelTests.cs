@@ -56,6 +56,30 @@ public class SurfaceAeroModelTests
     }
 
     [Fact]
+    public void Pitch_rate_about_the_quarter_chord_lifts_like_the_angle_at_the_three_quarter_chord()
+    {
+        // Pistolesi: a thin section pitching at q about its quarter chord lifts as if at alpha = q (c/2) / V.
+        const double speed = 15, pitchRate = 1;
+        var load = WingOnly().Evaluate(Context(Flow(speed, 0), omega: new Vec3(0, pitchRate, 0)));
+        double q = 0.5 * 1.225 * speed * speed;
+        double a = 2 * Math.PI / (1 + 2 * Math.PI / (Math.PI * Wing.Oswald * Wing.AspectRatio));
+        double expectedLift = q * Wing.TotalArea * a * pitchRate * (Wing.RootChord / 2) / speed;
+        Assert.InRange(load.Force.Z, 0.95 * expectedLift, 1.05 * expectedLift);
+    }
+
+    [Fact]
+    public void Pitch_rate_adds_the_thin_airfoil_camber_moment()
+    {
+        // The linear normal wash of a pitching section is a parabolic camber: ΔCm_c/4 = −(π/4)·q c / (2V).
+        const double speed = 15, pitchRate = 1;
+        var load = WingOnly().Evaluate(Context(Flow(speed, 0), omega: new Vec3(0, pitchRate, 0)));
+        double q = 0.5 * 1.225 * speed * speed;
+        double c = Wing.RootChord;
+        double expected = -Math.PI / 4 * pitchRate * c / (2 * speed) * q * Wing.TotalArea * c;
+        Assert.InRange(load.Moment.Y, 1.05 * expected, 0.95 * expected);
+    }
+
+    [Fact]
     public void Right_aileron_up_and_left_aileron_down_rolls_right()
     {
         var load = WingOnly().Evaluate(Context(Flow(15, 3), deflections: [-0.2, 0.2, 0]));

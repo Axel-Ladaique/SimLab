@@ -1,0 +1,98 @@
+
+=== trainer  V 15 m/s  alpha 1.07 deg
+                                              SimLab       AVL   ratio
+CLa                                           4.1420    4.2178    0.98
+Cma                                          -0.7653   -0.5436    1.41
+CYb                                          -0.2560   -0.1774    1.44
+Clb                                          -0.1033   -0.1151    0.90
+Cnb                                           0.1380    0.0839    1.65
+Clp                                          -0.6774   -0.3787    1.79
+Cnp                                           0.0020   -0.0164   -0.12
+Clr                                           0.1441    0.1250    1.15
+Cnr                                          -0.1830   -0.1286    1.42
+CYr                                           0.3127    0.2243    1.39
+CLq                                           2.2230    6.4594    0.34
+Cmq                                          -7.6584   -7.6701    1.00
+Cl_aileron/deg                                0.0065    0.0054    1.20
+Cn_aileron/deg                               -0.0005   -0.0003    1.96
+Cm_elevator/deg                               0.0177    0.0200    0.88
+CL_elevator/deg                              -0.0068   -0.0083    0.82
+Cn_rudder/deg                                 0.0015    0.0013    1.17
+Cl_rudder/deg                                -0.0002   -0.0002    1.09
+marge statique (%MAC)                        18.4754   12.8876    1.43
+spirale Clb.Cnr/(Clr.Cnb) (>1 stable)         0.9509    1.4113    0.67
+CL au trim                                    0.3524    0.3814    0.92
+e (Oswald, AVL Trefftz)                          nan    0.9436     nan
+
+=== sport  V 18 m/s  alpha 4.00 deg
+                                              SimLab       AVL   ratio
+CLa                                           4.3279    4.3150    1.00
+Cma                                          -0.7645   -0.4873    1.57
+CYb                                          -0.2929   -0.2051    1.43
+Clb                                          -0.0353   -0.0704    0.50
+Cnb                                           0.1894    0.1185    1.60
+Clp                                          -0.6282   -0.3592    1.75
+Cnp                                           0.0133   -0.0257   -0.52
+Clr                                           0.1214    0.0891    1.36
+Cnr                                          -0.2528   -0.1755    1.44
+CYr                                           0.3847    0.2599    1.48
+CLq                                           3.4689    7.7752    0.45
+Cmq                                          -9.6778   -9.3960    1.03
+Cl_aileron/deg                                0.0080    0.0067    1.19
+Cn_aileron/deg                               -0.0005    0.0004   -1.31
+Cm_elevator/deg                               0.0229    0.0253    0.91
+CL_elevator/deg                              -0.0085   -0.0101    0.84
+Cn_rudder/deg                                 0.0022    0.0018    1.23
+Cl_rudder/deg                                -0.0002   -0.0003    0.79
+marge statique (%MAC)                        17.6639   11.2929    1.56
+spirale Clb.Cnr/(Clr.Cnb) (>1 stable)         0.3880    1.1702    0.33
+CL au trim                                    0.3236    0.3218    1.01
+e (Oswald, AVL Trefftz)                          nan    1.0060     nan
+
+=== wing  V 14 m/s  alpha 5.56 deg
+                                              SimLab       AVL   ratio
+CLa                                           3.5163    4.0592    0.87
+Cma                                          -0.2885   -0.2082    1.39
+CYb                                          -0.3019   -0.2276    1.33
+Clb                                          -0.0489   -0.1186    0.41
+Cnb                                           0.0618    0.0421    1.47
+Clp                                          -0.5028   -0.3878    1.30
+Cnp                                          -0.0086   -0.0350    0.25
+Clr                                           0.0802    0.1045    0.77
+Cnr                                          -0.0273   -0.0263    1.04
+CYr                                           0.1131    0.0922    1.23
+CLq                                           0.5763    4.8156    0.12
+Cmq                                          -0.7239   -1.2873    0.56
+Cl_aileron/deg                                0.0041    0.0048    0.86
+Cn_aileron/deg                               -0.0002    0.0001   -4.73
+Cm_elevator/deg                               0.0091    0.0110    0.82
+CL_elevator/deg                              -0.0212   -0.0313    0.68
+marge statique (%MAC)                         8.2049    5.1297    1.60
+spirale Clb.Cnr/(Clr.Cnb) (>1 stable)         0.2691    0.7082    0.38
+CL au trim                                    0.3631    0.3997    0.91
+e (Oswald, AVL Trefftz)                          nan    1.0167     nan
+
+=== 3d  V 14 m/s  alpha 4.34 deg
+                                              SimLab       AVL   ratio
+CLa                                           4.5091    4.4516    1.01
+Cma                                          -0.8038   -0.4344    1.85
+CYb                                          -0.5444   -0.3313    1.64
+Clb                                          -0.0417   -0.0664    0.63
+Cnb                                           0.3088    0.1733    1.78
+Clp                                          -0.6541   -0.3617    1.81
+Cnp                                           0.0372   -0.0252   -1.48
+Clr                                           0.1426    0.0918    1.55
+Cnr                                          -0.3563   -0.2402    1.48
+CYr                                           0.6176    0.4106    1.50
+CLq                                           3.9436    8.4309    0.47
+Cmq                                         -11.0533  -10.6305    1.04
+Cl_aileron/deg                                0.0098    0.0074    1.32
+Cn_aileron/deg                               -0.0006    0.0008   -0.72
+Cm_elevator/deg                               0.0311    0.0335    0.93
+CL_elevator/deg                              -0.0130   -0.0154    0.85
+Cn_rudder/deg                                 0.0040    0.0028    1.41
+Cl_rudder/deg                                -0.0005   -0.0005    1.04
+marge statique (%MAC)                        17.8256    9.7589    1.83
+spirale Clb.Cnr/(Clr.Cnb) (>1 stable)         0.3378    1.0017    0.34
+CL au trim                                    0.3161    0.3114    1.01
+e (Oswald, AVL Trefftz)                          nan    0.8959     nan
