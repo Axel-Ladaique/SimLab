@@ -116,6 +116,7 @@ internal sealed class PowerDto
     public Vec3 ThrustAxis { get; set; } = BodyAxes.Forward;
     public int SpinDirection { get; set; } = 1;
     public double PFactor { get; set; } = 0.1;
+    public double DuctStatorRecovery { get; set; }
     public MotorDto? Motor { get; set; }
     public BatteryDto? Battery { get; set; }
     public EscDto? Esc { get; set; }

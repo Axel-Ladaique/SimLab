@@ -104,8 +104,9 @@ public sealed class Aircraft
             var air = start.Orientation.InverseRotate(start.Velocity - wind);
             double axial = Vec3.Dot(air + Vec3.Cross(start.AngularVelocity, spec.Position), spec.ThrustAxis);
             telemetry = Power.Step(dt, input.Throttle, axial, density);
-            wash = PropWash.Create(spec.Position, spec.ThrustAxis, spec.Propeller.DiameterM / 2, telemetry.Thrust, telemetry.PropTorque,
-                axial, density, spec.SpinDirection);
+            // A duct's stators straighten the swirl they take the torque back from.
+            wash = PropWash.Create(spec.Position, spec.ThrustAxis, spec.Propeller.DiameterM / 2, telemetry.Thrust,
+                telemetry.PropTorque * (1 - spec.DuctStatorRecovery), axial, density, spec.SpinDirection);
         }
         double propOmega = Power?.Omega ?? 0;
         double weight = Definition.Mass.Mass * Gravity;

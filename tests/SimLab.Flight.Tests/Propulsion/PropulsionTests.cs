@@ -84,6 +84,19 @@ public class PropulsionTests
     }
 
     [Fact]
+    public void Duct_stators_take_back_their_share_of_the_fan_torque()
+    {
+        // Steady state: the stator vanes straighten the swirl, so the airframe keeps only (1 - recovery) of the torque.
+        var ducted = TrainerLike() with { DuctStatorRecovery = 0.9 };
+        var steady = default(PowerTelemetry) with { Thrust = 20, ReactionTorque = 0.5, PropTorque = 0.5 };
+        Assert.Equal(0.05, PowerPlantLoads.Compute(ducted, steady, 0, Vec3.Zero, Vec3.Zero, inducedVelocity: 11).Moment.X, 12);
+
+        // Spooling up, the torque that accelerates the rotor is not in the flow, so the stators cannot take it back.
+        var spooling = steady with { ReactionTorque = 0.8 };
+        Assert.Equal(0.35, PowerPlantLoads.Compute(ducted, spooling, 0, Vec3.Zero, Vec3.Zero, inducedVelocity: 11).Moment.X, 12);
+    }
+
+    [Fact]
     public void Airframe_reaction_torque_is_the_prop_torque_once_spun_up()
     {
         // Bearing and iron-loss friction act between rotor and stator, so only the prop's torque reaches the airframe.
