@@ -41,7 +41,10 @@ public sealed class LiftingLine
 
     public const int MaxIterations = 8;
 
-    /// <summary>Convergence when max |residual| ≤ Tolerance · max(1, max |Γ|) (relative to the largest circulation).</summary>
+    /// <summary>
+    /// Convergence when max |residual| ≤ Tolerance · max(1, max |Γ|) (relative to the largest circulation). For these
+    /// aircraft Γ stays below 1 m²/s, so in practice it is an absolute 1e-6 m²/s; the relative form covers larger ones.
+    /// </summary>
     public const double Tolerance = 1e-6;
 
     const double MinSpeed = 0.1;

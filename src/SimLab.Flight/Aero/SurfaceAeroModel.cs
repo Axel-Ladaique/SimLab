@@ -145,7 +145,8 @@ public sealed class SurfaceAeroModel : IAeroModel
             double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap - Math.PI / 4 * pitchRate * seg.Chord / (2 * vBlown);
             moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * cm);
             // The trailing legs over the chord carry the circulation in the local flow: equal and opposite forces at the
-            // strip's two ends, a couple. In sideslip it is the lift-dependent part of the dihedral effect.
+            // strip's two ends, a couple. In sideslip it is the lift-dependent part of the dihedral effect. It uses the
+            // lifting line's (freestream-driven) Γ with the local blown flow.
             double legs = ctx.Density * _line.Circulation(i) * ChordwiseLegFraction * seg.Chord;
             moment += Vec3.Cross(_line.BoundVector(i), Vec3.Cross(-uForce, Vec3.UnitX)) * legs;
         }

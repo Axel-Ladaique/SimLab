@@ -75,7 +75,8 @@ public readonly record struct PropWash
     /// prop torque, the middle of the 30–60% plausible for a real single-engine airframe (a stator behind a prop recovers
     /// most of the swirl; a wing root, stab and fin are a partial, badly placed stator). The wash acts strip-wise, outside
     /// the lifting line (<see cref="SurfaceAeroModel"/>); with the lifting line in place (2026-09-26) the recovered share
-    /// is 40.0% at 0.101 and linear in this constant, about 3.96 % per 0.01: 30% → 0.076, 60% → 0.152.
+    /// is about 40% at 0.101 (40.0% with 3-strip tails, 39.8% with the 12-strip tails) and linear in this constant,
+    /// about 3.96% per 0.01: 30% → 0.076, 60% → 0.152.
     /// See docs/investigations/2026-09-25-slipstream-implementation.md.
     /// </summary>
     public const double SwirlEfficiency = 0.101;
