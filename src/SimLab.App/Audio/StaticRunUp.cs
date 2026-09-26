@@ -30,7 +30,7 @@ public sealed class StaticRunUp
         return SynthParams.Silent with
         {
             BladePassHz = v.BladePassHz, ShaftHz = v.ShaftHz, ElectricalHz = v.ElectricalHz,
-            PropGain = v.PropGain, WhineGain = v.WhineGain,
+            PropGain = v.PropGain, WhineGain = v.WhineGain, ExhaustGain = v.ExhaustGain, RoarGain = v.RoarGain, SpoolGain = v.SpoolGain,
         };
     }
 }

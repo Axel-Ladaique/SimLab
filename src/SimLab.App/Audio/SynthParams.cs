@@ -6,7 +6,7 @@ public readonly record struct SynthParams(
     double PropGain, double WhineGain,
     double WindGain, double WindCutoffHz,
     double RollGain,
-    double ExhaustGain = 0, double RoarGain = 0)
+    double ExhaustGain = 0, double RoarGain = 0, double SpoolGain = 0)
 {
     public static readonly SynthParams Silent = new(0, 0, 0, 0, 0, 0, 200, 0);
 }
@@ -38,7 +38,8 @@ public sealed class ParameterSmoother
             Follow(c.WindCutoffHz, target.WindCutoffHz, _attack, dt),
             Gain(c.RollGain, target.RollGain, dt),
             Gain(c.ExhaustGain, target.ExhaustGain, dt),
-            Gain(c.RoarGain, target.RoarGain, dt));
+            Gain(c.RoarGain, target.RoarGain, dt),
+            Gain(c.SpoolGain, target.SpoolGain, dt));
         return Current;
     }
 

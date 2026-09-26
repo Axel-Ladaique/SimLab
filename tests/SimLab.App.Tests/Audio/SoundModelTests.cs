@@ -79,6 +79,7 @@ public class SoundModelTests
         Assert.Equal(0, full.WhineGain);
         Assert.Equal(0, full.RoarGain);
         Assert.Equal(0, Piston.Evaluate(0, 0, 0).ExhaustGain);
+        Assert.True(full.PropGain < 0.5 * full.ExhaustGain, "the exhaust drowns the propeller");
     }
 
     [Fact]
@@ -87,7 +88,10 @@ public class SoundModelTests
         var idle = Turbine.Evaluate(rpm: 33000, thrust: 9, motorCurrent: 0);
         var full = Turbine.Evaluate(rpm: 117000, thrust: 220, motorCurrent: 0);
         Assert.Equal(550, idle.BladePassHz, 9);
-        Assert.True(idle.PropGain > 0 && idle.RoarGain > 0);
+        Assert.Equal(550, idle.ShaftHz, 9);
+        Assert.True(idle.SpoolGain > 0 && idle.RoarGain > 0);
+        Assert.Equal(0, full.PropGain);
+        Assert.True(full.SpoolGain > idle.SpoolGain);
         Assert.True(full.RoarGain > 3 * idle.RoarGain);
         Assert.Equal(1, full.RoarGain, 9);
         Assert.Equal(0, full.WhineGain);
