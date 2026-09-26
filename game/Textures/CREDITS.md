@@ -8,3 +8,6 @@ All textures are CC0 (public domain) from ambientCG (https://ambientcg.com), 1K 
 | terrain/dirt_* | Ground109 |
 | terrain/gravel_* | Gravel023 |
 | terrain/soil_* | Ground048 |
+| terrain/rock_* | Rock030 |
+| terrain/snow_* | Snow004 |
+| terrain/needles_* | Ground077 |

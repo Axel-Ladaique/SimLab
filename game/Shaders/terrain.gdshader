@@ -10,7 +10,7 @@ uniform sampler2DArray normal_layers : hint_normal, filter_linear_mipmap_anisotr
 // vertex of the same albedo (wheat is tinted grass and needed 3.0/1.8/0.15 to read golden).
 uniform vec3 tints[9];
 // Texture array slot of each surface kind (set by TerrainMaterial.cs): grass, mowed grass and wheat share the
-// grass layer; a layer with no texture of its own (rock and snow so far) shares its fallback's slot instead of
+// grass layer; a layer with no texture file of its own shares its fallback's slot instead of
 // occupying a redundant copy of it, so the tint is still per kind even though the layer is shared.
 uniform int layer_index[9];
 uniform float tile_metres = 4.0;

@@ -27,8 +27,8 @@ public static class MountainMap
     {
         TerrainTints = MapAmbience.DefaultTerrainTints.Select((tint, k) => (SurfaceKind)k switch
         {
-            SurfaceKind.Rock => new Rgb(0.50f, 0.44f, 0.36f),
-            SurfaceKind.Snow => new Rgb(1.2f, 1.18f, 1.1f),
+            SurfaceKind.Rock => new Rgb(1.35f, 1.25f, 1.07f),
+            SurfaceKind.Snow => new Rgb(1.1f, 1.04f, 0.91f),
             _ => tint,
         }).ToArray(),
     };
