@@ -42,10 +42,11 @@ public class SurfaceAeroModelTests
         var load = WingOnly().Evaluate(Context(Flow(15, 4)));
         double q = 0.5 * 1.225 * 15 * 15;
         double ar = Wing.AspectRatio;
-        double a = 2 * Math.PI / (1 + 2 * Math.PI / (Math.PI * Wing.Oswald * ar));
+        // Helmbold's lifting-surface estimate; the lifting line lands a few per cent below it with 6 strips per side.
+        double a = 2 * Math.PI * ar / (2 + Math.Sqrt(ar * ar + 4));
         double expectedLift = q * Wing.TotalArea * a * Angle.Rad(4);
         double lift = load.Force.Z * Math.Cos(Angle.Rad(4)) - load.Force.X * Math.Sin(Angle.Rad(4));
-        Assert.InRange(lift, 0.95 * expectedLift, 1.05 * expectedLift);
+        Assert.InRange(lift, 0.93 * expectedLift, 1.03 * expectedLift);
     }
 
     [Fact]
@@ -60,11 +61,11 @@ public class SurfaceAeroModelTests
     {
         // Pistolesi: a thin section pitching at q about its quarter chord lifts as if at alpha = q (c/2) / V.
         const double speed = 15, pitchRate = 1;
-        var load = WingOnly().Evaluate(Context(Flow(speed, 0), omega: new Vec3(0, pitchRate, 0)));
-        double q = 0.5 * 1.225 * speed * speed;
-        double a = 2 * Math.PI / (1 + 2 * Math.PI / (Math.PI * Wing.Oswald * Wing.AspectRatio));
-        double expectedLift = q * Wing.TotalArea * a * pitchRate * (Wing.RootChord / 2) / speed;
-        Assert.InRange(load.Force.Z, 0.95 * expectedLift, 1.05 * expectedLift);
+        var pitching = WingOnly().Evaluate(Context(Flow(speed, 0), omega: new Vec3(0, pitchRate, 0)));
+        double equivalent = Math.Atan(pitchRate * (Wing.RootChord / 2) / speed);
+        var steady = WingOnly().Evaluate(Context(Flow(speed, Angle.Deg(equivalent))));
+        double steadyLift = steady.Force.Z * Math.Cos(equivalent) - steady.Force.X * Math.Sin(equivalent);
+        Assert.InRange(pitching.Force.Z, 0.97 * steadyLift, 1.03 * steadyLift);
     }
 
     [Fact]
@@ -104,9 +105,9 @@ public class SurfaceAeroModelTests
             model.Evaluate(Context(Flow(15, 5), deflections: [0]));
             model.Advance(0.002);
         }
-        Assert.True(model.Downwash > 0.01, $"downwash {model.Downwash}");
+        Assert.True(model.TailDownwash > 0.01, $"downwash {model.TailDownwash}");
         model.Reset();
-        Assert.Equal(0, model.Downwash);
+        Assert.Equal(0, model.TailDownwash);
     }
 
     /// <summary>A 0.3 m prop 0.3 m ahead of the wing's quarter chord, 20 N of static thrust.</summary>
@@ -299,6 +300,8 @@ public class SurfaceAeroModelTests
         var withFlapMoment = model.Evaluate(ctx);
         Assert.True(Math.Abs(withFlapMoment.Moment.X) > 0.01, "the lift asymmetry still rolls the wing");
         foreach (var seg in model.Segments) seg.FlapMomentEffectiveness = 0;
+        // Same starting point for the lifting line's iteration as the first evaluation, so only the flap moment differs.
+        model.Reset();
         var withoutFlapMoment = model.Evaluate(ctx);
 
         Assert.Equal(withoutFlapMoment.Moment.X, withFlapMoment.Moment.X, 1e-9);

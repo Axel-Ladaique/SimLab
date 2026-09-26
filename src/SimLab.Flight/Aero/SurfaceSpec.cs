@@ -26,8 +26,7 @@ public sealed record SurfaceSpec(
     double TwistDeg,
     string Airfoil,
     int Segments,
-    bool Mirror,
-    double Oswald = 0.85)
+    bool Mirror)
 {
     public double PanelArea => Span * (RootChord + TipChord) / 2;
     public double TotalArea => Mirror ? 2 * PanelArea : PanelArea;

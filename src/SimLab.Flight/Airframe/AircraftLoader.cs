@@ -35,12 +35,13 @@ public static class AircraftLoader
             if (s.Segments < 1) throw Invalid(path, $"surface '{s.Name}' needs at least one segment.");
             if (s.Span <= 0 || s.RootChord <= 0 || s.TipChord <= 0)
                 throw Invalid(path, $"surface '{s.Name}' span and chords must be positive.");
-            if (s.Oswald <= 0) throw Invalid(path, $"surface '{s.Name}' oswald must be positive.");
+            if (s.Oswald is not null)
+                throw Invalid(path, $"surface '{s.Name}': oswald is no longer used: the lifting line computes the span efficiency.");
         }
 
         var surfaces = dto.Surfaces.Select(s => new SurfaceSpec(
             s.Name, s.Role, s.Root - cg, s.Span, s.RootChord, s.TipChord, s.SweepDeg, s.DihedralDeg,
-            s.IncidenceDeg, s.TwistDeg, s.Airfoil, s.Segments, s.Mirror, s.Oswald)).ToList();
+            s.IncidenceDeg, s.TwistDeg, s.Airfoil, s.Segments, s.Mirror)).ToList();
 
         var airfoils = surfaces.Select(s => s.Airfoil).Distinct()
             .ToDictionary(name => name, name => LoadAirfoil(folder, name));

@@ -43,9 +43,6 @@ public sealed class SurfaceSegment
 
     public required Airfoil Airfoil { get; init; }
 
-    /// <summary>1 / (π e AR) of the parent surface.</summary>
-    public required double InducedFactor { get; init; }
-
     public int ControlIndex { get; set; } = -1;
     public double FlapEffectiveness { get; set; }
     public double FlapMomentEffectiveness { get; set; }
