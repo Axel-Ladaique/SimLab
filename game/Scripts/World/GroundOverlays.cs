@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using SimLab.App.Maps;
 using SimLab.Flight.Geometry;
@@ -32,7 +33,8 @@ public static class GroundOverlays
         AddRunway(root, map);
         var pilot = map.Layout.PilotPosition;
         root.AddChild(Patch(map, pilot.X, pilot.Y, 8, 4, 0, "gravel", Gravel, 0));
-        foreach (var overlay in map.Overlays) root.AddChild(Ribbon(map, overlay));
+        var bridges = map.Props.OfType<Bridge>().ToList();
+        foreach (var overlay in map.Overlays) root.AddChild(Ribbon(map, overlay, bridges));
     }
 
     static void AddRunway(Node3D root, FieldMap map)
@@ -83,7 +85,7 @@ public static class GroundOverlays
         return material;
     }
 
-    static MeshInstance3D Ribbon(FieldMap map, MapOverlay overlay)
+    static MeshInstance3D Ribbon(FieldMap map, MapOverlay overlay, IReadOnlyList<Bridge> bridges)
     {
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
@@ -101,7 +103,8 @@ public static class GroundOverlays
                 Vector3 V(double t, double side)
                 {
                     double x = x0 + ux * t - uy * side, y = y0 + uy * t + ux * side;
-                    return new Vec3(x, y, map.Terrain.Height(x, y)).WorldToGodot() + new Vector3(0, Lift, 0);
+                    double z = overlay.Water ? map.Terrain.Height(x, y) : DeckOrGround(map, bridges, x, y);
+                    return new Vec3(x, y, z).WorldToGodot() + new Vector3(0, Lift, 0);
                 }
                 // UV in metres (x along the path, downstream for a stream; y across) and the depth tint, used only by the
                 // water shader.
@@ -126,5 +129,19 @@ public static class GroundOverlays
                 : OverlayMaterial("dirt", Dirt),
             CastShadow = overlay.Water ? GeometryInstance3D.ShadowCastingSetting.Off : GeometryInstance3D.ShadowCastingSetting.On,
         };
+    }
+
+    /// <summary>The road's height at (x, y): a bridge's deck top (<see cref="Bridge.Base"/>) where the point falls
+    /// within its footprint, otherwise the terrain height. The terrain is dug back down to the stream bed under a
+    /// bridge's deck (<c>MountainRelief.UnderBridge</c>), so following it there would sink the road ribbon into the
+    /// channel; the deck itself is flat, so any point on it reads the same height as the bridge's own base.</summary>
+    static double DeckOrGround(FieldMap map, IReadOnlyList<Bridge> bridges, double x, double y)
+    {
+        foreach (var bridge in bridges)
+        {
+            var (along, across) = PlanarYaw.ToLocal(x - bridge.Base.X, y - bridge.Base.Y, bridge.YawDeg);
+            if (Math.Abs(along) <= bridge.Length / 2 && Math.Abs(across) <= bridge.Width / 2) return bridge.Base.Z;
+        }
+        return map.Terrain.Height(x, y);
     }
 }
