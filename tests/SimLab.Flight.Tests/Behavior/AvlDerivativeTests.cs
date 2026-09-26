@@ -147,7 +147,7 @@ public class AvlDerivativeTests(ITestOutputHelper output)
         for (int i = 0; i < count; i++) aero.Evaluate(Context(i));
         double micro = watch.Elapsed.TotalMilliseconds * 1000 / count;
         output.WriteLine($"{id}: {aero.Segments.Count} strips, {micro:F1} µs per evaluation, last solve {aero.Line.LastIterations} iterations, " +
-                         $"{aero.Line.NonConvergedSolves} non-converged");
+                         $"{aero.Line.NonConvergedSolves} non-converged, {aero.Line.JacobianRefreshes} Jacobian refreshes");
 #if !DEBUG
         Assert.True(micro < 100, $"{micro:F1} µs per evaluation");
 #endif

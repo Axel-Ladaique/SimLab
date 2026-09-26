@@ -15,5 +15,20 @@ internal static class TestAirfoils
             alpha.Select(_ => 0.0).ToArray())]);
     }
 
+    /// <summary>
+    /// A low-Reynolds laminar-bubble kink: lift slope 4π/rad within ±1°, 2π/rad outside it (continuous), Cd 0.01, Cm 0.
+    /// </summary>
+    public static Airfoil Kinked()
+    {
+        double[] alpha = [-12, -1, 1, 12];
+        double Cl(double a) => Math.Abs(a) <= 1 ? 4 * Math.PI * Angle(a) : Math.Sign(a) * (4 * Math.PI * Angle(1) + 2 * Math.PI * Angle(Math.Abs(a) - 1));
+        static double Angle(double deg) => deg * Math.PI / 180;
+        return new Airfoil("kinked", [new AirfoilTable(
+            200_000, alpha,
+            alpha.Select(Cl).ToArray(),
+            alpha.Select(_ => 0.01).ToArray(),
+            alpha.Select(_ => 0.0).ToArray())]);
+    }
+
     public static IReadOnlyDictionary<string, Airfoil> Map() => new Dictionary<string, Airfoil> { ["linear"] = Linear() };
 }

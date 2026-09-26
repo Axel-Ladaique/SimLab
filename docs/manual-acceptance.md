@@ -7,30 +7,44 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] `"$GODOT" --headless --path game -- --smoke-radio` lists the radio and its axes change with the sticks.
 
 ## Radio screen
-- [ ] The radio appears in the device list; the 10 raw bars move with the sticks and switches.
-- [ ] Calibration: the four steps complete; the status turns green ("Calibrée — prête à voler").
-- [ ] Mode 1/Mode 2 changes the instructions (which stick to move).
+- [ ] With a calibrated radio plugged in, `--screen radio` opens directly on the Switches step.
+- [ ] Connect step: the radio appears as a card in the device list with a "To calibrate" / "Calibrated" pill; with no
+  radio plugged in, an empty-state card explains what to do (USB cable, EdgeTX joystick mode).
+- [ ] Calibrate step: the two-stick drawing shows the gesture for the current stage, the progress line reads "Step
+  n/6", and the six stages complete (center, extremes, throttle, aileron, elevator, rudder); the status pill turns
+  green and reads "<name> · Calibrée". Next and Cancel are visible only while a calibration is running (Cancel sits
+  on the progress row, not beside Next).
+- [ ] Mode 1/Mode 2 changes the instructions (which stick to move) and the gimbal layout.
 - [ ] A switch assigned to "reset" resets the aircraft in flight; "pause" and "vent" work too.
-- [ ] Control check ("Contrôle des gouvernes"), for each of trainer, sport, wing: right aileron raises the right
-  aileron (elevon) and lowers the left one, pulling the elevator stick raises the elevator (both elevons), right
-  rudder moves the rudder trailing edge right; the model and the text under it agree and no line turns red.
-- [ ] Reverse: tick "Inverser" on the rudder; the rudder line now reads "à gauche" for a right stick and the model
-  follows. Leave the screen and come back: the box is still ticked (the profile was saved). Untick it again.
+- [ ] Calibrate step, folded **Details**: the "Voies brutes" list shows each raw axis and what it drives (or "libre");
+  under "Sens des voies", for each of trainer, sport, wing, the readout shows right aileron raising the right aileron
+  (elevon) and lowering the left one, pulling the elevator stick raising the elevator (both elevons), right rudder
+  moving the rudder trailing edge right; the model and the text under it agree and no line turns red.
+- [ ] Reverse (in the "Sens des voies" fold): tick "Inverser" on the rudder; the rudder line now reads "à gauche" for
+  a right stick and the model follows. Leave the screen and come back: the box is still ticked (the profile was
+  saved). Untick it again.
+- [ ] Unplug the radio while a calibration run is in progress: the run stops and the message reads "Calibration
+  interrompue : radio débranchée."
 
 ## Radio switches
-- [ ] Switches tab: Learn **Gear** on a 2-position switch — the row shows two positions, flipping the switch lights
-  each one live; set them to Down and Up. In flight the gear follows the switch; G only moves the gear once the
-  gear switch assignment is cleared.
-- [ ] Learn **Flaps** on a 3-position switch; set one position to "—". In flight that position keeps the last flap
-  setting.
+- [ ] Switches step: with at least one switch card assigned, a muted hint reads "Cliquez une position pour changer
+  son effet." above the cards.
+- [ ] "+ Train" opens the learning dialog with the title "Apprendre « Train »" and the prompt "Basculez
+  l'interrupteur dans toutes ses positions en marquant un temps sur chacune."; flipping a 2-position switch shows
+  each detected position as a chip live; Save (enabled from 2 positions) creates the Gear card with a chip per
+  position — set them to Down and Up by clicking the chips until the right state is assigned. In flight the gear
+  follows the switch; G only moves the gear once the gear card is cleared (×).
+- [ ] Learn **Flaps** on a 3-position switch the same way; set one position's chip to "—". In flight that position
+  keeps the last flap setting.
 - [ ] Learn **Camera** (3 positions) and **OSD**: each flip selects that camera view, or shows/hides the OSD; the
-  flight starts in the view the switch is on.
+  flight starts in the view the switch is on; on the Switches step card, the chip of the switch's current position
+  is lit blue live.
 - [ ] Learn **Throttle cut**: with the switch on "Cut" the motor stops whatever the throttle stick does, and the
   OSD shows "GAZ COUPÉS" / "THR CUT".
 - [ ] Put Gear and Flaps on the same switch: both follow it.
 - [ ] An old profile (bound before positional switches) still drives gear, flaps, reset, pause and wind; the old
-  view switch shows "non assigné" / "not assigned" in the Switches tab. An old pause or wind *button* used to
-  toggle on each press; it now acts (pauses / turns wind on) only while held.
+  view switch shows an unassigned "+ Camera" card (no card with chips) in the Switches step. An old pause or wind
+  *button* used to toggle on each press; it now acts (pauses / turns wind on) only while held.
 
 ## Home screen
 - [ ] The app opens full screen; Settings → "Plein écran" off gives a window, on again gives full screen, and the
@@ -68,7 +82,7 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 
 ## Camera views
 - [ ] In flight, C cycles ground → FPV → chase → ground; the keyboard help line shows "C vue" / "C view".
-- [ ] A camera switch (learned on the Switches tab, see "Radio switches") selects the view directly by position,
+- [ ] A camera switch (learned on the Switches step, see "Radio switches") selects the view directly by position,
   not by cycling.
 - [ ] FPV: no part of the aircraft is seen (its shadow on the ground may be), the horizon rolls and pitches with
   it; the wing's camera looks up about 25° (the horizon sits low in level flight at speed).
