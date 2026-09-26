@@ -24,4 +24,4 @@ public sealed record HullPointSpec(string Name, Vec3 Position, string Tag);
 /// <param name="MaxBellyImpactSpeed">Maximum vertical speed for belly points (belly landings), m/s.</param>
 public sealed record CrashLimits(double MaxGearSinkRate, double MaxHullImpactSpeed, double MaxBellyImpactSpeed);
 
-public enum CrashCause { None, HardLanding, TreeStrike, WingtipStrike, NoseOver, HullImpact }
+public enum CrashCause { None, HardLanding, TreeStrike, WingtipStrike, NoseOver, HullImpact, StructureStrike, WireStrike }

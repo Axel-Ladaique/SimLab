@@ -91,9 +91,42 @@ public class GroundContactTests
     public void Flying_into_a_tree_is_a_crash()
     {
         var model = new GroundContactModel([], [new HullPointSpec("nose", new Vec3(-0.3, 0, 0), "nose")], 1.0);
-        var terrain = new FlatTerrain(0, [new CylinderObstacle(10.3, 0, 1, 10)]);
+        var terrain = new FlatTerrain(0, [new Obstacle(new VerticalCylinder(new Vec3(10.3, 0, 0), 1, 10), ObstacleKind.Tree)]);
         var s = new RigidBodyState(new Vec3(10, 0, 5), new Vec3(10, 0, 0), Level, Vec3.Zero);
         Assert.Equal(CrashCause.TreeStrike, model.DetectCrash(s, terrain, Limits));
+    }
+
+    /// <summary>Nose and two wingtips: the only probe points; nothing in between.</summary>
+    static readonly HullPointSpec[] Outline =
+    [
+        new("nose", new Vec3(-0.5, 0, 0), "nose"),
+        new("wingtipLeft", new Vec3(0.2, -0.75, 0), "wingtip"),
+        new("wingtipRight", new Vec3(0.2, 0.75, 0), "wingtip"),
+    ];
+
+    [Fact]
+    public void A_pole_between_two_hull_points_is_a_crash()
+    {
+        var model = new GroundContactModel([], Outline, 1.0);
+        // Heading east at (10, 0, 5): the wingtips are at x = 9.8, y = ±0.75, the nose at x = 10.5. The pole stands
+        // on the wingtip-to-wingtip line, 0.7 m from the nose and 0.75 m from each wingtip.
+        var s = new RigidBodyState(new Vec3(10, 0, 5), new Vec3(20, 0, 0), Level, Vec3.Zero);
+        var pole = new FlatTerrain(0, [new Obstacle(new VerticalCylinder(new Vec3(9.8, 0, 0), 0.05, 10), ObstacleKind.Structure)]);
+        Assert.Equal(CrashCause.StructureStrike, model.DetectCrash(s, pole, Limits));
+        var beside = new FlatTerrain(0, [new Obstacle(new VerticalCylinder(new Vec3(9.8, 2, 0), 0.05, 10), ObstacleKind.Structure)]);
+        Assert.Equal(CrashCause.None, model.DetectCrash(s, beside, Limits));
+    }
+
+    [Fact]
+    public void A_wire_is_caught_at_100_m_per_s_without_tunnelling()
+    {
+        var model = new GroundContactModel([], Outline, 1.0);
+        var terrain = new FlatTerrain(0, [new Obstacle(new Capsule(new Vec3(20, -10, 5), new Vec3(20, 10, 5), 0.10), ObstacleKind.Wire)]);
+        // One 500 Hz step at 100 m/s moves 0.20 m; the start is offset so no step lands exactly on the wire.
+        var cause = CrashCause.None;
+        for (double x = 15.037; x < 25 && cause == CrashCause.None; x += 0.20)
+            cause = model.DetectCrash(new RigidBodyState(new Vec3(x, 0, 5), new Vec3(100, 0, 0), Level, Vec3.Zero), terrain, Limits);
+        Assert.Equal(CrashCause.WireStrike, cause);
     }
 
     static readonly HullPointSpec[] BellyHull =

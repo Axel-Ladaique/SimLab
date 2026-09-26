@@ -1,5 +1,5 @@
-using SimLab.App.Field;
 using SimLab.App.Mapping;
+using SimLab.App.Maps;
 using SimLab.App.Settings;
 using SimLab.Flight.Airframe;
 using SimLab.Flight.Atmosphere;
@@ -9,14 +9,14 @@ using SimLab.Flight.Geometry;
 using SimLab.Flight.Ground;
 using SimLab.Flight.Recording;
 using SimLab.Flight.Sim;
+using SimLab.Flight.Terrain;
 using SimLab.Input;
 
 namespace SimLab.App.Session;
 
-/// <summary>One flight at the club field: owns the simulation and applies pilot actions (reset, pause, wind).</summary>
+/// <summary>One flight on a map: owns the simulation and applies pilot actions (reset, pause, wind).</summary>
 public sealed class FlightSession : IDisposable
 {
-    public const int TreeSeed = 7;
     const double HandLaunchHeight = 1.8;
     const double HandLaunchSpeed = 10;
     const double HandLaunchPitchDeg = 10;
@@ -24,11 +24,12 @@ public sealed class FlightSession : IDisposable
     readonly FlightEnvironment _windy;
     readonly FlightEnvironment _calm;
 
-    public FlightSession(AircraftDefinition definition, FlightConditions conditions)
+    public FlightSession(AircraftDefinition definition, FlightConditions conditions, FieldMap map)
     {
         Definition = definition;
         Conditions = conditions;
-        Terrain = new ClubFieldTerrain(TreePlanter.Plant(TreeSeed));
+        Map = map;
+        Terrain = map.Terrain;
         _windy = new FlightEnvironment(Terrain, new WindField(conditions.ToWindSettings(), conditions.Seed));
         _calm = new FlightEnvironment(Terrain, new WindField(new WindSettings(), conditions.Seed));
         Aircraft = new Aircraft(definition);
@@ -39,7 +40,8 @@ public sealed class FlightSession : IDisposable
 
     public AircraftDefinition Definition { get; }
     public FlightConditions Conditions { get; }
-    public ClubFieldTerrain Terrain { get; }
+    public FieldMap Map { get; }
+    public ITerrain Terrain { get; }
     public Aircraft Aircraft { get; }
     public Simulation Simulation { get; private set; }
     public bool Paused { get; private set; }
@@ -59,11 +61,11 @@ public sealed class FlightSession : IDisposable
     {
         if (Definition.Wheels.Count > 0)
         {
-            double heading = ClubField.TakeoffHeading(Conditions.WindFromDeg);
-            var (x, y) = ClubField.TakeoffPoint(heading);
+            double heading = Map.Layout.TakeoffHeading(Conditions.WindFromDeg);
+            var (x, y) = Map.Layout.TakeoffPoint(heading);
             return InitialConditions.OnGround(Definition, Terrain, x, y, heading);
         }
-        var (lx, ly, launchHeading) = ClubField.HandLaunchPoint(Conditions.WindFromDeg);
+        var (lx, ly, launchHeading) = Map.Layout.HandLaunchPoint(Conditions.WindFromDeg);
         return InitialConditions.InFlight(new Vec3(lx, ly, Terrain.Height(lx, ly) + HandLaunchHeight), launchHeading, HandLaunchSpeed, HandLaunchPitchDeg);
     }
 

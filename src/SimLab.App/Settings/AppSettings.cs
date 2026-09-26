@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SimLab.App.Cameras;
-using SimLab.App.Field;
+using SimLab.App.Maps;
 
 namespace SimLab.App.Settings;
 

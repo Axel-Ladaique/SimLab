@@ -90,17 +90,32 @@ public sealed class GroundContactModel
             var p = ProbePoint(w.Position, s, terrain);
             if (p.Depth > 0 && -p.NormalSpeed > limits.MaxGearSinkRate) return CrashCause.HardLanding;
         }
-        foreach (var h in _hull)
+        Span<Vec3> points = stackalloc Vec3[_hull.Length];
+        for (int i = 0; i < _hull.Length; i++)
         {
+            var h = _hull[i];
             var p = ProbePoint(h.Position, s, terrain);
-            if (terrain.HitsObstacle(p.Point)) return CrashCause.TreeStrike;
+            points[i] = p.Point;
+            if (terrain.HitObstacle(p.Point) is { } kind) return CauseFor(kind);
             if (p.Depth <= 0) continue;
             bool belly = h.Tag == "belly";
             double limit = belly ? limits.MaxBellyImpactSpeed : limits.MaxHullImpactSpeed;
             if (-p.NormalSpeed > limit) return CauseFor(h.Tag);
         }
+        // Every pair of hull points spans the aircraft's outline, so a pole or a wire passing between two of them
+        // (with no probe point inside it) is caught too.
+        for (int i = 0; i < points.Length; i++)
+        for (int j = i + 1; j < points.Length; j++)
+            if (terrain.HitObstacle(points[i], points[j]) is { } crossed) return CauseFor(crossed);
         return CrashCause.None;
     }
+
+    static CrashCause CauseFor(ObstacleKind kind) => kind switch
+    {
+        ObstacleKind.Tree => CrashCause.TreeStrike,
+        ObstacleKind.Structure => CrashCause.StructureStrike,
+        _ => CrashCause.WireStrike,
+    };
 
     static CrashCause CauseFor(string tag) => tag switch
     {

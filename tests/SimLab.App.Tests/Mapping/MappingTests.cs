@@ -67,4 +67,17 @@ public class MappingTests
         var b = a with { Position = new Vec3(2, 4, -6) };
         Near(new Vec3(0.5, 1, -1.5), StateInterpolation.Interpolate(a, b, 0.25).Position);
     }
+
+    [Fact]
+    public void Part_rotation_yaws_clockwise_then_pitches_up()
+    {
+        // Yaw 90: the part's local x (east at yaw 0) points south, Godot +Z.
+        Near(new Vec3(0, 0, 1), GodotBasis.PartRotation(90, 0).Rotate(Vec3.UnitX));
+        // Pitched up 30° along that heading.
+        Near(new Vec3(0, 0.5, Math.Cos(Angle.Rad(30))), GodotBasis.PartRotation(90, 30).Rotate(Vec3.UnitX));
+        // Local y (north at yaw 0, Godot −Z) turns with the yaw.
+        var (wx, wy) = PlanarYaw.ToWorld(0, 1, 30);
+        Near(GodotBasis.WorldToGodot(new Vec3(wx, wy, 0)), GodotBasis.PartRotation(30, 0).Rotate(new Vec3(0, 0, -1)));
+        Near(Vec3.UnitY, GodotBasis.PartRotation(123, 0).Rotate(Vec3.UnitY));
+    }
 }

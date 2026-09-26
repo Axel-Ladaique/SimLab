@@ -5,22 +5,19 @@ namespace SimLab.Flight.Terrain;
 public sealed class FlatTerrain : ITerrain
 {
     readonly double _elevation;
-    readonly CylinderObstacle[] _obstacles;
+    readonly ObstacleGrid _obstacles;
 
-    public FlatTerrain(double elevation = 0, IEnumerable<CylinderObstacle>? obstacles = null)
+    public FlatTerrain(double elevation = 0, IEnumerable<Obstacle>? obstacles = null)
     {
         _elevation = elevation;
-        _obstacles = obstacles?.ToArray() ?? [];
+        _obstacles = new ObstacleGrid(obstacles ?? []);
     }
 
     public double Height(double x, double y) => _elevation;
 
     public Vec3 Normal(double x, double y) => Vec3.UnitZ;
 
-    public bool HitsObstacle(Vec3 p)
-    {
-        foreach (var o in _obstacles)
-            if (o.Contains(p)) return true;
-        return false;
-    }
+    public ObstacleKind? HitObstacle(Vec3 p) => _obstacles.Hit(p);
+
+    public ObstacleKind? HitObstacle(Vec3 a, Vec3 b) => _obstacles.Hit(a, b);
 }

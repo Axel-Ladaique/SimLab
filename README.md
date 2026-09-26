@@ -13,11 +13,13 @@ Sub-project 1 (core) — headless libraries:
   keyboard fallback.
 - `aircraft/` — data-driven aircraft (trainer, sport, FPV wing, 3D, F-16 EDF jet, P-51 60cc gas warbird, F-18 turbine jet). Values are estimates; see `docs/tuning-log.md`.
 
-- `src/SimLab.App` — testable game logic: club field and terrain, three camera views (ground line-of-sight, FPV,
-  chase), procedural aircraft meshes, input routing, flight session, settings, translations.
-- `game/` — Godot 4 (.NET) simulator: radio setup and calibration, club field, flying from the ground, FPV or
-  chase view (C key or a bound radio switch), HUD, crash screen, French/English menus. See `docs/dev-setup.md`
-  to build and run, and `docs/manual-acceptance.md` for the pilot's checklist.
+- `src/SimLab.App` — testable game logic: flying fields (map model with the
+  club field), three camera views (ground line-of-sight, FPV, chase), procedural
+  aircraft meshes, input routing, flight session, settings, translations.
+- `game/` — Godot 4 (.NET) simulator: radio setup and calibration, flying fields
+  (map model with the club field), flying from the ground, FPV or chase view (C
+  key or a bound radio switch), HUD, crash screen, French/English menus. See
+  `docs/dev-setup.md` to build and run, and `docs/manual-acceptance.md` for the pilot's checklist.
 
 Next: VSPAERO/CFD import and telemetry replay (sub-project 2), VTOL/drones (sub-project 4).
 

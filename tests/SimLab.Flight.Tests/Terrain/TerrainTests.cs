@@ -14,11 +14,13 @@ public class TerrainTests
     }
 
     [Fact]
-    public void Point_inside_tree_cylinder_hits_obstacle()
+    public void Flat_terrain_reports_the_obstacle_kind()
     {
-        var t = new FlatTerrain(0, [new CylinderObstacle(10, 20, 2, 8)]);
-        Assert.True(t.HitsObstacle(new Vec3(11, 20, 5)));
-        Assert.False(t.HitsObstacle(new Vec3(11, 20, 9)));
-        Assert.False(t.HitsObstacle(new Vec3(13, 20, 5)));
+        var t = new FlatTerrain(0, [new Obstacle(new VerticalCylinder(new Vec3(10, 20, 0), 2, 8), ObstacleKind.Tree)]);
+        Assert.Equal(ObstacleKind.Tree, t.HitObstacle(new Vec3(11, 20, 5)));
+        Assert.Null(t.HitObstacle(new Vec3(11, 20, 9)));
+        Assert.Null(t.HitObstacle(new Vec3(13, 20, 5)));
+        Assert.Equal(ObstacleKind.Tree, t.HitObstacle(new Vec3(5, 20, 5), new Vec3(15, 20, 5)));
+        Assert.Null(new FlatTerrain().HitObstacle(Vec3.Zero, new Vec3(1, 0, 0)));
     }
 }
