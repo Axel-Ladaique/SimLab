@@ -27,7 +27,9 @@ public readonly record struct StripState(Vec3 Velocity, double AlphaOffset, doub
 /// by ½ v cₙ max|cl| even where the induced flow exceeds the onset flow (with v taken from the flow including the induced
 /// velocity, v ∝ |w| ∝ Γ fed back on itself and diverged in a static prop hang). The Reynolds number also uses the onset
 /// speed. The equations are
-/// solved by Newton's method with a constant Jacobian, I − diag(½ cₙ a)·N, factored once. Tail strips see the wing
+/// solved by Newton's method with the Jacobian I − diag(½ cₙ a)·N, kept factored between solves and refactored with each
+/// strip's local lift slope a when a solve is not converged after <see cref="RefreshAfter"/> steps: polars with a
+/// laminar-bubble kink near zero lift (low Reynolds) have slopes that differ from strip to strip. Tail strips see the wing
 /// strips' circulation through a first-order lag of time constant (tail x − wing x) / V: the downwash takes that long to
 /// travel to the tail.
 /// </remarks>
@@ -48,8 +50,18 @@ public sealed class LiftingLine
     /// </summary>
     public const double Tolerance = 1e-6;
 
+    /// <summary>A solve not converged after this many steps refactors the Jacobian with the local lift slopes.</summary>
+    public const int RefreshAfter = 3;
+
     const double MinSpeed = 0.1;
     static readonly double SlopeProbe = Angle.Rad(2);
+
+    /// <summary>Half-width of the central difference that measures a strip's local lift slope: narrow, so near a kink it
+    /// gives the slope of the table segment the strip is on rather than an average across the kink.</summary>
+    static readonly double LocalSlopeStep = Angle.Rad(0.1);
+
+    /// <summary>Floor on the Jacobian's lift slope (1/rad): past the stall the slope turns negative, and damping takes over.</summary>
+    const double MinSlope = 1.0;
 
     readonly SurfaceSegment[] _segments;
     readonly int _n;
@@ -57,13 +69,18 @@ public sealed class LiftingLine
     readonly Vec3[] _end;
     readonly double[] _normalChord;
     readonly double[] _slope;
+    readonly double[] _initialSlope;
     readonly Vec3[] _wControl;
     readonly Vec3[] _wBound;
     readonly bool[] _isWing;
     readonly int[] _group;
     readonly double[] _groupLead;
     readonly double[][] _lagged;
+    readonly double[,] _coupling;
+    readonly double[,] _jacobianMatrix;
     readonly LuDecomposition _jacobian;
+    readonly double[] _alpha;
+    readonly double[] _reynolds;
     readonly double[] _gamma;
     readonly double[] _residual;
     readonly double[] _step;
@@ -92,7 +109,7 @@ public sealed class LiftingLine
             _normalChord[i] = s.Area / (2 * half.Length);
             // Attached lift slope at the lowest-Reynolds table (Reynolds 0 clamps to it).
             double slope = (s.Airfoil.Evaluate(SlopeProbe, 0).Cl - s.Airfoil.Evaluate(-SlopeProbe, 0).Cl) / (2 * SlopeProbe);
-            _slope[i] = Math.Max(slope, 1.0);
+            _slope[i] = Math.Max(slope, MinSlope);
         }
 
         _wControl = new Vec3[_n * _n];
@@ -134,18 +151,22 @@ public sealed class LiftingLine
         _groupLead = leads.ToArray();
         _lagged = _groupLead.Select(_ => new double[_n]).ToArray();
 
-        var jacobian = new double[_n, _n];
+        _initialSlope = (double[])_slope.Clone();
+        _coupling = new double[_n, _n];
         for (int i = 0; i < _n; i++)
         {
             var normal = _segments[i].FlowNormalAxis;
             for (int j = 0; j < _n; j++)
             {
                 bool lagged = _group[i] >= 0 && _isWing[j];
-                double coupling = lagged ? 0 : Vec3.Dot(normal, _wControl[i * _n + j]) + (i == j ? 1 / (Math.PI * _normalChord[i]) : 0);
-                jacobian[i, j] = (i == j ? 1 : 0) - 0.5 * _normalChord[i] * _slope[i] * coupling;
+                _coupling[i, j] = lagged ? 0 : Vec3.Dot(normal, _wControl[i * _n + j]) + (i == j ? 1 / (Math.PI * _normalChord[i]) : 0);
             }
         }
-        _jacobian = new LuDecomposition(jacobian);
+        _jacobianMatrix = new double[_n, _n];
+        BuildJacobian();
+        _jacobian = new LuDecomposition(_jacobianMatrix);
+        _alpha = new double[_n];
+        _reynolds = new double[_n];
 
         _gamma = new double[_n];
         _residual = new double[_n];
@@ -157,6 +178,9 @@ public sealed class LiftingLine
     }
 
     public int Count => _n;
+
+    /// <summary>Times the Jacobian was refactored with local lift slopes (not cleared by <see cref="Reset"/>).</summary>
+    public long JacobianRefreshes { get; private set; }
 
     /// <summary>Iterations of the last <see cref="Solve"/> (0 when the warm start already met the tolerance).</summary>
     public int LastIterations { get; private set; }
@@ -206,7 +230,13 @@ public sealed class LiftingLine
                 break;
             }
             if (iteration == MaxIterations) break;
-            // Damping for stall, where the constant Jacobian's lift slope has the wrong sign.
+            // Not converged after RefreshAfter steps: the slopes are stale, so refresh them from the current angles of attack.
+            if (iteration == RefreshAfter)
+            {
+                RefreshJacobian();
+                previous = double.PositiveInfinity;
+            }
+            // Damping for stall, where the Jacobian's (floored) lift slope has the wrong sign.
             lambda = worst > previous ? Math.Max(lambda / 2, 0.125) : 1;
             previous = worst;
             _jacobian.Solve(_residual, _step);
@@ -233,11 +263,45 @@ public sealed class LiftingLine
 
     public void Reset()
     {
+        // Back to the construction slopes, so a reset run replays bit for bit whatever the Jacobian saw before.
+        if (!_slope.AsSpan().SequenceEqual(_initialSlope))
+        {
+            Array.Copy(_initialSlope, _slope, _n);
+            BuildJacobian();
+            _jacobian.Factor(_jacobianMatrix);
+        }
         Array.Clear(_gamma);
         foreach (var lagged in _lagged) Array.Clear(lagged);
         Array.Clear(_inducedControl);
         Array.Clear(_inducedBound);
         LastIterations = 0;
+    }
+
+    void BuildJacobian()
+    {
+        for (int i = 0; i < _n; i++)
+        {
+            double k = 0.5 * _normalChord[i] * _slope[i];
+            for (int j = 0; j < _n; j++) _jacobianMatrix[i, j] = (i == j ? 1 : 0) - k * _coupling[i, j];
+        }
+    }
+
+    /// <summary>Refactors the Jacobian with each strip's lift slope at its last angle of attack and Reynolds number.</summary>
+    void RefreshJacobian()
+    {
+        for (int i = 0; i < _n; i++)
+        {
+            if (_still[i]) continue;
+            var airfoil = _segments[i].Airfoil;
+            double up = airfoil.Evaluate(_alpha[i] + LocalSlopeStep, _reynolds[i]).Cl;
+            double down = airfoil.Evaluate(_alpha[i] - LocalSlopeStep, _reynolds[i]).Cl;
+            // Floored at half the attached slope: a strip passing through the stall mid-iteration (a tail meeting the wing's
+            // wash all at once) would otherwise get a near-zero slope and make Newton oscillate; damping handles the stall.
+            _slope[i] = Math.Max((up - down) / (2 * LocalSlopeStep), 0.5 * _initialSlope[i]);
+        }
+        BuildJacobian();
+        _jacobian.Factor(_jacobianMatrix);
+        JacobianRefreshes++;
     }
 
     Vec3 Horseshoe(Vec3 p, int j, double core, bool includeBound)
@@ -266,6 +330,8 @@ public sealed class LiftingLine
             var u = onset - w;
             double alpha = Math.Atan2(-Vec3.Dot(u, s.FlowNormalAxis), Vec3.Dot(u, s.FlowChordAxis)) + strips[i].AlphaOffset;
             double reynolds = density * v * s.Chord / Isa.DynamicViscosity;
+            _alpha[i] = alpha;
+            _reynolds[i] = reynolds;
             double cl = s.Airfoil.Evaluate(alpha, reynolds).Cl + strips[i].ClIncrement;
             _residual[i] = 0.5 * v * _normalChord[i] * cl - _gamma[i];
             worst = Math.Max(worst, Math.Abs(_residual[i]));

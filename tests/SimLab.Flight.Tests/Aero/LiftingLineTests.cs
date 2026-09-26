@@ -50,6 +50,24 @@ public class LiftingLineTests
         Assert.Equal(0, line.NonConvergedSolves);
     }
 
+    /// <summary>
+    /// A polar whose slope near zero lift differs from the slope where the strips fly (a low-Reynolds laminar-bubble kink)
+    /// leaves the Jacobian's slopes stale: the line refactors it with the local slopes once, then converges quickly again.
+    /// </summary>
+    [Fact]
+    public void Kinked_polar_refreshes_the_jacobian_and_keeps_converging()
+    {
+        var strips = SurfaceGeometry.Build(Rectangular, TestAirfoils.Kinked()).ToList();
+        var line = new LiftingLine(strips);
+        for (int k = 0; k < 50; k++)
+        {
+            line.Solve(Uniform(strips.Count, 15, 6 + 0.01 * (k % 10)), 1.225);
+            if (k > 0) Assert.True(line.LastIterations <= LiftingLine.RefreshAfter, $"solve {k}: {line.LastIterations} iterations");
+        }
+        Assert.Equal(0, line.NonConvergedSolves);
+        Assert.Equal(1, line.JacobianRefreshes);
+    }
+
     [Fact]
     public void Symmetric_flight_gives_symmetric_circulation()
     {

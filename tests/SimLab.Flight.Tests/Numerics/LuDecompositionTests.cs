@@ -15,6 +15,18 @@ public class LuDecompositionTests
     }
 
     [Fact]
+    public void Refactoring_in_place_solves_the_new_matrix()
+    {
+        var lu = new LuDecomposition(new double[,] { { 2, 1 }, { 1, 3 } });
+        lu.Factor(new double[,] { { 0, 1 }, { 1, 0 } });
+        var x = new double[2];
+        lu.Solve([2, 3], x);
+        Assert.Equal(3, x[0], 12);
+        Assert.Equal(2, x[1], 12);
+        Assert.Throws<ArgumentException>(() => lu.Factor(new double[3, 3]));
+    }
+
+    [Fact]
     public void Pivots_around_a_zero_diagonal()
     {
         var lu = new LuDecomposition(new double[,] { { 0, 1 }, { 1, 0 } });
