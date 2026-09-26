@@ -93,3 +93,28 @@ The static and roll derivatives do not change. Cmq now overshoots by the same ki
 flying-wing pitch effectiveness, item 3); Cnr and CYr grow because the fin also gets the yaw-rate camber effect,
 which is physical (AVL has it) but adds to the fin's over-effectiveness (item 2). Both residuals belong to the
 lifting-line / sidewash work, not to this term.
+
+## After the lifting line (same day)
+
+`SurfaceAeroModel` now solves a Weissinger lifting line over all strips (docs/superpowers/specs/2026-09-26-lifting-line-design.md),
+with the fleet re-tuned (docs/tuning-log.md, 2026-09-26) and the trailing-leg forces taken per strip end with the chord
+there (the per-strip couple over-counted the dihedral effect of tapered wings). Ratios SimLab / AVL, from
+`AvlDerivativeTests.Report_ratio_table`:
+
+| | trainer | sport | wing | 3d |
+|---|---|---|---|---|
+| CLa | 0.95 | 0.95 | 0.97 | 0.93 |
+| Clb | 1.08 | 0.92 | 1.24 | 0.90 |
+| Cnb | 1.16 | 1.11 | 1.01 | 1.08 |
+| Clp | 1.09 | 1.00 | 1.10 | 0.99 |
+| Clr | 0.99 | 1.03 | 1.29 | 1.01 |
+| Cnr | 1.13 | 1.09 | 1.04 | 1.06 |
+| Cmq | 1.03 | 1.01 | 1.15 | 1.00 |
+| Cl_aileron (without the 0.85 viscous flap efficiency) | 0.88 | 0.89 | 0.88 | 0.88 |
+| Cm_elevator (idem) | 0.93 | 0.96 | 0.96 | 0.96 |
+| Static margin, SimLab / AVL | 18.5 / 12.7 % | 15.5 / 11.2 % | 9.8 / 5.1 % | 19.1 / 16.8 % |
+
+The fin over-effectiveness (Cnb 1.5–1.8, item 2), the low dihedral effect and Clp 1.8 are gone. Left
+(docs/realism-backlog.md #16): the flying wing's winglets act too strongly on the wing tips (Clb, Clr; the wing alone
+matches AVL at every sweep: Clb x1.01 unswept, x0.98 at 25°, x0.94 at 35°), and the neutral point sits about 3 % of
+the chord further aft than AVL's on every planform, whatever the sweep.
