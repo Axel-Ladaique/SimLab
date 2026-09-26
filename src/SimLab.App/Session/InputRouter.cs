@@ -1,3 +1,4 @@
+using System.Linq;
 using SimLab.Flight.Controls;
 using SimLab.Input;
 
@@ -99,11 +100,13 @@ public sealed class InputRouter
             if (_switches.Held(SwitchFunction.Gear) is int gear) _gearUp = gear == SwitchStates.GearUp;
             if (_switches.Held(SwitchFunction.Flaps) is int flaps) _flap = FlapSetting.FromState(flaps);
             if (_switches.Held(SwitchFunction.ThrottleCut) is int cut) _throttleCut = cut == SwitchStates.ThrottleCut;
+            else if (!profile.Switches.Any(s => s.Function == SwitchFunction.ThrottleCut)) _throttleCut = false;
             return new RouterOutput(Command(ToControls(profile.Read(pad.Frame))), output, InputSource.Radio, pad.Name, pad.Frame);
         }
 
         _activeGuid = null;
         _switches = null;
+        _throttleCut = false;
         ApplyReset(output);
         return new RouterOutput(Command(ToControls(keyboardSticks)), output, InputSource.Keyboard, "");
     }

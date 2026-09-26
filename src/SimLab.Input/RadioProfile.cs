@@ -83,6 +83,7 @@ public sealed class RadioProfile
         foreach (var s in profile.Switches)
         {
             if (s is null) throw new InvalidDataException("Empty switch assignment.");
+            if (!Enum.IsDefined(s.Function)) throw new InvalidDataException($"Unknown switch function {(int)s.Function}.");
             if (!assigned.Add(s.Function)) throw new InvalidDataException($"Switch {s.Function} is assigned twice.");
             if ((s.Source.AxisIndex is null) == (s.Source.ButtonIndex is null))
                 throw new InvalidDataException($"Switch {s.Function} needs exactly one axis or one button.");

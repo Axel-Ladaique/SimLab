@@ -228,7 +228,8 @@ public partial class Main : Node
         if (radioShot >= 0 && radioShot + 2 < args.Length)
         {
             ShowRadio();
-            ((RadioScreen)_current!).SelectTab(int.Parse(args[radioShot + 1], CultureInfo.InvariantCulture));
+            int.TryParse(args[radioShot + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var tab);
+            ((RadioScreen)_current!).SelectTab(tab);
             CaptureAfterFrames(30, args[radioShot + 2]);
             return true;
         }

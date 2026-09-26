@@ -108,6 +108,7 @@ public class RadioProfileTests
     [InlineData("""[ { "Function": "Gear", "Source": { "AxisIndex": 1, "ButtonIndex": 1 }, "Positions": [ { "Value": -1, "State": 0 }, { "Value": 1, "State": 1 } ] } ]""")]
     [InlineData("""[ { "Function": "Gear", "Source": { "AxisIndex": -1 }, "Positions": [ { "Value": -1, "State": 0 }, { "Value": 1, "State": 1 } ] } ]""")]
     [InlineData("""[ { "Function": "Warp", "Source": { "AxisIndex": 1 }, "Positions": [ { "Value": -1, "State": 0 }, { "Value": 1, "State": 1 } ] } ]""")]
+    [InlineData("""[ { "Function": 42, "Source": { "AxisIndex": 1 }, "Positions": [ { "Value": -1, "State": 0 }, { "Value": 1, "State": 1 } ] } ]""")]
     public void Invalid_switch_assignments_are_rejected(string switches)
         => Assert.Throws<InvalidDataException>(() => RadioProfile.FromJson(WithSwitches(switches)));
 

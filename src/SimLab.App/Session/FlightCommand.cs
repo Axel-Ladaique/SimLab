@@ -3,6 +3,7 @@ using SimLab.Input;
 
 namespace SimLab.App.Session;
 
+/// <summary>What a <see cref="FlightCommand"/> asks for: a keyboard toggle, a radio setter, or a one-off action.</summary>
 public enum FlightCommandKind { Reset, TogglePause, SetPause, ToggleWind, SetWind, NextCamera, SelectCamera, SetOsd }
 
 /// <summary>

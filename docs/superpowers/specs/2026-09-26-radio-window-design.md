@@ -80,6 +80,8 @@ Pure, unit-tested. `Update(RawInputFrame)` returns:
   `SetOsd(bool)`. Keyboard keys produce the toggles, radio events the setters; the H key keeps toggling the OSD in `FlightScene`.
 - `FlightSession.Handle` handles reset, pause and wind; `FlightScene` handles camera and OSD (it owns both). OSD
   from the radio updates `Settings.ShowFlightData` like the H key.
+- A reset always unpauses the sim, even if a pause switch sits on Paused: the pause setter only fires again once
+  the switch is flipped away and back.
 - Gear arming in `FlightSession.Tick` (gear up only counts once seen down) is unchanged.
 
 ## Migration (P7)
@@ -89,14 +91,15 @@ Pure, unit-tested. `Update(RawInputFrame)` returns:
 | Old action | New assignment |
 |---|---|
 | GearUp | Gear: `Threshold−0.5` → Down, `Threshold+0.5` → Up |
-| Flaps | Flaps: −1 → Up, 0 → Takeoff, +1 → Landing (same thirds as before) |
+| Flaps | Flaps: −1 → Up, 0 → Takeoff, +1 → Landing (switch points at ±0.5 instead of the old ±1/3; identical for real 3-position switches) |
 | Pause | Pause: low → Running, high → Paused |
 | ToggleWind | Wind: low → Off, high → On |
 | Reset | Reset: low → —, high → Reset |
 | NextCamera | dropped (no positional equivalent); the Switches tab shows it unassigned |
 
 Buttons use −1/+1 in place of `Threshold∓0.5`. The next save writes the new shape. Nearest-position resolution
-with these values reproduces the old threshold exactly.
+with these values switches at the old threshold (±0.05 hysteresis). A button bound to Pause or Wind used to toggle
+on each press; it now pauses / turns wind on while held.
 
 ## Learning a switch (Switches tab)
 
@@ -109,15 +112,16 @@ with these values reproduces the old threshold exactly.
    the radio's direction is unknown) with a state picker each, including "—". Defaults: states in order (gear:
    Down/Up; flaps 2 positions: Up/Landing; 3: Up/Takeoff/Landing; camera 3: Ground/FPV/Chase, 2: Ground/FPV;
    Reset: —/Reset; others: first/second state). Flipping the switch highlights the matching position live.
-4. **Save** stores the assignment; **Clear** removes it. Changing a picker saves at once.
+4. **Next** stores the learned assignment at once (no separate Save step); **Clear** removes it. Changing a picker
+   also saves at once.
 
 Any switch can be learned for several functions (P3).
 
 ## Screen layout (P6)
 
 Left: a `TabContainer` with the menu's glass style (`Ui.Glass`, chips for tabs). Right, always visible: aircraft
-picker, 3D control check (gear, flaps and throttle cut driven by the switch states), and a status line
-("Gear down · Flaps 0 · FPV · Throttle armed").
+picker, 3D control check (gear, flaps and throttle cut driven by the switch states), and a status line showing
+gear, flaps and throttle cut ("Gear down · Flaps 0 · Throttle armed"; camera is not shown).
 
 - **Radio**: device list, status (name + calibrated/not), stick mode, calibration wizard (prompt, Calibrate / Next
   / Cancel), EdgeTX help.

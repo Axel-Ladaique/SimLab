@@ -29,7 +29,8 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
   OSD shows "GAZ COUPÉS" / "THR CUT".
 - [ ] Put Gear and Flaps on the same switch: both follow it.
 - [ ] An old profile (bound before positional switches) still drives gear, flaps, reset, pause and wind; the old
-  view switch shows "non assigné" / "not assigned" in the Switches tab.
+  view switch shows "non assigné" / "not assigned" in the Switches tab. An old pause or wind *button* used to
+  toggle on each press; it now acts (pauses / turns wind on) only while held.
 
 ## Home screen
 - [ ] The app opens full screen; Settings → "Plein écran" off gives a window, on again gives full screen, and the

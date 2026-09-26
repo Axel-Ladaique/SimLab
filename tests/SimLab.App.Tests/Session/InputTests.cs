@@ -235,6 +235,39 @@ public class InputTests
     }
 
     [Fact]
+    public void Unplugging_the_radio_on_cut_falls_back_to_the_uncut_keyboard_throttle()
+    {
+        var cut = OnAxis4(SwitchFunction.ThrottleCut, (-1, SwitchStates.ThrottleArmed), (1, SwitchStates.ThrottleCut));
+        var router = new InputRouter(_ => Profile(cut));
+        Assert.True(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+        var up = default(KeyboardKeys) with { ThrottleUp = true };
+        var output = router.Update(1.0, [], up, default);
+        Assert.False(output.Controls.ThrottleCut);
+        Assert.True(output.Controls.Throttle > 0.4);
+    }
+
+    [Fact]
+    public void Clearing_the_throttle_cut_assignment_uncuts_the_throttle()
+    {
+        var cut = OnAxis4(SwitchFunction.ThrottleCut, (-1, SwitchStates.ThrottleArmed), (1, SwitchStates.ThrottleCut));
+        RadioProfile? profile = Profile(cut);
+        var router = new InputRouter(_ => profile);
+        Assert.True(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+        profile = Profile();
+        router.InvalidateProfiles();
+        Assert.False(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+    }
+
+    [Fact]
+    public void A_no_effect_throttle_cut_position_keeps_the_last_state()
+    {
+        var cut = OnAxis4(SwitchFunction.ThrottleCut, (-1, SwitchStates.ThrottleCut), (1, null));
+        var router = new InputRouter(_ => Profile(cut));
+        Assert.True(router.Update(0.016, [Radio(-1)], default, default).Controls.ThrottleCut);
+        Assert.True(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+    }
+
+    [Fact]
     public void Camera_osd_wind_and_pause_switches_set_their_state_at_startup_and_on_each_move()
     {
         var camera = OnAxis4(SwitchFunction.Camera, (-1, SwitchStates.CameraGround), (0, SwitchStates.CameraFpv), (1, SwitchStates.CameraChase));
