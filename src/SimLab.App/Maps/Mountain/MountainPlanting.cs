@@ -4,13 +4,17 @@ using SimLab.Flight.Geometry;
 namespace SimLab.App.Maps.Mountain;
 
 /// <summary>
-/// Deterministic mountain vegetation and rocks: fir stands with clearings between the valley floor and +600 m,
+/// Deterministic mountain vegetation and rocks: fir stands with clearings from the valley floor up to +600 m,
 /// thinning with height, a few solitary firs on the shoulder meadows, boulders at the foot of the cliff bands and a
 /// few on the meadows. Nothing in <see cref="MountainMap.KeepOut"/>, on steep ground or around the chalets.
 /// </summary>
 public static class MountainPlanting
 {
-    const double ForestLow = -350, ForestHigh = 600, MaxTreeSlope = 0.78;
+    /// <summary>From the valley floor (−343…−362 m) to +600 m.</summary>
+    const double ForestLow = -380, ForestHigh = 600, MaxTreeSlope = 0.78;
+
+    /// <summary>Crowns and rocks keep this far from the road's centre line, plus their own radius.</summary>
+    const double RoadClearance = 8;
     const double TreeSpacing = 9, MeadowEnd = 450;
     const int SolitaryFirs = 40, MeadowBoulders = 30, MaxCliffBoulders = 300;
 
@@ -28,7 +32,7 @@ public static class MountainPlanting
         if (z < ForestLow || z > ForestHigh) return 0;
         double meadow = x < MountainRelief.CrestX(y) ? 1 : SmoothStep((x - MeadowEnd) / 200);
         if (meadow <= 0) return 0;
-        double threshold = 0.235 + 0.30 * (z - ForestLow) / (ForestHigh - ForestLow);
+        double threshold = 0.25 + 0.30 * (z - ForestLow) / (ForestHigh - ForestLow);
         return meadow * SmoothStep((Stands.Fbm(x / 350, y / 350, 4) - threshold) / 0.12);
     }
 
@@ -60,7 +64,7 @@ public static class MountainPlanting
             var tint = Tint(Fir, 0.10);
             double z = grid.Height(x, y);
             if (z < ForestLow || z > ForestHigh || !accept(roll)) return;
-            if (Slope(x, y) > MaxTreeSlope || !Free(x, y, h)) return;
+            if (Slope(x, y) > MaxTreeSlope || !Free(x, y, h) || road.Nearest(x, y, RoadClearance + radius) is not null) return;
             props.Add(new ConiferTree(Ground(x, y), yaw, h, radius, tint));
         }
 
@@ -84,7 +88,7 @@ public static class MountainPlanting
         {
             double u = rng.NextDouble(), radius = 0.8 + 3.2 * u * u, height = radius * Between(1.0, 1.5), yaw = Between(0, 360);
             var tint = Tint(Rock, 0.12);
-            if (!Free(x, y, 0.75 * height) || road.Nearest(x, y, 8 + radius) is not null) return null;
+            if (!Free(x, y, 0.75 * height) || road.Nearest(x, y, RoadClearance + radius) is not null) return null;
             return new Boulder(Ground(x, y), yaw, radius, height, tint);
         }
         var feet = CliffFeet(grid, Slope);

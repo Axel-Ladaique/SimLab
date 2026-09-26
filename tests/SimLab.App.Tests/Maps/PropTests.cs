@@ -107,7 +107,7 @@ public class PropTests
     }
 
     [Fact]
-    public void Boulder_is_a_solid_ellipsoid_half_sunk_in_the_ground()
+    public void Boulder_is_a_solid_ellipsoid_a_quarter_sunk_in_the_ground()
     {
         var rock = new Boulder(new Vec3(0, 0, 2), 30, 2, 3, Green);
         var t = Around(rock);

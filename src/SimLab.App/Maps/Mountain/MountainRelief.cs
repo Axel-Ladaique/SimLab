@@ -22,8 +22,9 @@ public static class MountainRelief
     const double LakeBlend = 35;
     const double StreamDepth = 2;
 
-    /// <summary>The road bridge's deck over the stream (m); under it the channel is dug again below the road.</summary>
-    public const double BridgeLength = 12, BridgeWidth = 5;
+    /// <summary>The road bridge's deck over the stream (m); under it the channel is dug again below the road. The road
+    /// crosses the stream at about 30°, so the deck is long enough to span most of the oblique channel.</summary>
+    public const double BridgeLength = 24, BridgeWidth = 5;
 
     /// <summary>Beyond this distance from the crossing the road's banks no longer fill the stream channel.</summary>
     const double BridgeReach = 60;
@@ -100,7 +101,7 @@ public static class MountainRelief
                 if (road.Nearest(x, y, roadCore + BankReach) is { } near)
                 {
                     h = near.Distance <= roadCore ? near.Profile : CutAndFill(h, road.Within(x, y, roadCore + BankReach), roadCore);
-                    h = UnderBridge(x, y, h, road.StreamCrossing, onRoad: near.Distance <= roadCore);
+                    h = UnderBridge(x, y, h, road.StreamCrossing, near.Distance, roadCore);
                 }
                 h = Level(x, y, h);
                 heights[j * count + i] = (float)h;
@@ -171,17 +172,20 @@ public static class MountainRelief
     }
 
     /// <summary>
-    /// Near the road's stream crossing, the channel cut again through the road's banks and, within the deck's length,
-    /// under the road bed too, below both the natural ground and the road surface. Off the deck the bed stays whole.
+    /// Near the road's stream crossing, the channel cut again through the road's banks and under the deck, below both
+    /// the natural ground and the road surface. Near the road only nodes a cell diagonal inside the deck's ends are
+    /// cut, so every grid triangle under the road off the deck keeps the road's height and meets the deck's ends.
     /// </summary>
-    static double UnderBridge(double x, double y, double h, (double X, double Y, double YawDeg, double Profile) crossing, bool onRoad)
+    static double UnderBridge(double x, double y, double h, (double X, double Y, double YawDeg, double Profile) crossing,
+        double roadDistance, double roadCore)
     {
         double dx = x - crossing.X, dy = y - crossing.Y;
         if (dx * dx + dy * dy > BridgeReach * BridgeReach) return h;
         double cut = StreamCut(StreamDistance(x, y));
         if (cut <= 0) return h;
+        double diagonal = MountainMap.GridStep * Math.Sqrt(2);
         var (along, _) = PlanarYaw.ToLocal(dx, dy, crossing.YawDeg);
-        if (onRoad && Math.Abs(along) > BridgeLength / 2) return h;
+        if (roadDistance <= roadCore + diagonal && Math.Abs(along) > BridgeLength / 2 - diagonal) return h;
         return Math.Min(h, Math.Min(Height(x, y), crossing.Profile) - cut);
     }
 

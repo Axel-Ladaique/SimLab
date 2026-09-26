@@ -92,9 +92,8 @@ public class MountainMapTests
     public void Road_is_drivable()
     {
         var road = new MountainRoad();
-        // The bridge deck carries the road over the re-cut stream channel; its own test checks it.
-        var crossing = road.StreamCrossing;
-        var samples = Along(road.Path, 5).Where(s => Distance(s.X, s.Y, crossing.X, crossing.Y) > 8).ToList();
+        // The bridge deck carries the road over the re-cut stream channel; its own test checks the deck.
+        var samples = Along(road.Path, 5).Where(s => !OnDeck(road, s.X, s.Y)).ToList();
         for (int k = 1; k < samples.Count; k++)
         {
             var (x0, y0, _, _) = samples[k - 1];
@@ -221,7 +220,9 @@ public class MountainMapTests
             Assert.Null(Mountain.Terrain.WaterSurface(x, y));
             if (Exempt(p)) continue;
             Assert.False(MountainMap.KeepOut(x, y, tall: TopAboveBase(p) > 2), $"{p.GetType().Name} in the keep-out at ({x:F0}, {y:F0})");
-            Assert.True(road.DistanceTo(x, y) > 8, $"{p.GetType().Name} on the road at ({x:F0}, {y:F0})");
+            // Crowns and rocks stay off the road too.
+            double reach = 8 + p switch { ConiferTree t => t.BaseRadius, Boulder b => b.Radius, _ => 0 };
+            Assert.True(road.DistanceTo(x, y) > reach, $"{p.GetType().Name} over the road at ({x:F0}, {y:F0})");
         }
     }
 
@@ -284,6 +285,24 @@ public class MountainMapTests
         Assert.Equal(road.ProfileHeight(crossing.X, crossing.Y), bridge.Base.Z, 6);
         // The channel is dug again under the deck.
         Assert.True(H(crossing.X, crossing.Y) < bridge.Base.Z - 1.5, $"channel {H(crossing.X, crossing.Y):F2} under deck {bridge.Base.Z:F2}");
+        // The road meets the deck top at both ends, across its whole width, and stays level just beyond them.
+        foreach (double along in new[] { -1.0, 1.0 })
+        foreach (double beyond in new[] { 0.0, 0.5, 1, 2 })
+        for (double across = -bridge.Width / 2; across <= bridge.Width / 2; across += 0.5)
+        {
+            var (dx, dy) = PlanarYaw.ToWorld(along * (bridge.Length / 2 + beyond), across, bridge.YawDeg);
+            double ground = H(bridge.Base.X + dx, bridge.Base.Y + dy);
+            Assert.True(Math.Abs(ground - bridge.Base.Z) < 0.05,
+                $"road {ground - bridge.Base.Z:F2} m from the deck top {beyond} m beyond its {(along < 0 ? "west" : "east")} end, {across} m across");
+        }
+    }
+
+    /// <summary>On the road over the bridge deck (within its length).</summary>
+    static bool OnDeck(MountainRoad road, double x, double y)
+    {
+        var c = road.StreamCrossing;
+        var (along, across) = PlanarYaw.ToLocal(x - c.X, y - c.Y, c.YawDeg);
+        return Math.Abs(along) <= MountainRelief.BridgeLength / 2 && Math.Abs(across) <= MountainRelief.BridgeWidth;
     }
 
     /// <summary>Points every <paramref name="step"/> metres along the polyline, with the unit direction there.</summary>

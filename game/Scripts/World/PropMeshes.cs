@@ -84,14 +84,15 @@ public static class PropMeshes
         return Merge(parts.ToArray());
     }
 
-    /// <summary>A sphere whose vertices are pushed in or out by up to 15 %, the same amount for every copy of a
-    /// vertex (poles, seam), so the surface stays closed; smooth normals averaged over the shared positions.</summary>
+    /// <summary>A sphere whose vertices are pulled in by up to 15 %, never out, so the drawn rock stays inside its
+    /// hit ellipsoid; the same amount for every copy of a vertex (poles, seam), so the surface stays closed; smooth
+    /// normals averaged over the shared positions.</summary>
     static Mesh Rock()
     {
         var arrays = Sphere(0.5f, 12, 7).GetMeshArrays();
         var vertices = arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
         var indices = arrays[(int)Mesh.ArrayType.Index].AsInt32Array();
-        for (int i = 0; i < vertices.Length; i++) vertices[i] *= 1f + 0.15f * Jitter(vertices[i]);
+        for (int i = 0; i < vertices.Length; i++) vertices[i] *= 1f - 0.15f * Jitter(vertices[i]);
 
         var sums = new Dictionary<(int, int, int), Vector3>();
         for (int k = 0; k < indices.Length; k += 3)
@@ -116,13 +117,13 @@ public static class PropMeshes
 
     static (int, int, int) Key(Vector3 v) => (Mathf.RoundToInt(v.X * 1e4f), Mathf.RoundToInt(v.Y * 1e4f), Mathf.RoundToInt(v.Z * 1e4f));
 
-    /// <summary>A deterministic value in [−1, 1] for a vertex position.</summary>
+    /// <summary>A deterministic value in [0, 1] for a vertex position.</summary>
     static float Jitter(Vector3 v)
     {
         var (x, y, z) = Key(v);
         uint h = (uint)x * 0x85EBCA6Bu ^ (uint)y * 0xC2B2AE35u ^ (uint)z * 0x27D4EB2Fu;
         h ^= h >> 16; h *= 0x85EBCA6Bu; h ^= h >> 13; h *= 0xC2B2AE35u; h ^= h >> 16;
-        return h / (float)uint.MaxValue * 2f - 1f;
+        return h / (float)uint.MaxValue;
     }
 
     /// <summary>
