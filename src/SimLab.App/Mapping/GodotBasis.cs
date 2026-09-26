@@ -25,4 +25,12 @@ public static class GodotBasis
 
     /// <summary>Converts a body-axis vector (x back, y right, z up) to the node's local axes (x right, y up, z back).</summary>
     public static Vec3 BodyToNodeLocal(Vec3 body) => new(body.Y, body.Z, body.X);
+
+    /// <summary>
+    /// Rotation (Godot axes) of a prop part: its local x yawed clockwise seen from above by <paramref name="yawDeg"/>
+    /// (<see cref="PlanarYaw"/>), then pitched up by <paramref name="pitchDeg"/>. Part meshes are built with local x
+    /// along Godot +X, local y along Godot −Z and up along +Y.
+    /// </summary>
+    public static Quat PartRotation(double yawDeg, double pitchDeg) =>
+        (Quat.FromAxisAngle(Vec3.UnitY, -Angle.Rad(yawDeg)) * Quat.FromAxisAngle(Vec3.UnitZ, Angle.Rad(pitchDeg))).Normalized();
 }
