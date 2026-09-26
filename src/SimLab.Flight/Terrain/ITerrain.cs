@@ -16,14 +16,3 @@ public interface ITerrain
     /// <summary>Kind of the first obstacle crossed by the world segment a→b, or null.</summary>
     ObstacleKind? HitObstacle(Vec3 a, Vec3 b);
 }
-
-/// <summary>Vertical cylinder obstacle, e.g. a tree.</summary>
-public readonly record struct CylinderObstacle(double X, double Y, double Radius, double Height, double BaseZ = 0)
-{
-    public bool Contains(Vec3 p)
-    {
-        if (p.Z < BaseZ || p.Z > BaseZ + Height) return false;
-        double dx = p.X - X, dy = p.Y - Y;
-        return dx * dx + dy * dy <= Radius * Radius;
-    }
-}

@@ -1,4 +1,5 @@
-using SimLab.App.Field;
+using SimLab.App.Maps;
+using SimLab.App.Maps.Club;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 using SimLab.Flight.Controls;
@@ -11,7 +12,7 @@ namespace SimLab.App.Tests.Session;
 public class FlightSessionTests
 {
     static FlightSession Session(string id, FlightConditions? conditions = null) =>
-        new(TestData.Aircraft(id), conditions ?? new FlightConditions(WindSpeed: 4, WindFromDeg: 80));
+        new(TestData.Aircraft(id), conditions ?? new FlightConditions(WindSpeed: 4, WindFromDeg: 80), FieldCatalog.Load("club"));
 
     [Fact]
     public void Catalog_lists_the_shipped_aircraft()
@@ -27,7 +28,7 @@ public class FlightSessionTests
     {
         using var session = Session("trainer");
         var s = session.Aircraft.State;
-        Assert.True(ClubField.OnRunway(s.Position.X, s.Position.Y));
+        Assert.True(ClubMap.Layout.OnRunway(s.Position.X, s.Position.Y));
         Assert.True(s.Position.X < 0);
         Assert.Equal(90, Angle.Deg(Attitude.FromOrientation(s.Orientation).Heading), 6);
         Assert.Equal(0, s.Velocity.Length);
@@ -117,10 +118,10 @@ public class FlightSessionTests
     }
 
     [Fact]
-    public void Session_uses_the_club_field_with_trees()
+    public void Session_uses_the_selected_map()
     {
         using var session = Session("sport");
-        Assert.True(session.Terrain.Trees.Count > 100);
+        Assert.Equal(ClubMap.Id, session.Map.Id);
         Assert.InRange(session.Span, 1.1, 1.3);
     }
 }

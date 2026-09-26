@@ -118,6 +118,31 @@ public class ClubMapTests
     }
 
     [Fact]
+    public void Normal_tilts_away_from_the_uphill_direction()
+    {
+        // Scan x at y = 800 for a point where the ground rises with increasing x, and check the
+        // normal there leans the opposite way (X < 0, i.e. away from the uphill slope).
+        double xUp = FindRising(x => ClubMap.Height(x, 800));
+        Assert.True(Club.Terrain.Normal(xUp, 800).X < 0);
+
+        // Same check along y at x = 800: where the ground rises with increasing y, the normal's
+        // Y component should be negative.
+        double yUp = FindRising(y => ClubMap.Height(800, y));
+        Assert.True(Club.Terrain.Normal(800, yUp).Y < 0);
+    }
+
+    static double FindRising(Func<double, double> heightAt)
+    {
+        const double step = 10;
+        for (double t = -900; t < 900; t += step)
+        {
+            if (heightAt(t + step) > heightAt(t))
+                return t + step / 2;
+        }
+        throw new InvalidOperationException("No rising segment found in the scanned range.");
+    }
+
+    [Fact]
     public void Catalog_finds_loads_and_falls_back_to_the_club()
     {
         Assert.Equal("club", FieldCatalog.Find("moon").Id);

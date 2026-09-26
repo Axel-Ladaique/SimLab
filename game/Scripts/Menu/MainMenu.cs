@@ -48,7 +48,7 @@ public partial class MainMenu : Control
         SetAnchorsPreset(LayoutPreset.FullRect);
 
         _view = new MenuAircraftView();
-        _view.Init(services.Settings.Conditions);
+        _view.Init(services.Settings.Conditions, FieldCatalog.Load(services.Settings.LastField));
         AddChild(_view);
         AddChild(new FieldAmbience());
 
@@ -140,6 +140,7 @@ public partial class MainMenu : Control
             {
                 _services.Settings = _services.Settings with { LastField = field.Id };
                 _services.SaveSettings();
+                _view.ShowField(FieldCatalog.Load(field.Id));
             };
             row.AddChild(chip);
         }

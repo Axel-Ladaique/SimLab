@@ -3,7 +3,7 @@ using System.Linq;
 using Godot;
 using SimLab.App.Audio;
 using SimLab.App.Cameras;
-using SimLab.App.Field;
+using SimLab.App.Maps;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 using SimLab.App.Visual;
@@ -144,6 +144,9 @@ public partial class Main : Node
 
     bool RunCommandLine(string[] args)
     {
+        // Map for the scripted modes; kept in memory only, never saved.
+        if (ArgValue(args, "--field") is { } field)
+            _services.Settings = _services.Settings with { LastField = FieldCatalog.Find(field).Id };
         if (Has(args, "--smoke-boot"))
         {
             GD.Print($"SIMLAB_BOOT_OK locale={TranslationServer.GetLocale()} title={Tr("APP_TITLE")}");
@@ -226,7 +229,7 @@ public partial class Main : Node
             try
             {
                 var folder = System.IO.Path.Combine(AppPaths.AircraftRoot, args[render + 1]);
-                using var session = new FlightSession(AircraftLoader.Load(folder), _services.Settings.Conditions with { WindSpeed = 0, Turbulence = 0 });
+                using var session = new FlightSession(AircraftLoader.Load(folder), _services.Settings.Conditions with { WindSpeed = 0, Turbulence = 0 }, FieldCatalog.Load(_services.Settings.LastField));
                 var samples = OfflineAudio.Render(session, new AircraftSound(session, SoundSpecLoader.Load(folder)), 20, 44100, OfflineAudio.TakeoffScript);
                 using (var file = System.IO.File.Create(args[render + 2])) WavWriter.Write(file, samples, 44100);
                 GD.Print($"SIMLAB_AUDIO_OK path={args[render + 2]} samples={samples.Length}");
@@ -276,15 +279,16 @@ public partial class Main : Node
     {
         var preview = new Node3D();
         Switch(preview);
-        var terrain = new ClubFieldTerrain(TreePlanter.Plant(FlightSession.TreeSeed));
-        FieldBuilder.Build(preview, terrain, _services.Settings.Conditions);
-        var eye = ClubField.PilotPosition.WorldToGodot() + new Vector3(0, (float)ClubField.EyeHeight, 0);
+        var map = FieldCatalog.Load(_services.Settings.LastField);
+        MapBuilder.Build(preview, map, _services.Settings.Conditions);
+        var pilot = map.Layout.PilotPosition;
+        var eye = new Vec3(pilot.X, pilot.Y, map.Terrain.Height(pilot.X, pilot.Y) + map.Layout.EyeHeight).WorldToGodot();
         var camera = new Camera3D { Current = true, Fov = (float)_services.Settings.FovDeg, Far = 4000f };
         preview.AddChild(camera);
         // Aim between the runway's east half and the windsock so the screenshot keeps both in frame
         // (the windsock sits close to the pilot, well off the runway's own axis).
-        var runwayEastQuarter = new Vector3((float)(ClubField.RunwayLength / 4), 4f, 0f);
-        var windsockAim = ClubField.WindsockPosition.WorldToGodot() + new Vector3(0, 3f, 0);
+        var runwayEastQuarter = new Vec3(map.Layout.RunwayCentre.X + map.Layout.RunwayLength / 4, map.Layout.RunwayCentre.Y, 0).WorldToGodot() + new Vector3(0, 4f, 0);
+        var windsockAim = map.Layout.WindsockPosition.WorldToGodot() + new Vector3(0, 3f, 0);
         camera.LookAtFromPosition(eye, (runwayEastQuarter + windsockAim) / 2f, Vector3.Up);
         CaptureAfterFrames(20, path);
     }
@@ -292,10 +296,10 @@ public partial class Main : Node
     void PreviewAircraft(string aircraftId, string path)
     {
         var definition = AircraftLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId));
-        var session = new FlightSession(definition, _services.Settings.Conditions);
+        var session = new FlightSession(definition, _services.Settings.Conditions, FieldCatalog.Load(_services.Settings.LastField));
         var preview = new Node3D();
         Switch(preview);
-        FieldBuilder.Build(preview, session.Terrain, _services.Settings.Conditions);
+        MapBuilder.Build(preview, session.Map, _services.Settings.Conditions);
         var visual = new AircraftVisual();
         preview.AddChild(visual);
         visual.Build(AircraftMeshBuilder.Build(definition, session.Aircraft.Aero.Segments));

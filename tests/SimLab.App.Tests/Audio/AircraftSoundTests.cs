@@ -1,4 +1,5 @@
 using SimLab.App.Audio;
+using SimLab.App.Maps;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 using SimLab.Flight.Controls;
@@ -10,7 +11,7 @@ namespace SimLab.App.Tests.Audio;
 
 public class AircraftSoundTests
 {
-    static FlightSession Session(string id) => new(TestData.Aircraft(id), new FlightConditions(WindSpeed: 0));
+    static FlightSession Session(string id) => new(TestData.Aircraft(id), new FlightConditions(WindSpeed: 0), FieldCatalog.Load("club"));
 
     static SoundFrame Run(FlightSession session, AircraftSound sound, double seconds, ControlInputs input)
     {
