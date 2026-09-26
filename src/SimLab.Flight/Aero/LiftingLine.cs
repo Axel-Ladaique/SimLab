@@ -5,8 +5,9 @@ using SimLab.Flight.Numerics;
 namespace SimLab.Flight.Aero;
 
 /// <param name="Velocity">
-/// Velocity of the strip's three-quarter-chord point relative to the air, body axes (m/s): freestream, rotation and prop
-/// wash, without the lifting line's own induced flow (the <see cref="AeroContext"/> convention).
+/// Onset velocity of the strip's three-quarter-chord point relative to the air, body axes (m/s): freestream and rotation,
+/// without the lifting line's own induced flow (the <see cref="AeroContext"/> convention). The prop wash is not part of it:
+/// <see cref="SurfaceAeroModel"/> applies the slipstream strip-wise, outside the lifting line.
 /// </param>
 /// <param name="AlphaOffset">Angle added to the section angle of attack (rad): the flap term.</param>
 /// <param name="GroundFactor">Factor on the induced flow the strip receives (McCormick ground effect, 1 out of ground effect).</param>
@@ -20,7 +21,11 @@ public readonly record struct StripState(Vec3 Velocity, double AlphaOffset, doub
 /// Each strip is a horseshoe vortex: a bound segment on its quarter-chord line and two trailing legs to +∞ along body +x.
 /// The section angle of attack is taken at the three-quarter-chord control point, where every horseshoe's flow is summed
 /// and the two-dimensional self-induction of the strip's own bound vortex, a normal flow Γ/(π cₙ), is removed because the
-/// polar already contains it. Γᵢ = ½ vᵢ cₙᵢ clᵢ with cₙ = c·cosΛ, the chord normal to the bound vortex. The equations are
+/// polar already contains it. Γᵢ = ½ vᵢ cₙᵢ clᵢ with cₙ = c·cosΛ, the chord normal to the bound vortex, and vᵢ the strip's
+/// onset in-plane speed, as in Prandtl's lifting line: the induced flow sets the angle of attack only, so Γ stays bounded
+/// by ½ v cₙ max|cl| even where the induced flow exceeds the onset flow (with v taken from the flow including the induced
+/// velocity, v ∝ |w| ∝ Γ fed back on itself and diverged in a static prop hang). The Reynolds number also uses the onset
+/// speed. The equations are
 /// solved by Newton's method with a constant Jacobian, I − diag(½ cₙ a)·N, factored once. Tail strips see the wing
 /// strips' circulation through a first-order lag of time constant (tail x − wing x) / V: the downwash takes that long to
 /// travel to the tail.
@@ -36,8 +41,8 @@ public sealed class LiftingLine
 
     public const int MaxIterations = 8;
 
-    /// <summary>Convergence when max |residual| ≤ Tolerance · max(1, max |Γ|).</summary>
-    public const double Tolerance = 1e-9;
+    /// <summary>Convergence when max |residual| ≤ Tolerance · max(1, max |Γ|) (relative to the largest circulation).</summary>
+    public const double Tolerance = 1e-6;
 
     const double MinSpeed = 0.1;
     static readonly double SlopeProbe = Angle.Rad(2);
@@ -251,10 +256,11 @@ public sealed class LiftingLine
             var s = _segments[i];
             var w = (Induced(_wControl, i) + s.FlowNormalAxis * (_gamma[i] / (Math.PI * _normalChord[i]))) * _groundFactor[i];
             _inducedControl[i] = w;
-            var u = strips[i].Velocity - w;
-            double uc = Vec3.Dot(u, s.FlowChordAxis), un = Vec3.Dot(u, s.FlowNormalAxis);
-            double v = Math.Sqrt(uc * uc + un * un);
-            double alpha = Math.Atan2(-un, uc) + strips[i].AlphaOffset;
+            var onset = strips[i].Velocity;
+            double oc = Vec3.Dot(onset, s.FlowChordAxis), on = Vec3.Dot(onset, s.FlowNormalAxis);
+            double v = Math.Sqrt(oc * oc + on * on);
+            var u = onset - w;
+            double alpha = Math.Atan2(-Vec3.Dot(u, s.FlowNormalAxis), Vec3.Dot(u, s.FlowChordAxis)) + strips[i].AlphaOffset;
             double reynolds = density * v * s.Chord / Isa.DynamicViscosity;
             double cl = s.Airfoil.Evaluate(alpha, reynolds).Cl;
             _residual[i] = 0.5 * v * _normalChord[i] * cl - _gamma[i];

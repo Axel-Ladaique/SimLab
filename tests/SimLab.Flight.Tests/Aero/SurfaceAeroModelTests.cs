@@ -155,6 +155,19 @@ public class SurfaceAeroModelTests
     }
 
     [Fact]
+    public void Prop_wash_does_not_feed_the_lifting_line()
+    {
+        // The lifting line carries the freestream-driven span loading; the slipstream acts strip-wise. The prop axis is
+        // tilted 5° nose down so the jet meets the wing at 5° angle of attack.
+        var model = WingOnly();
+        var axis = new Vec3(-Math.Cos(Angle.Rad(5)), 0, -Math.Sin(Angle.Rad(5)));
+        var wash = PropWash.Create(new Vec3(-0.3, 0, 0), axis, 0.15, 20, 0, 0, 1.225, 1);
+        var load = model.Evaluate(Context(Vec3.Zero, wash: wash));
+        for (int i = 0; i < model.Line.Count; i++) Assert.Equal(0, model.Line.Circulation(i));
+        Assert.True(load.Force.Z > 0, $"the blown wing still lifts: {load.Force.Z:F3}");
+    }
+
+    [Fact]
     public void Prop_wash_blows_over_a_stationary_tail()
     {
         var model = new SurfaceAeroModel([Stab], TestAirfoils.Map(), [Elevator], []);

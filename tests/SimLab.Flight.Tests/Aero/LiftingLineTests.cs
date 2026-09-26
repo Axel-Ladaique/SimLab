@@ -107,6 +107,33 @@ public class LiftingLineTests
     }
 
     [Fact]
+    public void Circulation_stays_bounded_when_the_induced_flow_exceeds_the_onset_flow()
+    {
+        // A static prop hang in miniature: a fast band at the wing root, near-still air elsewhere. With Γ = ½ v cₙ cl and
+        // v taken from the flow including the induced velocity, v ∝ |w| ∝ Γ feeds back and diverges; with the onset speed,
+        // Γ is bounded by ½ v_onset cₙ max|cl|. A 0.4 rad flap term on every strip (a deflected control, as in the full-aileron
+        // hover where the loop was found) supplies the lift that the feedback needs.
+        var strips = Strips(Rectangular, Stab);
+        var line = new LiftingLine(strips);
+        var states = new StripState[strips.Count];
+        double a = Angle.Rad(10);
+        for (int i = 0; i < strips.Count; i++)
+        {
+            double speed = strips[i].Role == SurfaceRole.Wing && strips[i].SpanFraction < 0.3 ? 20 : 0.3;
+            states[i] = new StripState(new Vec3(-speed * Math.Cos(a), 0, -speed * Math.Sin(a)), 0.4, 1);
+        }
+        for (int k = 0; k < 500; k++) line.Solve(states, 1.225);
+        for (int i = 0; i < strips.Count; i++)
+        {
+            double speed = states[i].Velocity.Length;
+            double bound = 0.5 * speed * line.NormalChord(i) * 2.5;
+            double gamma = line.Circulation(i);
+            Assert.True(double.IsFinite(gamma), $"Γ {i} not finite");
+            Assert.True(Math.Abs(gamma) <= bound, $"strip {i}: |Γ| {Math.Abs(gamma):G4} > {bound:G4}");
+        }
+    }
+
+    [Fact]
     public void Reset_clears_the_circulation()
     {
         var strips = Strips(Rectangular);

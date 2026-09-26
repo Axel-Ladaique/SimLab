@@ -28,6 +28,7 @@ public sealed class SurfaceAeroModel : IAeroModel
     readonly List<ControlSurfaceSpec> _assigned = [];
     readonly LiftingLine _line;
     readonly StripState[] _states;
+    readonly Vec3[] _blown;
     readonly double[] _meanSquare;
     double _lastAirspeed;
 
@@ -51,6 +52,7 @@ public sealed class SurfaceAeroModel : IAeroModel
 
         _line = new LiftingLine(_segments);
         _states = new StripState[_segments.Length];
+        _blown = new Vec3[_segments.Length];
         _meanSquare = new double[_segments.Length];
     }
 
@@ -80,14 +82,18 @@ public sealed class SurfaceAeroModel : IAeroModel
             var seg = _segments[i];
             // The rotation is taken at the three-quarter-chord point (Pistolesi): a section pitching about its quarter
             // chord lifts as if at the angle of attack seen there. It is also the lifting line's control point.
-            var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, LiftingLine.ControlPoint(seg));
+            var onset = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, LiftingLine.ControlPoint(seg));
+            // The lifting line sees the onset flow only; the prop wash is applied strip-wise on top of its induced flow.
+            // The lifting line carries the freestream-driven span loading, the slipstream stays strip theory: a blown
+            // band in a jet is not an isolated low-aspect-ratio wing (static deflected-slipstream tests, NACA TR 1263,
+            // turn the jet far more than such a wing would).
             // Mean in-plane speed squared over the strip; differs from v² only where the prop wash varies across it.
             double meanSquare = -1;
-            if (blown) u = Blow(i, u, seg.FlowChordAxis, seg.FlowNormalAxis, out meanSquare);
+            _blown[i] = blown ? Blow(i, onset, seg.FlowChordAxis, seg.FlowNormalAxis, out meanSquare) : onset;
             _meanSquare[i] = meanSquare;
             double height = ctx.HeightAboveGround + Vec3.Dot(seg.Position, ctx.UpBody);
             double flap = Flap(seg, ctx, out _);
-            _states[i] = new StripState(u, seg.FlapEffectiveness * flap, InducedFlow.GroundEffectFactor(height, WingSpan));
+            _states[i] = new StripState(onset, seg.FlapEffectiveness * flap, InducedFlow.GroundEffectFactor(height, WingSpan));
         }
 
         _line.Solve(_states, ctx.Density);
@@ -99,28 +105,31 @@ public sealed class SurfaceAeroModel : IAeroModel
             var seg = _segments[i];
             var c = seg.FlowChordAxis;
             var n = seg.FlowNormalAxis;
-            var u = _states[i].Velocity;
+            // Onset flow with the prop wash (strip theory); the lifting line's induced flow is subtracted below.
+            var u = _blown[i];
+            double ubc = Vec3.Dot(u, c), ubn = Vec3.Dot(u, n);
+            double vBlown = Math.Sqrt(ubc * ubc + ubn * ubn);
 
             // Section angle of attack at the control point, with the lifting line's induced flow.
             var uSection = u - _line.InducedAtControlPoint(i);
             double sc = Vec3.Dot(uSection, c), sn = Vec3.Dot(uSection, n);
-            double vSection = Math.Sqrt(sc * sc + sn * sn);
-            if (vSection < 0.1) continue;
+            if (vBlown < 0.1 || sc * sc + sn * sn < 0.01) continue;
             double alphaSection = Math.Atan2(-sn, sc);
-            double reynolds = ctx.Density * vSection * seg.Chord / Isa.DynamicViscosity;
+            double reynolds = ctx.Density * vBlown * seg.Chord / Isa.DynamicViscosity;
             var coeff = seg.Airfoil.Evaluate(alphaSection + _states[i].AlphaOffset, reynolds);
             if (seg.Role == SurfaceRole.HorizontalTail)
             {
-                downwash += Math.Atan2(-Vec3.Dot(u, n), Vec3.Dot(u, c)) - alphaSection;
+                downwash += Math.Atan2(-ubn, ubc) - alphaSection;
                 tailStrips++;
             }
 
-            // Lift and drag directions and the dynamic pressure from the flow at the bound vortex.
+            // Lift and drag directions from the flow at the bound vortex; the dynamic pressure from the onset speed with the
+            // wash, as the circulation (the induced flow turns the force, it does not feed its magnitude).
             var uForce = u - _line.InducedAtBoundVortex(i);
             double uc = Vec3.Dot(uForce, c), un = Vec3.Dot(uForce, n);
             double v = Math.Sqrt(uc * uc + un * un);
             if (v < 0.1) continue;
-            double q = 0.5 * ctx.Density * Math.Max(v * v, _meanSquare[i]);
+            double q = 0.5 * ctx.Density * Math.Max(vBlown * vBlown, _meanSquare[i]);
             double flap = Flap(seg, ctx, out double delta);
             double sinDelta = Math.Sin(delta);
             double cl = coeff.Cl;
@@ -133,7 +142,7 @@ public sealed class SurfaceAeroModel : IAeroModel
             force += f;
             // The linear normal wash of a pitching section is a parabolic camber: ΔCm_c/4 = −(π/4)·q c / (2V) (thin airfoil).
             double pitchRate = Vec3.Dot(ctx.AngularVelocityBody, seg.PitchAxis);
-            double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap - Math.PI / 4 * pitchRate * seg.Chord / (2 * v);
+            double cm = coeff.Cm + seg.FlapMomentEffectiveness * flap - Math.PI / 4 * pitchRate * seg.Chord / (2 * vBlown);
             moment += Vec3.Cross(seg.Position, f) + seg.PitchAxis * (qa * seg.Chord * cm);
             // The trailing legs over the chord carry the circulation in the local flow: equal and opposite forces at the
             // strip's two ends, a couple. In sideslip it is the lift-dependent part of the dihedral effect.
