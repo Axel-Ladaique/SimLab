@@ -23,13 +23,53 @@ public static class MountainMap
         SkyTop: new Rgb(0.22f, 0.42f, 0.78f), SkyHorizon: new Rgb(0.62f, 0.74f, 0.88f),
         GroundHorizon: new Rgb(0.30f, 0.34f, 0.30f), GroundBottom: new Rgb(0.10f, 0.12f, 0.10f), FogDensity: 0.00005);
 
+    /// <summary>The chairlift's line, from the lake's east shore up to the knob north of the strip.</summary>
+    public static readonly (double X, double Y) LiftBottom = (-930, 560), LiftTop = (-150, 950);
+
+    /// <summary>The switchback road, shared by the relief, the props and the keep-out.</summary>
+    public static MountainRoad Road { get; } = new();
+
+    const double StripMargin = 25, PilotClearing = 60, BeatDepth = 250, BeatHalfWidth = 350;
+    const double RoadClearance = 8, LakeClearance = 5, StreamClearance = 4, LiftClearance = 12;
+
     public static FieldMap Create()
     {
-        var road = new MountainRoad();
-        return new FieldMap(Id, "FIELD_MOUNTAIN", MountainRelief.Build(road), (_, _) => SurfaceWeights.Only(SurfaceKind.Grass),
-            Layout, Ambience, [], [], [MountainRelief.Lake])
+        var grid = MountainRelief.Build(Road);
+        var props = new List<Prop>();
+        props.AddRange(MountainPlanting.Plant(Seed, grid, Road));
+        props.AddRange(MountainFurniture.Place(grid, Road));
+        return new FieldMap(Id, "FIELD_MOUNTAIN", grid, (_, _) => SurfaceWeights.Only(SurfaceKind.Grass),
+            Layout, Ambience, props, [], [MountainRelief.Lake])
         {
             DatumElevationM = DatumElevationM,
         };
+    }
+
+    /// <summary>
+    /// Kept clear of props (but for the furniture placed there on purpose): the strip with 25 m margins, the pilot's
+    /// 60 m clearing, the road, the lake shore, the stream banks, the chairlift corridor and, for anything
+    /// <paramref name="tall"/> (over 2 m), the soaring beat on the face in front of the pilot.
+    /// </summary>
+    public static bool KeepOut(double x, double y, bool tall = true)
+    {
+        var (cx, cy) = (Layout.RunwayCentre.X, Layout.RunwayCentre.Y);
+        if (Math.Abs(x - cx) < Layout.RunwayLength / 2 + StripMargin && Math.Abs(y - cy) < Layout.RunwayWidth / 2 + StripMargin) return true;
+        var pilot = Layout.PilotPosition;
+        if ((x - pilot.X) * (x - pilot.X) + (y - pilot.Y) * (y - pilot.Y) < PilotClearing * PilotClearing) return true;
+        double crest = MountainRelief.CrestX(y);
+        if (tall && x <= crest && x >= crest - BeatDepth && Math.Abs(y - pilot.Y) < BeatHalfWidth) return true;
+        if (MountainRelief.OutsideLake(x, y) < LakeClearance) return true;
+        if (MountainRelief.StreamDistance(x, y) < StreamClearance) return true;
+        if (LiftDistance(x, y) < LiftClearance) return true;
+        return Road.Nearest(x, y, RoadClearance) is not null;
+    }
+
+    /// <summary>Horizontal distance to the chairlift's line.</summary>
+    public static double LiftDistance(double x, double y)
+    {
+        double ex = LiftTop.X - LiftBottom.X, ey = LiftTop.Y - LiftBottom.Y;
+        double t = Math.Clamp(((x - LiftBottom.X) * ex + (y - LiftBottom.Y) * ey) / (ex * ex + ey * ey), 0, 1);
+        double dx = LiftBottom.X + t * ex - x, dy = LiftBottom.Y + t * ey - y;
+        return Math.Sqrt(dx * dx + dy * dy);
     }
 }

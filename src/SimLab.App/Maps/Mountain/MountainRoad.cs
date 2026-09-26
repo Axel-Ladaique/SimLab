@@ -1,3 +1,5 @@
+using SimLab.Flight.Geometry;
+
 namespace SimLab.App.Maps.Mountain;
 
 /// <summary>
@@ -53,7 +55,12 @@ public sealed class MountainRoad
             for (int i = i0; i <= i1; i++)
                 (_cells[j * _cols + i] ??= []).Add(k);
         }
+        StreamCrossing = Crossing(MountainRelief.Stream);
     }
+
+    /// <summary>Where the road crosses <see cref="MountainRelief.Stream"/>: the point, the road's heading there (a
+    /// <see cref="PlanarYaw"/> along the road) and the road surface height.</summary>
+    public (double X, double Y, double YawDeg, double Profile) StreamCrossing { get; }
 
     /// <summary>The centre line, a point every <see cref="SampleStep"/> m from the valley to the car park.</summary>
     public IReadOnlyList<(double X, double Y)> Path => _path;
@@ -123,6 +130,23 @@ public sealed class MountainRoad
             found = true;
         }
         return found ? (Math.Sqrt(bestD2), bestProfile) : null;
+    }
+
+    (double X, double Y, double YawDeg, double Profile) Crossing(IReadOnlyList<(double X, double Y)> line)
+    {
+        for (int k = 0; k + 1 < _path.Length; k++)
+        for (int m = 0; m + 1 < line.Count; m++)
+        {
+            var (a, b) = (_path[k], _path[k + 1]);
+            var (c, d) = (line[m], line[m + 1]);
+            double ex = b.X - a.X, ey = b.Y - a.Y, fx = d.X - c.X, fy = d.Y - c.Y;
+            double den = ex * fy - ey * fx;
+            if (Math.Abs(den) < 1e-12) continue;
+            double t = ((c.X - a.X) * fy - (c.Y - a.Y) * fx) / den, u = ((c.X - a.X) * ey - (c.Y - a.Y) * ex) / den;
+            if (t < 0 || t > 1 || u < 0 || u > 1) continue;
+            return (a.X + t * ex, a.Y + t * ey, PlanarYaw.Of(ex, ey), _profile[k] + t * (_profile[k + 1] - _profile[k]));
+        }
+        throw new InvalidOperationException("The road does not cross the line.");
     }
 
     int Col(double x) => Math.Clamp((int)((x - _minX) / CellSize), 0, _cols - 1);

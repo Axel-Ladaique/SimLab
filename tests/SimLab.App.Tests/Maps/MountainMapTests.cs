@@ -1,5 +1,6 @@
 using SimLab.App.Maps;
 using SimLab.App.Maps.Mountain;
+using SimLab.Flight.Geometry;
 
 namespace SimLab.App.Tests.Maps;
 
@@ -91,7 +92,9 @@ public class MountainMapTests
     public void Road_is_drivable()
     {
         var road = new MountainRoad();
-        var samples = Along(road.Path, 5).ToList();
+        // The bridge deck carries the road over the re-cut stream channel; its own test checks it.
+        var crossing = road.StreamCrossing;
+        var samples = Along(road.Path, 5).Where(s => Distance(s.X, s.Y, crossing.X, crossing.Y) > 8).ToList();
         for (int k = 1; k < samples.Count; k++)
         {
             var (x0, y0, _, _) = samples[k - 1];
@@ -153,6 +156,134 @@ public class MountainMapTests
         Assert.Equal(270, heading);
         double dx = x - layout.PilotPosition.X, dy = y - layout.PilotPosition.Y;
         Assert.True(Math.Sqrt(dx * dx + dy * dy) < 5);
+    }
+
+    static double Distance(double x0, double y0, double x1, double y1) => Math.Sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
+
+    static double Slope(double x, double y)
+    {
+        var n = Mountain.Terrain.Normal(x, y);
+        return Math.Sqrt(1 - n.Z * n.Z) / n.Z;
+    }
+
+    /// <summary>Furniture allowed in the keep-out: the lift and its stations, the bridge and the parked cars.</summary>
+    static bool Exempt(Prop p) => p is Cableway or Bridge or Car
+        || (p is Building && (Distance(p.Base.X, p.Base.Y, MountainMap.LiftBottom.X, MountainMap.LiftBottom.Y) < 20
+                              || Distance(p.Base.X, p.Base.Y, MountainMap.LiftTop.X, MountainMap.LiftTop.Y) < 20));
+
+    static double TopAboveBase(Prop p) => p switch
+    {
+        ConiferTree t => t.Height,
+        Boulder b => 0.75 * b.Height,
+        Building b => b.TotalHeight,
+        _ => 0,
+    };
+
+    [Fact]
+    public void Props_are_deterministic()
+    {
+        var again = MountainMap.Create();
+        Assert.Equal(Mountain.Props.Count, again.Props.Count);
+        for (int i = 0; i < again.Props.Count; i++)
+            Assert.True(Mountain.Props[i].Parts().SequenceEqual(again.Props[i].Parts()), $"prop {i} differs");
+    }
+
+    [Fact]
+    public void Forest_has_the_right_size_and_stays_off_steep_ground()
+    {
+        var trees = Mountain.Props.OfType<ConiferTree>().ToList();
+        Assert.InRange(trees.Count, 5000, 8000);
+        foreach (var t in trees)
+        {
+            Assert.True(Slope(t.Base.X, t.Base.Y) <= 0.78, $"tree on slope {Slope(t.Base.X, t.Base.Y):F2} at ({t.Base.X:F0}, {t.Base.Y:F0})");
+            Assert.InRange(t.Height, 12, 28);
+        }
+        Assert.InRange(MountainPlanting.ForestDensity(trees[0].Base.X, trees[0].Base.Y), 0, 1);
+    }
+
+    [Fact]
+    public void Boulders_lie_below_the_cliffs_and_on_the_meadows()
+    {
+        var boulders = Mountain.Props.OfType<Boulder>().ToList();
+        int face = boulders.Count(b => b.Base.X < MountainRelief.CrestX(b.Base.Y));
+        Assert.InRange(face, 150, 400);
+        Assert.InRange(boulders.Count - face, 20, 40);
+        Assert.All(boulders, b => Assert.InRange(b.Radius, 0.8, 4));
+    }
+
+    [Fact]
+    public void No_prop_in_the_keep_out_the_lake_or_on_the_road()
+    {
+        var road = new MountainRoad();
+        foreach (var p in Mountain.Props)
+        {
+            var (x, y) = (p.Base.X, p.Base.Y);
+            Assert.Null(Mountain.Terrain.WaterSurface(x, y));
+            if (Exempt(p)) continue;
+            Assert.False(MountainMap.KeepOut(x, y, tall: TopAboveBase(p) > 2), $"{p.GetType().Name} in the keep-out at ({x:F0}, {y:F0})");
+            Assert.True(road.DistanceTo(x, y) > 8, $"{p.GetType().Name} on the road at ({x:F0}, {y:F0})");
+        }
+    }
+
+    [Fact]
+    public void Every_prop_stands_on_the_ground()
+    {
+        foreach (var p in Mountain.Props)
+        {
+            if (p is Bridge) continue;
+            if (p is Building b)
+            {
+                // Set at its lowest corner: the walls reach the ground everywhere.
+                foreach (var (cx, cy) in new[] { (1, 1), (1, -1), (-1, 1), (-1, -1) })
+                {
+                    var (wx, wy) = PlanarYaw.ToWorld(cx * b.Length / 2, cy * b.Width / 2, b.YawDeg);
+                    Assert.True(b.Base.Z <= H(b.Base.X + wx, b.Base.Y + wy) + 1e-6, $"building floats at ({b.Base.X:F0}, {b.Base.Y:F0})");
+                }
+                continue;
+            }
+            var bases = p is Cableway lift ? lift.Pylons : [p.Base];
+            foreach (var q in bases)
+                Assert.True(Math.Abs(q.Z - H(q.X, q.Y)) < 0.01, $"{p.GetType().Name} base {q.Z:F2} vs ground {H(q.X, q.Y):F2} at ({q.X:F0}, {q.Y:F0})");
+        }
+    }
+
+    [Fact]
+    public void Chairlift_climbs_to_the_knob_clear_of_the_pilot_and_the_ground()
+    {
+        var lift = Mountain.Props.OfType<Cableway>().Single();
+        Assert.True(lift.Pylons.Count >= 5, $"{lift.Pylons.Count} pylons");
+        var pilot = MountainMap.Layout.PilotPosition;
+        foreach (var q in lift.Pylons) Assert.True(Distance(q.X, q.Y, pilot.X, pilot.Y) > 350, $"pylon at ({q.X:F0}, {q.Y:F0})");
+        for (int span = 0; span + 1 < lift.Pylons.Count; span++)
+        foreach (int side in new[] { -1, 1 })
+        for (double t = 0; t <= 1; t += 0.01)
+        {
+            var c = lift.CablePoint(span, side, t);
+            Assert.True(c.Z - H(c.X, c.Y) > 3, $"cable {c.Z - H(c.X, c.Y):F1} m above ground at ({c.X:F0}, {c.Y:F0})");
+        }
+        Assert.Equal(2, Mountain.Props.OfType<Building>().Count(Exempt));
+    }
+
+    [Fact]
+    public void Hamlet_has_two_chalets_a_hut_and_two_cars()
+    {
+        var steep = Mountain.Props.OfType<Building>().Where(b => b.SteepRoof).ToList();
+        Assert.Equal(2, steep.Count(b => b.Length == 12 && b.Width == 9 && b.WallHeight == 5));
+        Assert.Equal(1, steep.Count(b => b.Length == 6 && b.Width == 5 && b.WallHeight == 3));
+        Assert.All(steep, b => Assert.InRange(b.Base.X, 190, 310));
+        Assert.Equal(2, Mountain.Props.OfType<Car>().Count());
+    }
+
+    [Fact]
+    public void Bridge_carries_the_road_over_the_stream()
+    {
+        var road = new MountainRoad();
+        var crossing = road.StreamCrossing;
+        var bridge = Mountain.Props.OfType<Bridge>().Single();
+        Assert.True(Distance(bridge.Base.X, bridge.Base.Y, crossing.X, crossing.Y) < 0.01);
+        Assert.Equal(road.ProfileHeight(crossing.X, crossing.Y), bridge.Base.Z, 6);
+        // The channel is dug again under the deck.
+        Assert.True(H(crossing.X, crossing.Y) < bridge.Base.Z - 1.5, $"channel {H(crossing.X, crossing.Y):F2} under deck {bridge.Base.Z:F2}");
     }
 
     /// <summary>Points every <paramref name="step"/> metres along the polyline, with the unit direction there.</summary>

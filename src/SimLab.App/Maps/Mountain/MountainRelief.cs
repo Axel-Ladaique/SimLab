@@ -1,3 +1,5 @@
+using SimLab.Flight.Geometry;
+
 namespace SimLab.App.Maps.Mountain;
 
 /// <summary>
@@ -19,6 +21,12 @@ public static class MountainRelief
     /// <summary>Covers the shore band (r ≤ 1.15) even along the long axis, 0.15 × 225 = 33.75 m out.</summary>
     const double LakeBlend = 35;
     const double StreamDepth = 2;
+
+    /// <summary>The road bridge's deck over the stream (m); under it the channel is dug again below the road.</summary>
+    public const double BridgeLength = 12, BridgeWidth = 5;
+
+    /// <summary>Beyond this distance from the crossing the road's banks no longer fill the stream channel.</summary>
+    const double BridgeReach = 60;
 
     /// <summary>Cut and fill banks rise at most this steeply (45°) from the road bed's edge…</summary>
     const double BankSlope = 1.0;
@@ -71,7 +79,8 @@ public static class MountainRelief
     }
 
     /// <summary>The map's height grid: the relief sampled every <see cref="MountainMap.GridStep"/> m, then the
-    /// stream carved, the lake dug, the road cut and filled, and the strip and pilot area levelled.</summary>
+    /// stream carved, the lake dug, the road cut and filled (the stream channel dug again under the bridge), and the
+    /// strip and pilot area levelled.</summary>
     public static HeightGrid Build(MountainRoad road)
     {
         const double half = MountainMap.HalfSize, step = MountainMap.GridStep;
@@ -89,7 +98,10 @@ public static class MountainRelief
                 h = CarveStream(x, y, h);
                 h = DigLake(x, y, h);
                 if (road.Nearest(x, y, roadCore + BankReach) is { } near)
+                {
                     h = near.Distance <= roadCore ? near.Profile : CutAndFill(h, road.Within(x, y, roadCore + BankReach), roadCore);
+                    h = UnderBridge(x, y, h, road.StreamCrossing, onRoad: near.Distance <= roadCore);
+                }
                 h = Level(x, y, h);
                 heights[j * count + i] = (float)h;
             }
@@ -158,11 +170,42 @@ public static class MountainRelief
         return low > high ? (low + high) / 2 : Math.Clamp(natural, low, high);
     }
 
-    static double CarveStream(double x, double y, double h)
+    /// <summary>
+    /// Near the road's stream crossing, the channel cut again through the road's banks and, within the deck's length,
+    /// under the road bed too, below both the natural ground and the road surface. Off the deck the bed stays whole.
+    /// </summary>
+    static double UnderBridge(double x, double y, double h, (double X, double Y, double YawDeg, double Profile) crossing, bool onRoad)
+    {
+        double dx = x - crossing.X, dy = y - crossing.Y;
+        if (dx * dx + dy * dy > BridgeReach * BridgeReach) return h;
+        double cut = StreamCut(StreamDistance(x, y));
+        if (cut <= 0) return h;
+        var (along, _) = PlanarYaw.ToLocal(dx, dy, crossing.YawDeg);
+        if (onRoad && Math.Abs(along) > BridgeLength / 2) return h;
+        return Math.Min(h, Math.Min(Height(x, y), crossing.Profile) - cut);
+    }
+
+    static double CarveStream(double x, double y, double h) => h - StreamCut(StreamDistance(x, y));
+
+    /// <summary>Distance to the stream's centre line.</summary>
+    public static double StreamDistance(double x, double y)
     {
         double d = double.PositiveInfinity;
         for (int k = 1; k < Stream.Count; k++) d = Math.Min(d, SegmentDistance(x, y, Stream[k - 1], Stream[k]));
-        return d > 7.5 ? h : h - StreamDepth * (1 - SmoothStep((d - 1.5) / 6));
+        return d;
+    }
+
+    /// <summary>The channel's depth at <paramref name="d"/> m from the stream's centre line: flat 1.5 m either side,
+    /// easing out to 0 at 7.5 m.</summary>
+    static double StreamCut(double d) => d > 7.5 ? 0 : StreamDepth * (1 - SmoothStep((d - 1.5) / 6));
+
+    /// <summary>Horizontal distance outside the lake's shore, measured along the ray from its centre; 0 or less
+    /// inside.</summary>
+    public static double OutsideLake(double x, double y)
+    {
+        double dx = x - LakeX, dy = y - LakeY;
+        double r = Math.Sqrt((dx / LakeSemiX) * (dx / LakeSemiX) + (dy / LakeSemiY) * (dy / LakeSemiY));
+        return r < 1e-9 ? -LakeSemiY : Math.Sqrt(dx * dx + dy * dy) * (1 - 1 / r);
     }
 
     /// <summary>Inside the shore a bowl 2 m below the level at the edge and 15 m at the centre; outside it the ground
@@ -173,7 +216,7 @@ public static class MountainRelief
         double r2 = (dx / LakeSemiX) * (dx / LakeSemiX) + (dy / LakeSemiY) * (dy / LakeSemiY);
         double level = MountainMap.LakeLevel;
         if (r2 <= 1) return level - 2 - 13 * (1 - r2);
-        double r = Math.Sqrt(r2), outside = Math.Sqrt(dx * dx + dy * dy) * (1 - 1 / r);
+        double outside = OutsideLake(x, y);
         if (outside >= LakeBlend) return h;
         double bank = level + 0.3;
         return Math.Max(bank + (h - bank) * SmoothStep(outside / LakeBlend), bank);
