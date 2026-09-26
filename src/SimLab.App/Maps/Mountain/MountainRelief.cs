@@ -120,15 +120,13 @@ public static class MountainRelief
     /// </summary>
     static double WestFace(double below, double x, double y)
     {
-        double strength = Math.Clamp(0.6 + 0.9 * Noise.Value(3.7, y / 350), 0, 1);
-        double roadSection = SmoothStep((y + 1130) / 150) * (1 - SmoothStep((y + 480) / 150));
-        strength *= 1 - 0.85 * roadSection;
+        var (strength, roadSection) = BandStrength(y);
 
         double bandsTotal = 0, bandsDrop = 0;
         for (int k = 0; k < Bands.Length; k++)
         {
-            var (at, height, width) = Bands[k];
-            at += 25 * Noise.Value(17.3 * (k + 1), y / 250);
+            var (_, height, width) = Bands[k];
+            double at = BandCentre(k, y);
             bandsTotal += strength * height;
             bandsDrop += strength * height * SmoothStep((below - at + width / 2) / width);
         }
@@ -139,6 +137,40 @@ public static class MountainRelief
         h += SmoothStep(below / FaceLength) * (5 - 0.0065 * Math.Max(0, 500 - y));
         return h;
     }
+
+    /// <summary>
+    /// How much the cliff bands show at (x, y), each 0…1 and scaled by the bands' strength there: <c>Rock</c> on the
+    /// bands themselves (fading over 6 m beyond their width), <c>Scree</c> in a 20–60 m apron below each band's foot
+    /// (its length varying along the crest).
+    /// </summary>
+    public static (double Rock, double Scree) CliffBands(double x, double y)
+    {
+        double below = CrestX(y) - x;
+        if (below <= 0) return (0, 0);
+        double strength = BandStrength(y).Strength;
+        if (strength <= 0) return (0, 0);
+        double rock = 0, scree = 0;
+        for (int k = 0; k < Bands.Length; k++)
+        {
+            double at = BandCentre(k, y), width = Bands[k].Width;
+            rock = Math.Max(rock, 1 - SmoothStep((Math.Abs(below - at) - width / 2) / 6));
+            double foot = below - (at + width / 2), apron = 40 + 20 * Noise.Value(29.1 * (k + 1), y / 180);
+            scree = Math.Max(scree, SmoothStep((foot + 5) / 10) * (1 - SmoothStep((foot - apron) / 15)));
+        }
+        return (strength * rock, strength * scree);
+    }
+
+    /// <summary>The cliff bands' strength along the crest (0…1), softened where the road climbs, and how far into the
+    /// road's section of the face y lies (0…1).</summary>
+    static (double Strength, double RoadSection) BandStrength(double y)
+    {
+        double strength = Math.Clamp(0.6 + 0.9 * Noise.Value(3.7, y / 350), 0, 1);
+        double roadSection = SmoothStep((y + 1130) / 150) * (1 - SmoothStep((y + 480) / 150));
+        return (strength * (1 - 0.85 * roadSection), roadSection);
+    }
+
+    /// <summary>Distance below the crest of band <paramref name="k"/>'s centre, wandering ±25 m along the crest.</summary>
+    static double BandCentre(int k, double y) => Bands[k].Below + 25 * Noise.Value(17.3 * (k + 1), y / 250);
 
     /// <summary>The climb east of the shoulder with its ridged roughness, merged with the north-east summit.</summary>
     static double East(double x, double y)
