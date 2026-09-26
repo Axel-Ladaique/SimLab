@@ -77,7 +77,7 @@ Pure, unit-tested. `Update(RawInputFrame)` returns:
   and the control check). Starts Armed on a new flight unless the radio says Cut. No keyboard key.
 - `RouterOutput.Actions` (`SwitchAction` list) becomes `Commands`, a list of `FlightCommand`:
   `Reset`, `TogglePause`, `SetPause(bool)`, `ToggleWind`, `SetWind(bool)`, `NextCamera`, `SelectCamera(view)`,
-  `ToggleOsd`, `SetOsd(bool)`. Keyboard keys produce the toggles, radio events the setters.
+  `SetOsd(bool)`. Keyboard keys produce the toggles, radio events the setters; the H key keeps toggling the OSD in `FlightScene`.
 - `FlightSession.Handle` handles reset, pause and wind; `FlightScene` handles camera and OSD (it owns both). OSD
   from the radio updates `Settings.ShowFlightData` like the H key.
 - Gear arming in `FlightSession.Tick` (gear up only counts once seen down) is unchanged.
