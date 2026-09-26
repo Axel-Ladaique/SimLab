@@ -384,11 +384,25 @@ public class MountainMapTests
         for (double y = -1900; y <= 1900; y += 37)
         for (double x = -1900; x <= 1900; x += 37)
         {
-            if (MountainPlanting.ForestDensity(x, y, H(x, y)) <= 0.8 || Slope(x, y) > 0.5) continue;
+            if (MountainPlanting.ForestDensity(x, y, H(x, y)) <= 0.8 || Slope(x, y) > 0.5 || MountainMap.InSoaringBeat(x, y, 40) > 0) continue;
             checkedPoints++;
             Assert.True(Mountain.Surface(x, y).Needles > 0.6, $"forest floor at ({x}, {y}) is {Mountain.Surface(x, y)}");
         }
         Assert.True(checkedPoints > 100, $"only {checkedPoints} dense forest points");
+    }
+
+    [Fact]
+    public void Soaring_beat_kept_clear_of_trees_is_not_needle_ground()
+    {
+        int checkedPoints = 0;
+        for (double y = -360; y <= 320; y += 10)
+        for (double x = -300; x <= 0; x += 10)
+        {
+            if (MountainMap.InSoaringBeat(x, y, 40) < 1) continue;
+            checkedPoints++;
+            Assert.True(Mountain.Surface(x, y).Needles < 1e-9, $"needles in the beat at ({x}, {y}): {Mountain.Surface(x, y)}");
+        }
+        Assert.True(checkedPoints > 100, $"only {checkedPoints} points inside the beat");
     }
 
     [Fact]

@@ -100,4 +100,8 @@ void fragment() {
     ALBEDO = c * macro;
     NORMAL_MAP = n;
     ROUGHNESS = 1.0;
+    // No specular: at the default 0.5 the grazing-angle Fresnel term (f90 = 1) mirrors the blue sky off every
+    // distant slope, whatever the roughness — the cyan, plastic sheen far terrain and ridges had. Ground this rough
+    // shows no such sheen.
+    SPECULAR = 0.0;
 }
