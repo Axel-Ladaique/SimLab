@@ -4,15 +4,15 @@ namespace SimLab.App.Audio;
 /// Aircraft voice synthesized sample by sample: propeller (blade-pass fundamental plus decaying harmonics, amplitude
 /// modulated at the shaft rate), brushless whine (electrical frequency and its second harmonic), piston exhaust (one
 /// combustion pop per turn: a ringing muffler resonance plus a noise burst over a low pulse-train body, with cycle-to-cycle
-/// loudness and timing scatter that grows towards idle), turbine roar (low-passed noise), wind (low-passed noise) and rolling (band-limited noise with
-/// random grain). Exhaust and roar share the motor level of the voice mix. Parameters ramp linearly across each buffer and
+/// loudness and timing scatter that grows towards idle), turbine spool (a wavering whistle at the shaft rate over an intake
+/// hiss), turbine roar (noise that brightens with thrust, over a tearing low rumble), wind (low-passed noise) and rolling (band-limited noise with
+/// random grain). Exhaust, spool and roar share the motor level of the voice mix. Parameters ramp linearly across each buffer and
 /// oscillator phases carry over, so parameter changes never click.
 /// </summary>
 public sealed class EngineSynth
 {
     // Mix levels, tuned by ear.
     const double PropLevel = 0.35, WhineLevel = 0.08, WindLevel = 0.25, RollLevel = 0.2;
-    const double RoarLevel = 0.5, RoarCutoffHz = 1800;
     const int PropHarmonics = 5, ExhaustHarmonics = 8;
     const double ShaftModulation = 0.15;
 
@@ -24,12 +24,20 @@ public sealed class EngineSynth
     const double PopResonanceIdleHz = 160, PopResonanceRangeHz = 260, BurstCutoffHz = 3500;
     const double IdleExhaustGain = 0.3, TimingScatter = 0.1, LoudnessScatter = 0.6, IdleMissChance = 0.08;
 
+    // Turbine. The spool whistle is a nearly pure tone at the shaft rate with a slow random pitch waver; the intake adds
+    // a high hiss. The roar is noise whose low-pass opens with RoarGain (thrust), plus a deep rumble whose loudness is
+    // torn by a slow random envelope.
+    const double SpoolLevel = 0.22, SpoolHissLevel = 0.12, SpoolWaver = 0.004, SpoolWaverHz = 2.5, SpoolHissCornerHz = 5000;
+    const double RoarLevel = 0.55, RoarIdleCutoffHz = 350, RoarCutoffRangeHz = 2400;
+    const double RumbleLevel = 3.5, RumbleCutoffHz = 110, TearDepth = 0.45, TearHz = 7;
+
     readonly int _seed;
     SynthParams _last = SynthParams.Silent;
     VoiceMix _lastMix = VoiceMix.Full;
     double _bladePhase, _shaftPhase, _elecPhase;
     double _windState, _rollLow, _rollBand, _grain, _roarState;
     double _firePhase, _fireStretch = 1, _popAge = double.MaxValue, _popAmp, _burstState;
+    double _spoolPhase, _waver, _hissLow, _rumble, _tear;
     uint _rng;
 
     public EngineSynth(int sampleRate, int seed = 1)
@@ -53,6 +61,7 @@ public sealed class EngineSynth
         _bladePhase = _shaftPhase = _elecPhase = 0;
         _windState = _rollLow = _rollBand = _grain = _roarState = 0;
         _firePhase = 0; _fireStretch = 1; _popAge = double.MaxValue; _popAmp = 0; _burstState = 0;
+        _spoolPhase = _waver = _hissLow = _rumble = _tear = 0;
         _rng = (uint)_seed * 2654435761u | 1u;
     }
 
@@ -76,6 +85,7 @@ public sealed class EngineSynth
             double roll = Lerp(from.RollGain, target.RollGain, t);
             double exhaust = EngineMuted ? 0 : Lerp(from.ExhaustGain, target.ExhaustGain, t);
             double roar = EngineMuted ? 0 : Lerp(from.RoarGain, target.RoarGain, t);
+            double spool = EngineMuted ? 0 : Lerp(from.SpoolGain, target.SpoolGain, t);
             double propMix = Lerp(fromMix.Propeller, toMix.Propeller, t);
             double motorMix = Lerp(fromMix.Motor, toMix.Motor, t);
             double windMix = Lerp(fromMix.Wind, toMix.Wind, t);
@@ -122,10 +132,23 @@ public sealed class EngineSynth
                     _popAge += dt;
                 }
             }
+            if (spool > 0)
+            {
+                double waver = SlowNoise(ref _waver, SpoolWaverHz, dt);
+                _spoolPhase = Wrap(_spoolPhase + 2 * Math.PI * shaft * (1 + SpoolWaver * waver) * dt);
+                double tone = 0;
+                for (int k = 1; k <= 3 && k * shaft < 0.5 * SampleRate; k++) tone += Math.Sin(k * _spoolPhase) * (k == 1 ? 1 : 0.35 / k);
+                double noise = Noise();
+                _hissLow += (1 - Math.Exp(-2 * Math.PI * SpoolHissCornerHz * dt)) * (noise - _hissLow);
+                sample += spool * (SpoolLevel * tone + SpoolHissLevel * (noise - _hissLow)) * motorMix;
+            }
             if (roar > 0)
             {
-                _roarState += (1 - Math.Exp(-2 * Math.PI * RoarCutoffHz * dt)) * (Noise() - _roarState);
-                sample += RoarLevel * roar * _roarState * motorMix;
+                double roarCutoff = RoarIdleCutoffHz + RoarCutoffRangeHz * roar;
+                _roarState += (1 - Math.Exp(-2 * Math.PI * roarCutoff * dt)) * (Noise() - _roarState);
+                _rumble += (1 - Math.Exp(-2 * Math.PI * RumbleCutoffHz * dt)) * (Noise() - _rumble);
+                double torn = Math.Max(0, 1 + TearDepth * SlowNoise(ref _tear, TearHz, dt));
+                sample += roar * (RoarLevel * _roarState + RumbleLevel * _rumble * torn) * motorMix;
             }
             if (wind > 0 || roll > 0)
             {
@@ -142,7 +165,7 @@ public sealed class EngineSynth
             }
             buffer[i] = (float)Math.Tanh(sample);
         }
-        _last = EngineMuted ? target with { PropGain = 0, WhineGain = 0, ExhaustGain = 0, RoarGain = 0 } : target;
+        _last = EngineMuted ? target with { PropGain = 0, WhineGain = 0, ExhaustGain = 0, RoarGain = 0, SpoolGain = 0 } : target;
         _lastMix = toMix;
     }
 
@@ -152,6 +175,15 @@ public sealed class EngineSynth
         _rng ^= _rng >> 17;
         _rng ^= _rng << 5;
         return _rng / (double)uint.MaxValue * 2 - 1;
+    }
+
+    /// <summary>White noise through a one-pole low-pass at <paramref name="hz"/>, rescaled to unit standard deviation
+    /// (a low corner would otherwise leave it far quieter than the input).</summary>
+    double SlowNoise(ref double state, double hz, double dt)
+    {
+        double a = 1 - Math.Exp(-2 * Math.PI * hz * dt);
+        state += a * (Noise() - state);
+        return state * Math.Sqrt(3 * (2 - a) / a);
     }
 
     static double Lerp(double a, double b, double t) => a + (b - a) * t;

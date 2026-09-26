@@ -5,8 +5,9 @@ namespace SimLab.App.Audio;
 
 /// <param name="ExhaustGain">Piston exhaust pulses at <paramref name="ShaftHz"/> (a single-cylinder two-stroke fires once per turn).</param>
 /// <param name="RoarGain">Turbine jet roar (broadband).</param>
+/// <param name="SpoolGain">Turbine spool whistle at <paramref name="ShaftHz"/>.</param>
 public readonly record struct EngineVoice(double BladePassHz, double ShaftHz, double ElectricalHz, double PropGain, double WhineGain,
-    double ExhaustGain = 0, double RoarGain = 0);
+    double ExhaustGain = 0, double RoarGain = 0, double SpoolGain = 0);
 
 /// <summary>Maps power-plant telemetry to the motor and propeller voice. Gains are 0..1, normalised by the static
 /// full-throttle point.</summary>
@@ -47,9 +48,9 @@ public sealed class EngineSoundModel
         if (rpm < StoppedRpm) return new EngineVoice(shaft * _spec.Blades, shaft, shaft * _spec.PolePairs, 0, 0);
         double thrustShare = Math.Clamp(thrust / StaticThrust, 0, 1);
         if (_source == PowerSource.Turbine)
-            // The propeller voice plays the spool whine (blades = compressor tones per turn); the roar follows thrust.
-            return new EngineVoice(shaft * _spec.Blades, shaft, shaft * _spec.PolePairs, TurbineWhineIdle + TurbineWhineRange * thrustShare, 0,
-                RoarGain: RoarIdleShare + (1 - RoarIdleShare) * thrustShare);
+            // No propeller: the spool whistles at the shaft rate and the roar follows thrust.
+            return new EngineVoice(shaft * _spec.Blades, shaft, shaft * _spec.PolePairs, 0, 0,
+                RoarGain: RoarIdleShare + (1 - RoarIdleShare) * thrustShare, SpoolGain: TurbineWhineIdle + TurbineWhineRange * thrustShare);
         double prop = PropIdleShare * Math.Min(rpm / StaticRpm, 1) + (1 - PropIdleShare) * Math.Clamp(thrust / StaticThrust, 0, 1);
         if (_source == PowerSource.Piston)
             return new EngineVoice(shaft * _spec.Blades, shaft, shaft * _spec.PolePairs, PistonPropShare * Math.Clamp(prop, 0, 1), 0,

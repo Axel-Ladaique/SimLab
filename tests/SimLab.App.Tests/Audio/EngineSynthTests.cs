@@ -218,6 +218,33 @@ public class EngineSynthTests
     }
 
     [Fact]
+    public void Spool_voice_whistles_at_the_shaft_frequency()
+    {
+        var synth = new EngineSynth(Rate);
+        var buffer = new float[Rate];
+        var spool = SynthParams.Silent with { ShaftHz = 1000, SpoolGain = 1 };
+        synth.Render(buffer.AsSpan(0, 512), spool);
+        synth.Render(buffer, spool);
+        double tone = Power(buffer, 1000);
+        Assert.True(tone > 20 * Power(buffer, 700));
+        Assert.True(tone > 20 * Power(buffer, 1500));
+    }
+
+    [Fact]
+    public void Roar_brightens_with_its_gain()
+    {
+        double Brightness(double gain)
+        {
+            var synth = new EngineSynth(Rate);
+            var buffer = new float[Rate];
+            synth.Render(buffer, SynthParams.Silent with { RoarGain = gain });
+            synth.Render(buffer, SynthParams.Silent with { RoarGain = gain });
+            return Power(buffer, 2000) / Power(buffer, 400);
+        }
+        Assert.True(Brightness(1) > 3 * Brightness(0.15));
+    }
+
+    [Fact]
     public void Roar_voice_is_broadband_noise()
     {
         var synth = new EngineSynth(Rate);
