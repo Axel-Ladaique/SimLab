@@ -55,6 +55,7 @@ public static class PropLayer
             VisibilityRangeBeginMargin = rangeBegin > 0 ? FadeMargin : 0,
             VisibilityRangeEnd = rangeEnd,
             VisibilityRangeEndMargin = rangeEnd > 0 ? FadeMargin : 0,
+            VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self,
         };
     }
 }
