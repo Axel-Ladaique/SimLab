@@ -14,6 +14,8 @@ public static class Ui
     public static readonly Color Orange = new(0.85f, 0.35f, 0.19f);
     /// <summary>Done / OK green.</summary>
     public static readonly Color Good = new(0.35f, 0.85f, 0.45f);
+    /// <summary>Missing / wrong red.</summary>
+    public static readonly Color Bad = new(0.95f, 0.40f, 0.35f);
 
     static readonly Color ChipFill = new(0.09f, 0.37f, 0.65f);
 

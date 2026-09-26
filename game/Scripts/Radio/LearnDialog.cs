@@ -6,7 +6,7 @@ namespace SimLab.Game.Radio;
 /// <summary>
 /// Modal "learn a switch" dialog: a dark scrim that swallows clicks and a centred glass box with the function to learn,
 /// the instruction, one chip per position found so far, and Save (enabled from two positions) / Cancel.
-/// The owner toggles <see cref="CanvasItem.Visible"/> and feeds <see cref="Show"/> while the pilot flips the switch.
+/// The owner toggles <see cref="CanvasItem.Visible"/> and feeds <see cref="Display"/> while the pilot flips the switch.
 /// </summary>
 public partial class LearnDialog : Control
 {
@@ -24,7 +24,7 @@ public partial class LearnDialog : Control
         if (!_built) Build();
         _title.Text = string.Format(Ui.T("RADIO_LEARN_TITLE"), functionName);
         _shown = -1;
-        Show(null);
+        Display(null);
     }
 
     void Build()
@@ -74,13 +74,17 @@ public partial class LearnDialog : Control
 
     /// <summary>The positions found so far (raw values, lowest first; null or empty: none yet). Only their count is
     /// shown, as "Position 1", "Position 2"…</summary>
-    public void Show(IReadOnlyList<double>? positions)
+    public void Display(IReadOnlyList<double>? positions)
     {
         int count = positions?.Count ?? 0;
         if (count == _shown) return;
         _shown = count;
         foreach (var child in _positions.GetChildren())
-            if (child != _waiting) child.QueueFree();
+        {
+            if (child == _waiting) continue;
+            _positions.RemoveChild(child);
+            child.QueueFree();
+        }
         _waiting.Visible = count == 0;
         for (int i = 0; i < count; i++)
             _positions.AddChild(Ui.Pill(string.Format(Ui.T("RADIO_POSITION"), i + 1), Ui.Accent, 16));

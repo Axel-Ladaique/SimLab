@@ -5,13 +5,15 @@ namespace SimLab.Game.Radio;
 
 /// <summary>
 /// The radio screen's "1 Connect — 2 Calibrate — 3 Switches" bar: one chip per <see cref="RadioStep"/>, the current
-/// one filled blue, done ones outlined green with a check mark. The selection is driven by <see cref="Show"/>, not by
+/// one filled blue, done ones outlined green with a check mark. The selection is driven by <see cref="Display"/>, not by
 /// clicks: a click only reports the step.
 /// </summary>
 public partial class StepBar : HBoxContainer
 {
     static readonly RadioStep[] Steps = [RadioStep.Connect, RadioStep.Calibrate, RadioStep.Switches];
     readonly Button[] _chips = new Button[Steps.Length];
+    readonly bool[] _done = new bool[Steps.Length];
+    RadioStep? _current;
 
     public void Init(System.Action<RadioStep> selected)
     {
@@ -33,13 +35,23 @@ public partial class StepBar : HBoxContainer
         }
     }
 
-    public void Show(RadioStep current, System.Func<RadioStep, bool> done)
+    /// <summary>Lights <paramref name="current"/> and marks the done steps; does nothing when neither changed, since
+    /// restyling the chips allocates style boxes (the screen calls this every frame).</summary>
+    public void Display(RadioStep current, System.Func<RadioStep, bool> done)
     {
+        bool changed = current != _current;
         for (int i = 0; i < Steps.Length; i++)
         {
             bool isDone = done(Steps[i]);
-            _chips[i].Text = Label(Steps[i], i, isDone);
-            Ui.ChipLook(_chips[i], Steps[i] == current, isDone ? Ui.Good : null);
+            changed |= isDone != _done[i];
+            _done[i] = isDone;
+        }
+        if (!changed) return;
+        _current = current;
+        for (int i = 0; i < Steps.Length; i++)
+        {
+            _chips[i].Text = Label(Steps[i], i, _done[i]);
+            Ui.ChipLook(_chips[i], Steps[i] == current, _done[i] ? Ui.Good : null);
         }
     }
 

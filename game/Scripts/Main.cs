@@ -6,6 +6,7 @@ using SimLab.App.Cameras;
 using SimLab.App.Maps;
 using SimLab.App.Session;
 using SimLab.App.Settings;
+using SimLab.App.Ui;
 using SimLab.App.Visual;
 using SimLab.Flight.Airframe;
 using SimLab.Flight.Controls;
@@ -228,9 +229,24 @@ public partial class Main : Node
         if (radioShot >= 0 && radioShot + 2 < args.Length)
         {
             ShowRadio();
-            int.TryParse(args[radioShot + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var tab);
-            ((RadioScreen)_current!).SelectTab(tab);
+            int.TryParse(args[radioShot + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var step);
+            ((RadioScreen)_current!).SelectStep((RadioStep)System.Math.Clamp(step, 0, 2));
             CaptureAfterFrames(30, args[radioShot + 2]);
+            return true;
+        }
+        // The Switches step on a built-in demo radio (nothing saved), without and with the learning dialog open.
+        if (ArgValue(args, "--screenshot-radio-demo") is { } radioDemoShot)
+        {
+            ShowRadio();
+            ((RadioScreen)_current!).ShowDemo(false);
+            CaptureAfterFrames(30, radioDemoShot);
+            return true;
+        }
+        if (ArgValue(args, "--screenshot-radio-learn") is { } radioLearnShot)
+        {
+            ShowRadio();
+            ((RadioScreen)_current!).ShowDemo(true);
+            CaptureAfterFrames(30, radioLearnShot);
             return true;
         }
         int render = System.Array.IndexOf(args, "--render-audio");

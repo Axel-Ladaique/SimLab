@@ -22,7 +22,7 @@ public partial class SticksView : Control
         MouseFilter = MouseFilterEnum.Ignore;
     }
 
-    public void Show(StickPoint left, StickPoint right, StickGesture? gesture)
+    public void Display(StickPoint left, StickPoint right, StickGesture? gesture)
     {
         if (left == _left && right == _right && gesture == _gesture) return;
         (_left, _right, _gesture) = (left, right, gesture);
@@ -48,7 +48,7 @@ public partial class SticksView : Control
         DrawStyleBox(frame, box);
 
         var c = box.GetCenter();
-        float half = box.Size.X / 2, travel = half - RingRadius - 6;
+        float half = box.Size.X / 2, travel = Mathf.Max(0, half - RingRadius - 6);
         var cross = Faded(Cross, alpha);
         DrawLine(new Vector2(box.Position.X + 10, c.Y), new Vector2(box.End.X - 10, c.Y), cross, 1, true);
         DrawLine(new Vector2(c.X, box.Position.Y + 10), new Vector2(c.X, box.End.Y - 10), cross, 1, true);

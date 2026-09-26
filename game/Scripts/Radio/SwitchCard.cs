@@ -18,7 +18,11 @@ public partial class SwitchCard : PanelContainer
     /// index; <paramref name="clear"/> is the × button.</summary>
     public void Init(SwitchAssignment assignment, System.Action<int> chipClicked, System.Action clear)
     {
-        foreach (var child in GetChildren()) child.QueueFree();
+        foreach (var child in GetChildren())
+        {
+            RemoveChild(child);
+            child.QueueFree();
+        }
         _chips.Clear();
         AddThemeStyleboxOverride("panel", Ui.Glass(0.35f, 10, 12));
 

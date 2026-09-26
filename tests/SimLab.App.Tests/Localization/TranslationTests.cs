@@ -46,9 +46,9 @@ public class TranslationTests
             Assert.Contains(SwitchStates.FunctionKey(f), keys);
             for (int s = 0; s < SwitchStates.Count(f); s++) Assert.Contains(SwitchStates.StateKey(f, s), keys);
         }
-        foreach (var k in new[] { "RADIO_TAB_RADIO", "RADIO_TAB_CHANNELS", "RADIO_TAB_SWITCHES", "RADIO_LEARN", "RADIO_CLEAR",
-                     "RADIO_LEARN_PROMPT", "RADIO_LEARN_NONE", "RADIO_LEARN_DONE", "RADIO_SWITCH_NONE", "RADIO_SOURCE_AXIS",
-                     "RADIO_SOURCE_BUTTON", "RADIO_SWITCHES_HELP", "SWITCH_NO_EFFECT", "STICK_THROTTLE", "STICK_AILERON",
+        foreach (var k in new[] { "RADIO_TITLE", "RADIO_DEVICE_UNCALIBRATED", "RADIO_CALIBRATE", "RADIO_NEXT", "RADIO_CANCEL",
+                     "RADIO_SAVED", "RADIO_MODE", "RADIO_AXES", "RADIO_HELP", "CAL_FAILED", "RADIO_LEARN_PROMPT",
+                     "RADIO_SOURCE_AXIS", "RADIO_SOURCE_BUTTON", "SWITCH_NO_EFFECT", "STICK_THROTTLE", "STICK_AILERON",
                      "STICK_ELEVATOR", "STICK_RUDDER", "RADIO_CHANNEL_FREE" })
             Assert.Contains(k, keys);
         foreach (var k in new[] { "RADIO_STEP_CONNECT", "RADIO_STEP_CALIBRATE", "RADIO_STEP_SWITCHES", "RADIO_BACK",
@@ -56,6 +56,16 @@ public class TranslationTests
                      "RADIO_START_CALIBRATION", "RADIO_CAL_PROGRESS", "RADIO_DETAILS", "RADIO_SAVE", "RADIO_LEARN_TITLE",
                      "RADIO_LEARN_WAITING", "RADIO_POSITION", "RADIO_ADD_SWITCH", "RADIO_CALIBRATED_HINT" })
             Assert.Contains(k, keys);
+    }
+
+    [Fact]
+    public void The_tabbed_radio_screen_keys_are_gone()
+    {
+        var keys = Shipped().Keys.ToHashSet();
+        foreach (var k in new[] { "RADIO_TAB_RADIO", "RADIO_TAB_CHANNELS", "RADIO_TAB_SWITCHES", "RADIO_LEARN", "RADIO_CLEAR",
+                     "RADIO_LEARN_DONE", "RADIO_SWITCHES_HELP", "RADIO_LEARN_NONE", "RADIO_SWITCH_NONE", "RADIO_NO_DEVICE",
+                     "RADIO_DEVICE_READY", "RADIO_PREVIEW_TITLE", "RADIO_PREVIEW_AIRCRAFT" })
+            Assert.DoesNotContain(k, keys);
     }
 
     [Fact]
@@ -72,7 +82,7 @@ public class TranslationTests
         foreach (CheckEffect e in Enum.GetValues<CheckEffect>().Where(e => e != CheckEffect.None))
             Assert.Contains("CHECK_EFFECT_" + e.ToString().ToUpperInvariant(), keys);
         foreach (var k in new[] { "CHECK_STEER_LEFT", "CHECK_STEER_RIGHT", "CHECK_NO_SURFACE", "CHECK_WRONG_WAY",
-                     "RADIO_REVERSE", "RADIO_REVERSE_TITLE", "RADIO_PREVIEW_TITLE", "RADIO_PREVIEW_AIRCRAFT" })
+                     "RADIO_REVERSE", "RADIO_REVERSE_TITLE" })
             Assert.Contains(k, keys);
     }
 
