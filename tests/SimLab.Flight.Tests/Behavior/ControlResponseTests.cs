@@ -35,6 +35,7 @@ public class ControlResponseTests
     [InlineData("sport")]
     [InlineData("wing")]
     [InlineData("3d")]
+    [InlineData("jet")]
     public void Right_aileron_rolls_right(string id) =>
         AssertResponse(id, u => u with { Aileron = 0.5 }, s => PilotFrame.RollRightRate(s.Aircraft.State.AngularVelocity), 0.3);
 
@@ -43,6 +44,7 @@ public class ControlResponseTests
     [InlineData("sport")]
     [InlineData("wing")]
     [InlineData("3d")]
+    [InlineData("jet")]
     public void Up_elevator_pitches_up(string id) =>
         // Pitch attitude, not the pitch rate at the end of the input: the rate oscillates with the short period, so a snapshot
         // depends on its phase (the flying wing's well-damped short period is already past its peak at 0.4 s).
@@ -52,6 +54,7 @@ public class ControlResponseTests
     [InlineData("trainer")]
     [InlineData("sport")]
     [InlineData("3d")]
+    [InlineData("jet")]
     public void Right_rudder_yaws_right(string id) =>
         AssertResponse(id, u => u with { Rudder = 0.5 }, Heading, 5 * Math.PI / 180, inputSeconds: 1.0, difference: HeadingDifference);
 }

@@ -22,7 +22,7 @@ public partial class AircraftVisual : Node3D
         {
             if (part.ControlIndex < 0)
             {
-                var mesh = MeshFor(part.Triangles, part.Color, Vector3.Zero, part.Name == "propeller" ? 0.35f : 1f);
+                var mesh = MeshFor(part.Triangles, part.Color, Vector3.Zero, part.Name == "propeller" ? 0.35f : 1f, part.Smooth);
                 AddChild(mesh);
                 if (part.Name == "propeller") _propeller = mesh;
                 continue;
@@ -55,12 +55,15 @@ public partial class AircraftVisual : Node3D
         foreach (var (pivot, axis, _) in _controls) pivot.Basis = new Basis(axis, (float)radians);
     }
 
-    static MeshInstance3D MeshFor(IReadOnlyList<SimLab.Flight.Geometry.Vec3> triangles, Rgb color, Vector3 origin, float alpha)
+    static MeshInstance3D MeshFor(IReadOnlyList<SimLab.Flight.Geometry.Vec3> triangles, Rgb color, Vector3 origin, float alpha,
+        bool smooth = false)
     {
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
         st.SetColor(color.ToGodot(alpha));
         foreach (var v in triangles) st.AddVertex(GodotBasis.BodyToNodeLocal(v).ToVector3() - origin);
+        // Merging the shared vertices first makes GenerateNormals average across faces (smooth shading).
+        if (smooth) st.Index();
         st.GenerateNormals();
         return new MeshInstance3D
         {

@@ -1,0 +1,80 @@
+{
+  // Display-only shape of the F-16 (see aircraft/README.md, "visual.json"). Same datum as aircraft.json: the nose tip,
+  // body x back, y right, z up. Sections follow the General Dynamics F-16 outline scaled 1:10.4. Two-tone air-superiority grey.
+  "surfaceColor": [0.60, 0.63, 0.66],
+  "controlColor": [0.53, 0.56, 0.59],
+  "propellerDisc": false,
+  "shapes": [
+    { "name": "radome", "color": [0.40, 0.42, 0.45], "sides": 20,
+      "stations": [
+        { "x": 0.0, "z": 0.0, "width": 0 },
+        { "x": 0.03, "z": 0.0, "width": 0.030, "height": 0.030 },
+        { "x": 0.08, "z": 0.002, "width": 0.058, "height": 0.058 },
+        { "x": 0.13, "z": 0.004, "width": 0.076, "height": 0.080 }
+      ] },
+    { "name": "fuselage", "color": [0.55, 0.58, 0.61], "sides": 24, "roundness": 2.6,
+      "stations": [
+        { "x": 0.13, "z": 0.004, "width": 0.076, "height": 0.080 },
+        { "x": 0.20, "z": 0.008, "width": 0.090, "height": 0.098 },
+        { "x": 0.30, "z": 0.010, "width": 0.104, "height": 0.112 },
+        { "x": 0.42, "z": 0.010, "width": 0.118, "height": 0.124 },
+        { "x": 0.56, "z": 0.006, "width": 0.130, "height": 0.130 },
+        { "x": 0.76, "z": 0.002, "width": 0.136, "height": 0.130 },
+        { "x": 0.96, "z": 0.000, "width": 0.130, "height": 0.124 },
+        { "x": 1.14, "z": 0.000, "width": 0.120, "height": 0.114 },
+        { "x": 1.28, "z": 0.000, "width": 0.104, "height": 0.102 },
+        { "x": 1.36, "z": 0.000, "width": 0.094, "height": 0.094 }
+      ] },
+    { "name": "nozzle", "color": [0.24, 0.23, 0.22], "sides": 20, "roundness": 2,
+      "stations": [
+        { "x": 1.36, "z": 0.0, "width": 0.094, "height": 0.094 },
+        { "x": 1.45, "z": 0.0, "width": 0.078, "height": 0.078 },
+        { "x": 1.45, "z": 0.0, "width": 0.064, "height": 0.064 },
+        { "x": 1.40, "z": 0.0, "width": 0 }
+      ] },
+    { "name": "canopy", "color": [0.42, 0.34, 0.14], "sides": 20,
+      "stations": [
+        { "x": 0.17, "z": 0.048, "width": 0 },
+        { "x": 0.20, "z": 0.058, "width": 0.046, "height": 0.030 },
+        { "x": 0.26, "z": 0.070, "width": 0.066, "height": 0.058 },
+        { "x": 0.34, "z": 0.078, "width": 0.074, "height": 0.074 },
+        { "x": 0.42, "z": 0.078, "width": 0.070, "height": 0.068 },
+        { "x": 0.50, "z": 0.074, "width": 0.052, "height": 0.044 },
+        { "x": 0.55, "z": 0.070, "width": 0 }
+      ] },
+    { "name": "spine", "color": [0.55, 0.58, 0.61], "sides": 16,
+      "stations": [
+        { "x": 0.46, "z": 0.066, "width": 0.050, "height": 0.030 },
+        { "x": 0.70, "z": 0.070, "width": 0.064, "height": 0.042 },
+        { "x": 1.02, "z": 0.066, "width": 0.056, "height": 0.036 },
+        { "x": 1.30, "z": 0.048, "width": 0.020, "height": 0.016 }
+      ] },
+    { "name": "intake", "color": [0.55, 0.58, 0.61], "sides": 20, "roundness": 2.4,
+      "stations": [
+        { "x": 0.36, "z": -0.082, "width": 0.096, "height": 0.066 },
+        { "x": 0.46, "z": -0.080, "width": 0.100, "height": 0.070 },
+        { "x": 0.62, "z": -0.070, "width": 0.100, "height": 0.060 },
+        { "x": 0.78, "z": -0.050, "width": 0.070, "height": 0.030 }
+      ] },
+    { "name": "intakeMouth", "color": [0.06, 0.06, 0.07], "sides": 20, "roundness": 2.4,
+      "stations": [
+        { "x": 0.362, "z": -0.082, "width": 0.090, "height": 0.060 },
+        { "x": 0.40, "z": -0.082, "width": 0 }
+      ] },
+    { "name": "wingtipMissiles", "color": [0.88, 0.88, 0.86], "sides": 10, "mirror": true,
+      "stations": [
+        { "x": 0.86, "y": 0.482, "z": -0.012, "width": 0 },
+        { "x": 0.89, "y": 0.482, "z": -0.012, "width": 0.014 },
+        { "x": 1.08, "y": 0.482, "z": -0.012, "width": 0.014 },
+        { "x": 1.10, "y": 0.482, "z": -0.012, "width": 0.010 }
+      ] }
+  ],
+  "plates": [
+    { "name": "strakes", "color": [0.60, 0.63, 0.66], "mirror": true,
+      "points": [ [0.28, 0.05, -0.012], [0.45, 0.085, -0.012], [0.60, 0.108, -0.011], [0.661, 0.12, -0.010], [0.70, 0.05, -0.010] ] },
+    { "name": "ventralFins", "color": [0.55, 0.58, 0.61], "mirror": true,
+      "points": [ [1.08, 0.045, -0.050], [1.23, 0.045, -0.050], [1.23, 0.058, -0.098], [1.17, 0.058, -0.098] ] },
+    { "name": "missileRails", "color": [0.55, 0.58, 0.61], "mirror": true,
+      "points": [ [0.90, 0.470, -0.010], [1.05, 0.470, -0.010], [1.05, 0.480, -0.012], [0.90, 0.480, -0.012] ] }
+  ]
+}

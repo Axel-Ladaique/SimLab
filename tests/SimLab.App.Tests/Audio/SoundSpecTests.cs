@@ -36,6 +36,13 @@ public sealed class SoundSpecTests : IDisposable
     }
 
     [Fact]
+    public void Shipped_jet_sounds_like_a_twelve_blade_fan_on_a_four_pole_inrunner()
+    {
+        var jet = SoundSpecLoader.Load(Path.Combine(TestData.RepoRoot, "aircraft", "jet"));
+        Assert.Equal(SoundSpec.Default with { Blades = 12, PolePairs = 2 }, jet);
+    }
+
+    [Fact]
     public void Missing_block_or_missing_power_file_gives_defaults()
     {
         Assert.Equal(SoundSpec.Default, SoundSpecLoader.Load(Folder("""{ "motor": {} }""")));
@@ -58,7 +65,7 @@ public sealed class SoundSpecTests : IDisposable
 
     [Theory]
     [InlineData("""{ "sound": { "blades": 0 } }""", "blades")]
-    [InlineData("""{ "sound": { "blades": 7 } }""", "blades")]
+    [InlineData("""{ "sound": { "blades": 17 } }""", "blades")]
     [InlineData("""{ "sound": { "polePairs": 21 } }""", "polePairs")]
     [InlineData("""{ "sound": { "sample": "motor.ogg" } }""", "sampleRpm")]
     [InlineData("""{ "sound": { "sampleRpm": 9000 } }""", "sampleRpm")]
