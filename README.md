@@ -11,7 +11,7 @@ Sub-project 1 (core) — headless libraries:
   crash detection, ISA atmosphere, wind with Dryden turbulence, fixed-step (500 Hz) simulation, CSV recorder.
 - `src/SimLab.Input` — radio input: calibration wizard, channel pipeline (trim, expo, rates), switch actions,
   keyboard fallback.
-- `aircraft/` — data-driven aircraft (trainer, sport, FPV wing). Values are estimates; see `docs/tuning-log.md`.
+- `aircraft/` — data-driven aircraft (trainer, sport, FPV wing, 3D, F-16 EDF jet, P-51 60cc gas warbird, F-18 turbine jet). Values are estimates; see `docs/tuning-log.md`.
 
 - `src/SimLab.App` — testable game logic: club field and terrain, three camera views (ground line-of-sight, FPV,
   chase), procedural aircraft meshes, input routing, flight session, settings, translations.

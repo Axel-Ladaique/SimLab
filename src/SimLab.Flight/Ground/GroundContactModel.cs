@@ -12,6 +12,8 @@ public readonly record struct ContactSample(string Name, bool IsWheel, string Ta
 public sealed class GroundContactModel
 {
     const double FrictionVelocity = 0.05;
+    // Brakes hold: a much sharper friction onset so an idling engine cannot creep the aircraft forward.
+    const double BrakeVelocity = 0.005;
     const double HullFriction = 0.6;
     const double HullStiffnessPerKg = 3000;
     const double HullDampingPerKg = 80;
@@ -34,6 +36,9 @@ public sealed class GroundContactModel
     /// <summary>False while retractable gear is up or travelling: the wheels then neither touch nor carry anything.</summary>
     public bool WheelsExtended { get; set; } = true;
 
+    /// <summary>Brake command, 0–1, applied to every wheel that has a brake.</summary>
+    public double BrakeCommand { get; set; }
+
     ReadOnlySpan<WheelSpec> ActiveWheels => WheelsExtended ? _wheels : [];
 
     readonly record struct Probe(Vec3 Point, double Depth, Vec3 Normal, Vec3 Velocity)
@@ -46,7 +51,7 @@ public sealed class GroundContactModel
         var total = BodyLoad.Zero;
         var wheels = ActiveWheels;
         for (int i = 0; i < wheels.Length; i++)
-            total += WheelLoad(wheels[i], s, terrain, i < steerRad.Count ? steerRad[i] : 0);
+            total += WheelLoad(wheels[i], s, terrain, i < steerRad.Count ? steerRad[i] : 0, BrakeCommand);
         foreach (var h in _hull)
             total += HullLoad(h, s, terrain);
         return total;
@@ -112,7 +117,7 @@ public sealed class GroundContactModel
         return new Probe(p, terrain.Height(p.X, p.Y) - p.Z, terrain.Normal(p.X, p.Y), v);
     }
 
-    static BodyLoad WheelLoad(WheelSpec w, in RigidBodyState s, ITerrain terrain, double steer)
+    static BodyLoad WheelLoad(WheelSpec w, in RigidBodyState s, ITerrain terrain, double steer, double brake)
     {
         var c = ProbePoint(w.Position, s, terrain);
         if (c.Depth <= 0) return BodyLoad.Zero;
@@ -124,8 +129,9 @@ public sealed class GroundContactModel
         var lateral = Vec3.Cross(c.Normal, roll);
         var vt = c.Velocity - c.Normal * vn;
 
+        double along = Vec3.Dot(vt, roll);
         var force = c.Normal * normal
-            - roll * (w.RollingFriction * normal * Math.Tanh(Vec3.Dot(vt, roll) / FrictionVelocity))
+            - roll * (w.RollingFriction * normal * Math.Tanh(along / FrictionVelocity) + w.BrakeFriction * brake * normal * Math.Tanh(along / BrakeVelocity))
             - lateral * (w.LateralFriction * normal * Math.Tanh(Vec3.Dot(vt, lateral) / FrictionVelocity));
         return ToBody(s, w.Position, force);
     }

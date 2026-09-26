@@ -39,12 +39,15 @@ public class FlightQualityTests
     [InlineData("wing")]
     [InlineData("3d")]
     [InlineData("jet")]
+    [InlineData("p51")]
+    [InlineData("f18")]
     public void Flies_hands_off_for_ten_seconds(string id)
     {
         var sim = Fleet.InFlight(id, 100, Fleet.Cruise(id).Airspeed);
         Fleet.Fly(sim, 10, _ => Cruise(id));
         Assert.Equal(CrashCause.None, sim.Aircraft.Crash);
-        Assert.InRange(sim.Aircraft.AirData.Airspeed, 8, 35);
+        // Big jets cruise faster than the 35 m/s the small models stay under.
+        Assert.InRange(sim.Aircraft.AirData.Airspeed, 8, Math.Max(35, 1.4 * Fleet.Cruise(id).Airspeed));
     }
 
     [Fact]
@@ -88,6 +91,8 @@ public class FlightQualityTests
     [InlineData("sport")]
     [InlineData("3d")]
     [InlineData("jet")]
+    [InlineData("p51")]
+    [InlineData("f18")]
     public void Dutch_roll_damps_after_a_rudder_pulse(string id)
     {
         double Run(bool pulse)

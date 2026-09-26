@@ -8,8 +8,8 @@ class jet and, instead of a piston A400M (commercial RC A400Ms are electric), a 
 **Skymaster F/A-18E Super Hornet 1:6.25 (ARF Plus)**: span 2180 mm, length 2970 mm, dry weight 21–22 kg; single turbine
 180–220 N or two of 100–140 N; 11 servos, scale retracts. Engine used here: one **JetCat P220-RXi class** turbine
 (220 N, idle about 33 000 rpm, max about 117 000 rpm; the P180-RXi publishes 175 N, 32 000–126 000 rpm, 610 ml/min,
-1.6 kg). Planform from the Boeing F/A-18E (span 13.62 m, length 18.31 m, wing 46.45 m², LE sweep 28°? see
-aircraft.json provenance) scaled 1:6.25.
+1.6 kg). Planform from the Boeing F/A-18E (span 13.62 m, length 18.31 m, wing 46.45 m², aspect ratio 4, 20° quarter-chord
+sweep, taper 0.35 estimated, 3° anhedral, fins canted 20°) scaled 1:6.25.
 
 **Hangar 9 P-51D Mustang 60cc (HAN4770)**: span 2260 mm, length 1970 mm, wing area 1420 in² (0.916 m²), flying weight
 11.8–13.0 kg, 1/5 scale, electric retracts, flaps. Manual: CG 171 mm behind the wing leading edge at the root; high
@@ -44,12 +44,15 @@ For both, `PowerTelemetry.StateOfCharge` is the fuel left (fraction) and the ele
 
 ## Other changes
 
+- **Wheel brakes**: optional `brakeFriction` per wheel, on while the throttle is closed. Fuel engines keep idling (about
+  10 N for either aircraft), which rolling friction alone does not hold. The brake friction has a sharper onset than
+  rolling friction (5 mm/s instead of 5 cm/s) so a held aircraft does not creep.
 - **OSD**: fuel percentage and ml left instead of volts/amps/mAh for fuel engines.
-- **Sound**: `sound.engine` = `electric` (default), `piston` or `turbine`. Piston adds an exhaust pulse train at the
+- **Sound**: the voice follows the power source. Piston adds an exhaust pulse train at the
   firing frequency (single-cylinder two-stroke: once per revolution); turbine replaces the motor whine by the spool
   whine and adds a broadband jet roar that grows with thrust.
-- **Aircraft**: `aircraft/f18` (turbine, retracts, twin canted fins, stabilators, flaperons) and `aircraft/p51`
-  (gas, retracts, 4-blade look), each with a `visual.json`.
+- **Aircraft**: `aircraft/f18` (turbine, retracts, twin canted fins, stabilators, outboard ailerons) and `aircraft/p51`
+  (gas, retracts, taildragger, two-blade 23×9), each with a `visual.json`. Main wheels of both have brakes.
 
 ## Known limits
 

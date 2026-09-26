@@ -257,6 +257,14 @@ public sealed class AircraftLoaderTests : IDisposable
         => AssertRejected(Aircraft(), "power.json", Edit(TurbinePower, find, replace));
 
     [Fact]
+    public void Wheel_brakes_default_to_none_and_load_when_given()
+    {
+        Assert.Equal(0, AircraftLoader.Load(Write(Aircraft())).Wheels[0].BrakeFriction);
+        var braked = Edit(Aircraft(), "\"stiffness\": 800,", "\"brakeFriction\": 0.6, \"stiffness\": 800,");
+        Assert.Equal(0.6, AircraftLoader.Load(Write(braked)).Wheels[0].BrakeFriction);
+    }
+
+    [Fact]
     public void Cg_datum_shifts_every_body_position()
     {
         var withBody = Edit(Aircraft(), "\"power\": \"power.json\",",

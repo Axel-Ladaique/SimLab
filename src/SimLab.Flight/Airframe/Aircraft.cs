@@ -13,6 +13,9 @@ public sealed class Aircraft
 {
     public const double Gravity = 9.80665;
 
+    /// <summary>Throttle at or below which the wheel brakes are on.</summary>
+    public const double BrakeThrottle = 0.02;
+
     readonly Servo[] _servos;
     readonly double[] _deflections;
     readonly double[] _steer;
@@ -87,6 +90,8 @@ public sealed class Aircraft
         }
         var wheels = Definition.Wheels;
         for (int i = 0; i < _steer.Length; i++) _steer[i] = SteerAngle(wheels[i], input);
+        // Wheel brakes (where fitted) are mixed to the throttle stick: on at idle, off as soon as it opens.
+        Ground.BrakeCommand = input.Throttle <= BrakeThrottle ? 1 : 0;
 
         if (Definition.GearRetract is { } retract)
         {

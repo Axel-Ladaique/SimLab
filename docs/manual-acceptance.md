@@ -105,3 +105,9 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Start or reset (R) with the gear switch left up: the gear stays down until the switch is put down, then obeys it.
 - [ ] Gear up on the runway: the jet sinks onto its belly without a crash message; gear down in flight costs speed.
 - [ ] Trainer, sport, 3D, wing: G does nothing and the OSD shows no gear line.
+
+## Fuel engines (P-51 gas, F-18 turbine)
+
+- [ ] P-51: idles at start (exhaust bark audible), stays put with the throttle closed (brakes), rolls as soon as the throttle opens; needs right rudder on the takeoff run; OSD shows CARBURANT % and ml.
+- [ ] F-18: the turbine whines at idle; full throttle takes about 4–5 s to reach full thrust (roar grows); fuel drops about 750 ml/min at full power.
+- [ ] Both: G raises and lowers the gear; the sheet in the menu shows "Moteur thermique 5.0 kW · 23×9 in · 700 ml" / "Turbine 220 N · 4.5 L".

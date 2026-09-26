@@ -29,6 +29,8 @@ public class FleetControlSignTests
     [InlineData("wing")]
     [InlineData("3d")]
     [InlineData("jet")]
+    [InlineData("p51")]
+    [InlineData("f18")]
     public void Right_aileron_gives_a_right_roll_moment(string id) =>
         Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Aileron = 0.5 }).X < 0, "roll right is -x");
 
@@ -38,6 +40,8 @@ public class FleetControlSignTests
     [InlineData("wing")]
     [InlineData("3d")]
     [InlineData("jet")]
+    [InlineData("p51")]
+    [InlineData("f18")]
     public void Up_elevator_gives_a_nose_up_moment(string id) =>
         Assert.True(MomentDueTo(id, ControlInputs.Neutral with { Elevator = 0.5 }).Y > 0);
 
@@ -65,6 +69,8 @@ public class FleetControlSignTests
     [InlineData("sport")]
     [InlineData("3d")]
     [InlineData("jet")]
+    [InlineData("p51")]
+    [InlineData("f18")]
     public void Right_rudder_gives_a_nose_right_yaw_moment(string id)
     {
         var m = MomentDueTo(id, ControlInputs.Neutral with { Rudder = 0.5 });
@@ -76,6 +82,8 @@ public class FleetControlSignTests
     [InlineData("sport")]
     [InlineData("3d")]
     [InlineData("jet")]
+    [InlineData("p51")]
+    [InlineData("f18")]
     public void Right_rudder_steers_the_rolling_aircraft_to_the_right(string id)
     {
         var def = Fleet.Load(id);
@@ -89,7 +97,9 @@ public class FleetControlSignTests
         double pitch = Math.Atan((fixedWheel.Z - steered.Z) / (fixedWheel.X - steered.X));
         var q = Attitude.ToOrientation(0, pitch, Math.PI / 2);
         double lowest = def.Wheels.Min(w => q.Rotate(w.Position).Z);
-        var rolling = new RigidBodyState(new Vec3(0, 0, -lowest - 0.01), q.Rotate(BodyAxes.Forward * 3), q, Vec3.Zero);
+        // Roll along the ground (horizontally), not along the tail-down body axis, which would lift the wheels off.
+        var forward = q.Rotate(BodyAxes.Forward);
+        var rolling = new RigidBodyState(new Vec3(0, 0, -lowest - 0.01), new Vec3(forward.X, forward.Y, 0).Normalized() * 3, q, Vec3.Zero);
         Assert.Equal(def.Wheels.Count, ground.WheelsInContact(rolling, new FlatTerrain()));
         var m = ground.Evaluate(rolling, new FlatTerrain(), steer).Moment;
         Assert.True(m.Z < 0, $"{id}: yaw moment {m.Z:F4} N·m (+z is yaw left)");

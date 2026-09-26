@@ -85,6 +85,7 @@ internal sealed class WheelDto
     public double LateralFriction { get; set; } = 0.8;
     public double MaxSteerDeg { get; set; }
     public Dictionary<string, double> SteerMix { get; set; } = new();
+    public double BrakeFriction { get; set; }
 }
 
 internal sealed class HullDto

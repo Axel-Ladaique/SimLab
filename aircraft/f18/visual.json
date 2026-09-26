@@ -1,0 +1,65 @@
+{
+  // F/A-18E outline at 1:6.25. Datum: nose tip, fuselage reference line at z = 0. US Navy tactical greys.
+  "surfaceColor": [0.63, 0.66, 0.69],
+  "controlColor": [0.56, 0.59, 0.62],
+  "propellerDisc": false,
+  "shapes": [
+    { "name": "radome", "color": [0.46, 0.48, 0.51], "sides": 20,
+      "stations": [ { "x": 0.0, "width": 0 }, { "x": 0.08, "width": 0.06 }, { "x": 0.18, "width": 0.11, "height": 0.11 }, { "x": 0.30, "width": 0.15, "height": 0.15 } ] },
+    { "name": "fuselage", "color": [0.60, 0.63, 0.66], "sides": 24, "roundness": 2.4,
+      "stations": [
+        { "x": 0.30, "z": 0.0, "width": 0.15, "height": 0.15 },
+        { "x": 0.50, "z": 0.01, "width": 0.18, "height": 0.19 },
+        { "x": 0.75, "z": 0.01, "width": 0.21, "height": 0.21 },
+        { "x": 1.00, "z": 0.0, "width": 0.26, "height": 0.22 },
+        { "x": 1.40, "z": 0.0, "width": 0.34, "height": 0.22 },
+        { "x": 1.80, "z": 0.0, "width": 0.36, "height": 0.21 },
+        { "x": 2.20, "z": 0.0, "width": 0.34, "height": 0.20 },
+        { "x": 2.60, "z": 0.0, "width": 0.30, "height": 0.16 },
+        { "x": 2.78, "z": 0.0, "width": 0.28, "height": 0.14 }
+      ] },
+    { "name": "nozzles", "color": [0.30, 0.28, 0.26], "sides": 20, "mirror": true,
+      "stations": [
+        { "x": 2.72, "y": 0.075, "width": 0.12 },
+        { "x": 2.93, "y": 0.075, "width": 0.10 },
+        { "x": 2.93, "y": 0.075, "width": 0.08 },
+        { "x": 2.85, "y": 0.075, "width": 0 }
+      ] },
+    { "name": "canopy", "color": [0.40, 0.33, 0.15], "sides": 20,
+      "stations": [
+        { "x": 0.42, "z": 0.07, "width": 0 },
+        { "x": 0.50, "z": 0.10, "width": 0.08, "height": 0.06 },
+        { "x": 0.62, "z": 0.13, "width": 0.12, "height": 0.11 },
+        { "x": 0.78, "z": 0.13, "width": 0.12, "height": 0.10 },
+        { "x": 0.92, "z": 0.115, "width": 0.08, "height": 0.06 },
+        { "x": 1.00, "z": 0.10, "width": 0 }
+      ] },
+    { "name": "spine", "color": [0.60, 0.63, 0.66], "sides": 16,
+      "stations": [
+        { "x": 0.95, "z": 0.10, "width": 0.10, "height": 0.06 },
+        { "x": 1.60, "z": 0.10, "width": 0.12, "height": 0.07 },
+        { "x": 2.20, "z": 0.09, "width": 0.10, "height": 0.05 },
+        { "x": 2.60, "z": 0.07, "width": 0.06, "height": 0.03 }
+      ] },
+    { "name": "intakes", "color": [0.60, 0.63, 0.66], "sides": 16, "roundness": 2.6, "mirror": true,
+      "stations": [
+        { "x": 1.00, "y": 0.16, "z": -0.06, "width": 0.09, "height": 0.12 },
+        { "x": 1.30, "y": 0.16, "z": -0.06, "width": 0.10, "height": 0.13 },
+        { "x": 1.70, "y": 0.15, "z": -0.05, "width": 0.09, "height": 0.10 },
+        { "x": 2.00, "y": 0.13, "z": -0.03, "width": 0.05, "height": 0.05 }
+      ] },
+    { "name": "intakeMouths", "color": [0.06, 0.06, 0.07], "sides": 16, "roundness": 2.6, "mirror": true,
+      "stations": [ { "x": 1.002, "y": 0.16, "z": -0.06, "width": 0.08, "height": 0.11 }, { "x": 1.05, "y": 0.16, "z": -0.06, "width": 0 } ] },
+    { "name": "wingtipMissiles", "color": [0.90, 0.90, 0.88], "sides": 10, "mirror": true,
+      "stations": [
+        { "x": 1.53, "y": 1.10, "z": -0.04, "width": 0 },
+        { "x": 1.58, "y": 1.10, "z": -0.04, "width": 0.025 },
+        { "x": 1.93, "y": 1.10, "z": -0.04, "width": 0.025 },
+        { "x": 1.96, "y": 1.10, "z": -0.04, "width": 0.018 }
+      ] }
+  ],
+  "plates": [
+    { "name": "lex", "color": [0.63, 0.66, 0.69], "mirror": true,
+      "points": [ [0.55, 0.09, 0.02], [0.95, 0.20, 0.02], [1.2955, 0.30, 0.02], [1.35, 0.14, 0.02] ] }
+  ]
+}

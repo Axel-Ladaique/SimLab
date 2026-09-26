@@ -100,7 +100,7 @@ public static class AircraftLoader
             bodies,
             dto.Power is null ? null : Shift(LoadPower(Path.Combine(folder, dto.Power)), cg),
             dto.Gear.Select(w => new WheelSpec(w.Name, w.Position - cg, w.Stiffness, w.Damping, w.RollingFriction,
-                w.LateralFriction, w.MaxSteerDeg, w.SteerMix)).ToList(),
+                w.LateralFriction, w.MaxSteerDeg, w.SteerMix, w.BrakeFriction)).ToList(),
             dto.Hull.Select(h => new HullPointSpec(h.Name, h.Position - cg, h.Tag)).ToList(),
             new CrashLimits(dto.Crash.MaxGearSinkRate, dto.Crash.MaxHullImpactSpeed, dto.Crash.MaxBellyImpactSpeed),
             dto.Provenance,
