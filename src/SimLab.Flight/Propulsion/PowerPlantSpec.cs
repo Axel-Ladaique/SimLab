@@ -55,6 +55,10 @@ public sealed record PropellerSpec(double DiameterM, double PitchM, double[] J, 
 /// <param name="ThrustAxis">Unit vector along which thrust pushes the aircraft, body axes.</param>
 /// <param name="SpinDirection">+1 = clockwise seen from behind, −1 = counter-clockwise.</param>
 /// <param name="PFactor">Thrust-center offset per unit of disk inflow angle, as a fraction of prop diameter.</param>
+/// <param name="DuctStatorRecovery">
+/// Ducted fan: fraction (0–1) of the rotor's aerodynamic torque that the stator vanes take back by straightening the swirl,
+/// so it never reaches the airframe. 0 for an open propeller.
+/// </param>
 public sealed record PowerPlantSpec(
     MotorSpec Motor,
     BatterySpec Battery,
@@ -63,4 +67,5 @@ public sealed record PowerPlantSpec(
     Vec3 Position,
     Vec3 ThrustAxis,
     int SpinDirection,
-    double PFactor);
+    double PFactor,
+    double DuctStatorRecovery = 0);

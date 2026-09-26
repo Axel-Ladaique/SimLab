@@ -144,6 +144,7 @@ public static class AircraftLoader
         if (dto.Motor.Kv <= 0 || dto.Motor.RotorInertia <= 0) throw Invalid(path, "motor kv and rotorInertia must be positive.");
         if (dto.Battery.Cells < 1) throw Invalid(path, "battery cells must be at least 1.");
         if (dto.Battery.CapacityAh <= 0) throw Invalid(path, "battery capacityAh must be positive.");
+        if (dto.DuctStatorRecovery is < 0 or > 1) throw Invalid(path, "ductStatorRecovery must be between 0 and 1.");
 
         var esc = dto.Esc is null ? EscSpec.Linear() : new EscSpec(dto.Esc.ThrottleIn, dto.Esc.ThrottleOut, dto.Esc.Brake);
         Interpolation.RequireIncreasing(esc.ThrottleIn, "esc.throttleIn");
@@ -156,7 +157,8 @@ public static class AircraftLoader
             dto.Position,
             dto.ThrustAxis.Normalized(),
             dto.SpinDirection >= 0 ? 1 : -1,
-            dto.PFactor);
+            dto.PFactor,
+            dto.DuctStatorRecovery);
 
         if (dto.ThrustStand is null) return spec;
         var csv = Path.Combine(Path.GetDirectoryName(path)!, dto.ThrustStand);

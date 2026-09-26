@@ -1,0 +1,16 @@
+{
+  "position": [1.45, 0, 0],
+  "thrustAxis": [-1, 0, 0],
+  "spinDirection": 1,
+  "pFactor": 0,
+  "ductStatorRecovery": 0.9,
+  "motor": { "kv": 2100, "resistanceOhm": 0.009, "noLoadCurrentA": 4.0, "maxCurrentA": 100, "rotorInertia": 2.0e-5 },
+  "battery": { "cells": 6, "capacityAh": 5.0, "internalResistanceOhm": 0.018 },
+  "propeller": {
+    "diameterM": 0.08, "pitchM": 0.09,
+    "j":  [0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5],
+    "ct": [0.99, 0.86, 0.71, 0.54, 0.36, 0.17, -0.03],
+    "cp": [1.04, 1.03, 1.00, 0.95, 0.87, 0.76, 0.62]
+  },
+  "sound": { "blades": 12, "polePairs": 2 }
+}

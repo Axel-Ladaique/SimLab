@@ -11,6 +11,7 @@ public class StaticRunUpTests
     [InlineData("sport")]
     [InlineData("wing")]
     [InlineData("3d")]
+    [InlineData("jet")]
     public void Zero_throttle_is_silent(string id)
     {
         var runUp = For(id);

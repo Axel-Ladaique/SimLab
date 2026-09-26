@@ -1,0 +1,54 @@
+{
+  "name": "F-16 80 mm EDF",
+  "description": "Electric ducted-fan F-16 in the class of the E-flite F-16 Falcon 80 mm: 1 m span, 2.7 kg, 6S. Fast, all-moving stabilators, tricycle gear. Keep the speed up.",
+  "mass": 2.73,
+  "cg": [0.77, 0, 0],
+  "inertia": { "roll": 0.037, "yaw": 0.234, "pitch": 0.207, "rollYaw": 0.0036 },
+  "surfaces": [
+    { "name": "wing", "role": "wing", "root": [0.685, 0, -0.01], "span": 0.47, "rootChord": 0.50, "tipChord": 0.115,
+      "sweepDeg": 32.4, "dihedralDeg": 0, "incidenceDeg": 1.0, "airfoil": "naca0012", "segments": 12, "mirror": true },
+    { "name": "stab", "role": "horizontalTail", "root": [1.2475, 0.08, -0.01], "span": 0.193, "rootChord": 0.19, "tipChord": 0.06,
+      "sweepDeg": 33.7, "dihedralDeg": -10, "incidenceDeg": -1.5, "airfoil": "naca0012", "segments": 4, "mirror": true },
+    { "name": "fin", "role": "verticalTail", "root": [1.07, 0, 0.07], "span": 0.26, "rootChord": 0.28, "tipChord": 0.085,
+      "sweepDeg": 41.5, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 4, "mirror": false }
+  ],
+  "controls": [
+    { "name": "aileronRight", "surface": "wing", "side": "right", "chordFraction": 0.22, "spanStart": 0.17, "spanEnd": 0.75,
+      "maxPositiveDeg": 10, "maxNegativeDeg": 10, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": -1 } },
+    { "name": "aileronLeft", "surface": "wing", "side": "left", "chordFraction": 0.22, "spanStart": 0.17, "spanEnd": 0.75,
+      "maxPositiveDeg": 10, "maxNegativeDeg": 10, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": 1 } },
+    { "name": "elevator", "surface": "stab", "side": "both", "chordFraction": 1.0,
+      "maxPositiveDeg": 13, "maxNegativeDeg": 16, "servoSecondsPer60Deg": 0.1, "mix": { "elevator": -1 } },
+    { "name": "rudder", "surface": "fin", "side": "both", "chordFraction": 0.3, "spanStart": 0.05, "spanEnd": 0.85,
+      "maxPositiveDeg": 15, "maxNegativeDeg": 15, "servoSecondsPer60Deg": 0.1, "mix": { "rudder": 1 } }
+  ],
+  "bodies": [ { "name": "fuselage", "position": [0.72, 0, 0], "cdA": [0.0075, 0.05, 0.06] } ],
+  "power": "power.json",
+  "gear": [
+    { "name": "nosewheel", "position": [0.46, 0, -0.19], "stiffness": 1500, "damping": 35,
+      "rollingFriction": 0.04, "lateralFriction": 0.7, "maxSteerDeg": 25, "steerMix": { "rudder": 1 } },
+    { "name": "mainLeft", "position": [0.84, -0.115, -0.19], "stiffness": 3000, "damping": 70 },
+    { "name": "mainRight", "position": [0.84, 0.115, -0.19], "stiffness": 3000, "damping": 70 }
+  ],
+  "hull": [
+    { "name": "nose", "position": [0, 0, 0], "tag": "nose" },
+    { "name": "wingtipLeft", "position": [0.983, -0.47, -0.01], "tag": "wingtip" },
+    { "name": "wingtipRight", "position": [0.983, 0.47, -0.01], "tag": "wingtip" },
+    { "name": "tail", "position": [1.45, 0, 0], "tag": "tail" },
+    { "name": "finTop", "position": [1.32, 0, 0.33], "tag": "tail" },
+    { "name": "stabTipLeft", "position": [1.39, -0.27, -0.044], "tag": "tail" },
+    { "name": "stabTipRight", "position": [1.39, 0.27, -0.044], "tag": "tail" },
+    { "name": "canopy", "position": [0.33, 0, 0.11], "tag": "canopy" },
+    { "name": "belly", "position": [0.62, 0, -0.1], "tag": "belly" }
+  ],
+  "fpvCamera": { "position": [0.3, 0, 0.1], "uptiltDeg": 5, "fovDeg": 100 },
+  "crash": { "maxGearSinkRate": 2.5, "maxHullImpactSpeed": 1.5, "maxBellyImpactSpeed": 2.0 },
+  "provenance": {
+    "*": "estimated",
+    "mass": "E-flite F-16 Falcon 80mm (EFL87850) published weight, 96 oz",
+    "cg": "estimated; E-flite manual gives 95 mm aft of the wing leading edge at the fuselage (about 0.714 m here), moved 46 mm aft because the strip model has no destabilizing fuselage or strakes",
+    "surfaces": "General Dynamics F-16 planform (30 ft span reference wing, 300 sq ft, taper 0.227, 40 deg leading-edge sweep; stabilators 10 deg anhedral) scaled 1:10.4 to the model's 1450 mm length",
+    "controls": "E-flite manual high rates: aileron 15 mm, stabilator 32 mm up / 27 mm down, rudder 21 mm, converted to degrees at the measuring point",
+    "inertia": "F-16 radii of gyration (Ixx 12875, Iyy 75674, Izz 85552, Ixz 1331 kg m2 at 9295 kg) scaled to the model"
+  }
+}

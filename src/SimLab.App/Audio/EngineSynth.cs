@@ -74,7 +74,8 @@ public sealed class EngineSynth
             if (prop > 0)
             {
                 double harmonics = 0;
-                for (int k = 1; k <= PropHarmonics; k++) harmonics += Math.Sin(k * _bladePhase) / Math.Pow(k, 1.2);
+                // Harmonics at or above Nyquist would fold back as spurious tones (a many-bladed fan passes several kHz).
+                for (int k = 1; k <= PropHarmonics && k * blade < 0.5 * SampleRate; k++) harmonics += Math.Sin(k * _bladePhase) / Math.Pow(k, 1.2);
                 sample += PropLevel * prop * harmonics * (1 + ShaftModulation * Math.Sin(_shaftPhase)) * propMix;
             }
             if (whine > 0)

@@ -150,6 +150,20 @@ public sealed class AircraftLoaderTests : IDisposable
         => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"capacityAh\": 2.2", "\"capacityAh\": 0"));
 
     [Fact]
+    public void Duct_stator_recovery_defaults_to_zero_and_loads_when_given()
+    {
+        Assert.Equal(0, AircraftLoader.Load(Write(Aircraft())).Power!.DuctStatorRecovery);
+        var ducted = Edit(Power, "\"pFactor\": 0.1,", "\"pFactor\": 0.1, \"ductStatorRecovery\": 0.9,");
+        Assert.Equal(0.9, AircraftLoader.Load(Write(Aircraft(), power: ducted)).Power!.DuctStatorRecovery);
+    }
+
+    [Theory]
+    [InlineData("-0.1")]
+    [InlineData("1.1")]
+    public void Duct_stator_recovery_outside_zero_to_one_is_rejected(string value)
+        => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"pFactor\": 0.1,", $"\"pFactor\": 0.1, \"ductStatorRecovery\": {value},"));
+
+    [Fact]
     public void Cg_datum_shifts_every_body_position()
     {
         var withBody = Edit(Aircraft(), "\"power\": \"power.json\",",

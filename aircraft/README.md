@@ -95,6 +95,35 @@ datum and axes as everything else — a left wingtip has negative y, a belly poi
 forward axis, `fovDeg` (60–150) is its **horizontal** field of view, as FPV camera specs give it. Without the block,
 the camera sits on the hull point tagged `nose` (else the most forward hull point) with 10° uptilt and 110°.
 
+## Display shape: `visual.json` (optional)
+
+Without it an aircraft is drawn from its aero surfaces plus a box fuselage spanning the hull points. A `visual.json`
+next to `aircraft.json` adds display-only geometry; it never changes the physics. Positions use the same datum and body
+axes as `aircraft.json`, colours are `[r, g, b]` in 0–1.
+
+```json
+{
+  "surfaceColor": [0.60, 0.63, 0.66],      // wing and tail panels (default cream)
+  "controlColor": [0.53, 0.56, 0.59],      // control surfaces (default orange)
+  "propellerDisc": false,                  // hide the spinning prop disc (ducted fans)
+  "shapes": [                              // lofted bodies; any shape replaces the box fuselage
+    { "name": "fuselage", "color": [0.55, 0.58, 0.61], "sides": 24, "roundness": 2.6, "mirror": false,
+      "stations": [ { "x": 0.0, "width": 0 }, { "x": 0.3, "y": 0, "z": 0.01, "width": 0.10, "height": 0.11 } ] }
+  ],
+  "plates": [                              // flat convex polygons: strakes, ventral fins, rails
+    { "name": "strakes", "color": [0.6, 0.63, 0.66], "mirror": true, "points": [ [0.28, 0.05, -0.01], [0.45, 0.085, -0.01], [0.70, 0.05, -0.01] ] }
+  ]
+}
+```
+
+- A shape is a list of cross-sections (at least 2), each a superellipse `width` (along y) by `height` (along z, defaults
+  to `width`) centred on (`y`, `z`) at body `x`. `roundness` 2 is an ellipse, higher values square the section off.
+  A zero-size station closes the shape to a point (a nose, a tail cone). Shapes are smooth-shaded.
+- `mirror: true` also draws the shape or plate reflected to −y (wingtip missiles, strakes).
+- `sides` is 3–64 (default 16).
+
+See `jet/visual.json` for a complete example (the F-16).
+
 ## Inertia
 
 ```json
@@ -124,6 +153,21 @@ About the **CG**, in body axes:
   - a **down** thrust offset adds a small **−z** component.
   - the trainer combines both: `[-0.9988, 0.0349, -0.0349]` (about 2° right, 2° down thrust).
 
+### Ducted fans (EDF)
+
+A ducted fan is entered as a propeller of the fan's diameter with explicit `j` / `ct` / `cp` tables (the generic
+propeller estimate is far too weak for a 12-blade fan), plus:
+
+```json
+"pFactor": 0,
+"ductStatorRecovery": 0.9
+```
+
+`ductStatorRecovery` (0–1, default 0) is the share of the rotor's aerodynamic torque that the stator vanes behind the
+fan take back by straightening the swirl: the airframe keeps only the rest (and the torque that spins the rotor up), and
+the exhaust leaves with that much less swirl. Put `position` at the nozzle exit so no surface sits in the exhaust.
+See `jet/power.json`.
+
 ### Optional `sound` block (power.json)
 
 ```json
@@ -132,7 +176,7 @@ About the **CG**, in body axes:
 
 | Field | Default | Meaning |
 |-------|---------|---------|
-| `blades` | 2 | Propeller blade count (1–6); sets the blade-pass frequency rpm × blades / 60 |
+| `blades` | 2 | Propeller or fan blade count (1–16); sets the blade-pass frequency rpm × blades / 60 |
 | `polePairs` | 7 | Motor magnetic pole pairs (1–20); sets the motor whine frequency rpm × polePairs / 60 |
 | `sample`, `sampleRpm` | none | Recorded motor loop (relative to the aircraft folder) and the rpm it was recorded at; when given, the loop replaces the synthesized motor and propeller, pitched by rpm / sampleRpm. Give both or neither. |
 

@@ -62,4 +62,18 @@ public class AircraftMeshBuilderTests
         Assert.Equal(def.Hull.Max(h => h.Position.X), fuselage.Triangles.Max(v => v.X), 6);
         Assert.Equal(def.Hull.Min(h => h.Position.X), fuselage.Triangles.Min(v => v.X), 6);
     }
+    [Fact]
+    public void Swept_tapered_surfaces_are_drawn_as_their_trapezoid()
+    {
+        // Jet wing: leading edge at datum x 0.56 on the centreline, 40° leading-edge sweep, 0.47 m semi-span, tip
+        // chord 0.115; CG at datum x 0.77. Strips drawn as rectangles would leave a staircase along the leading edge.
+        var parts = Parts("jet").Where(p => p.Name is "airframe" or "aileronRight" or "aileronLeft").SelectMany(p => p.Triangles).ToList();
+        var tip = parts.Where(v => v.Y > 0.47 - 1e-6).ToList();
+        double tipLeading = 0.56 + 0.47 * Math.Tan(40 * Math.PI / 180) - 0.77;
+        Assert.Equal(tipLeading, tip.Min(v => v.X), 2);
+        Assert.Equal(tipLeading + 0.115, tip.Max(v => v.X), 2);
+        var root = parts.Where(v => Math.Abs(v.Y) < 1e-6 && v.Z < 0.02).ToList(); // not the fin
+        Assert.Equal(0.56 - 0.77, root.Min(v => v.X), 2);
+        Assert.Equal(0.56 + 0.50 - 0.77, root.Max(v => v.X), 2);
+    }
 }

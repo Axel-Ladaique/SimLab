@@ -9,11 +9,15 @@ public readonly record struct Rgb(float R, float G, float B);
 /// <summary>
 /// A renderable piece of the aircraft. Vertices are in body axes, three per triangle. For control parts, rotating the
 /// vertices about <see cref="HingeAxis"/> through <see cref="HingePoint"/> by the deflection (rad, positive = trailing
-/// edge down) reproduces the physical deflection.
+/// edge down) reproduces the physical deflection. <see cref="Smooth"/> parts are shaded with shared vertex normals.
 /// </summary>
-public sealed record MeshPart(string Name, int ControlIndex, Vec3 HingePoint, Vec3 HingeAxis, IReadOnlyList<Vec3> Triangles, Rgb Color);
+public sealed record MeshPart(string Name, int ControlIndex, Vec3 HingePoint, Vec3 HingeAxis, IReadOnlyList<Vec3> Triangles, Rgb Color,
+    bool Smooth = false);
 
-/// <summary>Builds a simple flat-panel model of an aircraft directly from its aerodynamic geometry.</summary>
+/// <summary>
+/// Builds a simple flat-panel model of an aircraft directly from its aerodynamic geometry, with the display-only shapes,
+/// plates and colours of its optional <see cref="AircraftVisualSpec"/>.
+/// </summary>
 public static class AircraftMeshBuilder
 {
     static readonly Rgb SurfaceColor = new(0.93f, 0.91f, 0.86f);
@@ -25,42 +29,61 @@ public static class AircraftMeshBuilder
     const double GearSize = 0.05;
     const int PropSides = 16;
 
-    public static IReadOnlyList<MeshPart> Build(AircraftDefinition definition, IReadOnlyList<SurfaceSegment> segments)
+    public static IReadOnlyList<MeshPart> Build(AircraftDefinition definition, IReadOnlyList<SurfaceSegment> segments) =>
+        Build(definition, segments, AircraftVisualSpec.Load(definition));
+
+    public static IReadOnlyList<MeshPart> Build(AircraftDefinition definition, IReadOnlyList<SurfaceSegment> segments, AircraftVisualSpec? visual)
     {
         var parts = new List<MeshPart>();
         var fixedTriangles = new List<Vec3>();
         var controlTriangles = new SortedDictionary<int, List<Vec3>>();
         var hinges = new Dictionary<int, (Vec3 Point, Vec3 Axis)>();
 
+        var endChords = EndChords(segments);
         foreach (var s in segments)
         {
-            var span = Vec3.Cross(s.FlowChordAxis, s.FlowNormalAxis).Normalized();
-            var half = span * (s.Area / s.Chord / 2);
-            var leading = s.Position + s.ChordAxis * (0.25 * s.Chord);
-            var trailing = s.Position - s.ChordAxis * (0.75 * s.Chord);
+            // Each strip is a trapezoid along its swept quarter-chord line, its chord interpolated to the strip ends so
+            // neighbouring strips join edge to edge.
+            var (innerChord, outerChord) = endChords[s];
+            var inner = s.Position - s.HalfSpan;
+            var outer = s.Position + s.HalfSpan;
+            Vec3 Along(Vec3 quarterChord, double chord, double fromLeadingEdge) => quarterChord + s.ChordAxis * ((0.25 - fromLeadingEdge) * chord);
+            var leadIn = Along(inner, innerChord, 0);
+            var leadOut = Along(outer, outerChord, 0);
+            var trailIn = Along(inner, innerChord, 1);
+            var trailOut = Along(outer, outerChord, 1);
             if (s.ControlIndex < 0)
             {
-                AddQuad(fixedTriangles, leading - half, leading + half, trailing + half, trailing - half);
+                AddQuad(fixedTriangles, leadIn, leadOut, trailOut, trailIn);
                 continue;
             }
 
-            var hinge = trailing + s.ChordAxis * (s.ControlChordFraction * s.Chord);
-            AddQuad(fixedTriangles, leading - half, leading + half, hinge + half, hinge - half);
+            var hingeIn = Along(inner, innerChord, 1 - s.ControlChordFraction);
+            var hingeOut = Along(outer, outerChord, 1 - s.ControlChordFraction);
+            AddQuad(fixedTriangles, leadIn, leadOut, hingeOut, hingeIn);
             if (!controlTriangles.TryGetValue(s.ControlIndex, out var list)) controlTriangles[s.ControlIndex] = list = [];
-            AddQuad(list, hinge - half, hinge + half, trailing + half, trailing - half);
+            AddQuad(list, hingeIn, hingeOut, trailOut, trailIn);
             if (!hinges.ContainsKey(s.ControlIndex))
             {
-                var toTrailing = trailing - hinge;
-                double sign = Vec3.Dot(Vec3.Cross(span, toTrailing), s.NormalAxis * -1) >= 0 ? 1 : -1;
-                hinges[s.ControlIndex] = (hinge, span * sign);
+                var line = (hingeOut - hingeIn).Normalized();
+                var toTrailing = s.ChordAxis * -1;
+                double sign = Vec3.Dot(Vec3.Cross(line, toTrailing), s.NormalAxis * -1) >= 0 ? 1 : -1;
+                hinges[s.ControlIndex] = (hingeIn, line * sign);
             }
         }
 
-        parts.Add(new MeshPart("airframe", -1, Vec3.Zero, BodyAxes.Right, fixedTriangles, SurfaceColor));
+        parts.Add(new MeshPart("airframe", -1, Vec3.Zero, BodyAxes.Right, fixedTriangles, visual?.SurfaceColor ?? SurfaceColor));
         foreach (var (index, triangles) in controlTriangles)
-            parts.Add(new MeshPart(definition.Controls[index].Name, index, hinges[index].Point, hinges[index].Axis, triangles, ControlColor));
+            parts.Add(new MeshPart(definition.Controls[index].Name, index, hinges[index].Point, hinges[index].Axis, triangles,
+                visual?.ControlColor ?? ControlColor));
 
-        parts.Add(new MeshPart("fuselage", -1, Vec3.Zero, BodyAxes.Right, Fuselage(definition), FuselageColor));
+        if (visual is { Shapes.Count: > 0 })
+            foreach (var shape in visual.Shapes)
+                parts.Add(new MeshPart(shape.Name, -1, Vec3.Zero, BodyAxes.Right, Loft(shape), shape.Color, Smooth: true));
+        else
+            parts.Add(new MeshPart("fuselage", -1, Vec3.Zero, BodyAxes.Right, Fuselage(definition), FuselageColor));
+        foreach (var plate in visual?.Plates ?? [])
+            parts.Add(new MeshPart(plate.Name, -1, Vec3.Zero, BodyAxes.Right, Plate(plate), plate.Color));
 
         if (definition.Wheels.Count > 0)
         {
@@ -69,7 +92,7 @@ public static class AircraftMeshBuilder
             parts.Add(new MeshPart("gear", -1, Vec3.Zero, BodyAxes.Right, gear, DarkColor));
         }
 
-        if (definition.Power is { } power)
+        if (definition.Power is { } power && (visual?.PropellerDisc ?? true))
             parts.Add(new MeshPart("propeller", -1, power.Position, power.ThrustAxis, Disc(power.Position, power.ThrustAxis, power.Propeller.DiameterM / 2), DarkColor));
 
         return parts;
@@ -82,6 +105,73 @@ public static class AircraftMeshBuilder
         double back = definition.Hull.Count > 0 ? definition.Hull.Max(h => h.Position.X) : 0.5;
         var triangles = new List<Vec3>();
         AddBox(triangles, new Vec3((front + back) / 2, 0, 0), (back - front) / 2, FuselageHeight / 2, FuselageWidth / 2);
+        return triangles;
+    }
+
+    /// <summary>
+    /// Chord at the inner and outer end of every strip: the mean with the neighbouring strip of the same panel, extrapolated
+    /// at the root and tip, which reproduces a linear taper exactly.
+    /// </summary>
+    static Dictionary<SurfaceSegment, (double Inner, double Outer)> EndChords(IReadOnlyList<SurfaceSegment> segments)
+    {
+        var ends = new Dictionary<SurfaceSegment, (double, double)>();
+        foreach (var panel in segments.GroupBy(s => (s.SurfaceName, s.Side)))
+        {
+            var strips = panel.OrderBy(s => s.SpanFraction).ToList();
+            for (int k = 0; k < strips.Count; k++)
+            {
+                double c = strips[k].Chord;
+                double inner = k > 0 ? (strips[k - 1].Chord + c) / 2 : strips.Count > 1 ? c - (strips[1].Chord - c) / 2 : c;
+                double outer = k + 1 < strips.Count ? (strips[k + 1].Chord + c) / 2 : strips.Count > 1 ? c + (c - strips[k - 1].Chord) / 2 : c;
+                ends[strips[k]] = (inner, outer);
+            }
+        }
+        return ends;
+    }
+
+    /// <summary>Rings of superellipse sections joined by quads (mirrored across y = 0 when asked).</summary>
+    static List<Vec3> Loft(VisualShape shape)
+    {
+        var triangles = new List<Vec3>();
+        foreach (double side in shape.Mirror ? new[] { 1.0, -1.0 } : [1.0])
+        {
+            var rings = shape.Stations.Select(s => Ring(s, shape.Sides, shape.Roundness, side)).ToList();
+            for (int r = 0; r + 1 < rings.Count; r++)
+                for (int i = 0; i < shape.Sides; i++)
+                {
+                    int j = (i + 1) % shape.Sides;
+                    AddQuad(triangles, rings[r][i], rings[r][j], rings[r + 1][j], rings[r + 1][i]);
+                }
+        }
+        return triangles;
+    }
+
+    static Vec3[] Ring(VisualStation s, int sides, double roundness, double side)
+    {
+        var ring = new Vec3[sides];
+        double e = 2 / roundness;
+        for (int i = 0; i < sides; i++)
+        {
+            double a = 2 * Math.PI * i / sides, c = Math.Cos(a), n = Math.Sin(a);
+            double y = Math.Sign(c) * Math.Pow(Math.Abs(c), e) * s.Width / 2;
+            double z = Math.Sign(n) * Math.Pow(Math.Abs(n), e) * s.Height / 2;
+            ring[i] = new Vec3(s.X, side * (s.Y + y), s.Z + z);
+        }
+        return ring;
+    }
+
+    /// <summary>Triangle fan over a convex polygon (mirrored across y = 0 when asked).</summary>
+    static List<Vec3> Plate(VisualPlate plate)
+    {
+        var triangles = new List<Vec3>();
+        foreach (double side in plate.Mirror ? new[] { 1.0, -1.0 } : [1.0])
+        {
+            var p = plate.Points.Select(v => new Vec3(v.X, side * v.Y, v.Z)).ToList();
+            for (int i = 1; i + 1 < p.Count; i++)
+            {
+                triangles.Add(p[0]); triangles.Add(p[i]); triangles.Add(p[i + 1]);
+            }
+        }
         return triangles;
     }
 
