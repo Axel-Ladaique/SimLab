@@ -94,8 +94,12 @@ public sealed record Fence(Vec3 Base, double YawDeg, double Length, Rgb Wood) : 
 /// Wooden poles 9 m tall carrying two wires, one each side of a cross-arm, that sag 1.5 m mid-span. Each span's wires
 /// are drawn and collide as the same 8 straight segments; wires collide with <see cref="WireHitRadius"/>.
 /// </summary>
-public sealed record PowerLine(IReadOnlyList<Vec3> Poles) : Prop(Poles[0], 0)
+public sealed record PowerLine(IReadOnlyList<Vec3> Poles) : Prop(RequireAtLeastTwoPoles(Poles)[0], 0)
 {
+    static IReadOnlyList<Vec3> RequireAtLeastTwoPoles(IReadOnlyList<Vec3> poles) => poles.Count >= 2
+        ? poles
+        : throw new ArgumentException($"PowerLine needs at least 2 poles, got {poles.Count}.", nameof(poles));
+
     public const double PoleHeight = 9;
     public const double PoleRadius = 0.13;
     public const double ArmHalfLength = 0.8;

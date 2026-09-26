@@ -97,4 +97,44 @@ public class ObstacleShapeTests
         Assert.False(wire.Intersects(new Vec3(19, 11, 5), new Vec3(21, 11, 5)));
         Assert.Equal(new Footprint(19.9, -10.1, 20.1, 10.1), wire.Footprint);
     }
+
+    [Fact]
+    public void Vertical_cylinder_bounds_span_its_base_to_its_top()
+    {
+        var pole = new VerticalCylinder(new Vec3(10, 20, 2), 0.05, 8);
+        Assert.Equal(2, pole.Bounds.MinZ, 9);
+        Assert.Equal(10, pole.Bounds.MaxZ, 9);
+    }
+
+    [Fact]
+    public void Vertical_cone_bounds_span_its_base_to_its_tip()
+    {
+        var cone = new VerticalCone(new Vec3(0, 0, 1), 4, 10);
+        Assert.Equal(1, cone.Bounds.MinZ, 9);
+        Assert.Equal(11, cone.Bounds.MaxZ, 9);
+    }
+
+    [Fact]
+    public void Ellipsoid_bounds_span_its_vertical_radius()
+    {
+        var crown = new Ellipsoid(new Vec3(0, 0, 10), 4, 5);
+        Assert.Equal(5, crown.Bounds.MinZ, 9);
+        Assert.Equal(15, crown.Bounds.MaxZ, 9);
+    }
+
+    [Fact]
+    public void Oriented_box_bounds_cover_its_turned_extent()
+    {
+        var box = new OrientedBox(new Vec3(100, 50, 2), new Vec3(6, 1, 2), 90);
+        Assert.Equal(0, box.Bounds.MinZ, 9);
+        Assert.Equal(4, box.Bounds.MaxZ, 9);
+    }
+
+    [Fact]
+    public void Capsule_bounds_cover_both_ends_plus_radius()
+    {
+        var wire = new Capsule(new Vec3(20, -10, 5), new Vec3(20, 10, 6), 0.10);
+        Assert.Equal(4.9, wire.Bounds.MinZ, 9);
+        Assert.Equal(6.1, wire.Bounds.MaxZ, 9);
+    }
 }

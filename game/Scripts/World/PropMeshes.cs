@@ -32,7 +32,8 @@ public static class PropMeshes
 
     static Mesh BuildNear(PartMesh mesh) => mesh switch
     {
-        PartMesh.Trunk => new CylinderMesh { TopRadius = 0.3f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 8, Rings = 1 },
+        // Untapered so the drawn trunk matches the hit cylinder's radius exactly (trunks collide exactly, per spec).
+        PartMesh.Trunk => new CylinderMesh { TopRadius = 0.5f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 8, Rings = 1 },
         PartMesh.Post => new CylinderMesh { TopRadius = 0.5f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 8, Rings = 1 },
         PartMesh.Box => new BoxMesh { Size = Vector3.One },
         PartMesh.Wire => Merge((new CylinderMesh { TopRadius = 0.5f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 4, Rings = 1 },
@@ -46,7 +47,7 @@ public static class PropMeshes
 
     static Mesh? BuildFar(PartMesh mesh) => mesh switch
     {
-        PartMesh.Trunk => new CylinderMesh { TopRadius = 0.3f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 4, Rings = 1 },
+        PartMesh.Trunk => new CylinderMesh { TopRadius = 0.5f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 4, Rings = 1 },
         PartMesh.BroadleafCrown => new SphereMesh { Radius = 0.48f, Height = 0.96f, RadialSegments = 6, Rings = 3 },
         PartMesh.ConiferCrown => new CylinderMesh { TopRadius = 0f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 5, Rings = 1 },
         _ => null,

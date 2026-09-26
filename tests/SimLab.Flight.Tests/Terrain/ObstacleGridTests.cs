@@ -36,12 +36,14 @@ public class ObstacleGridTests
         double U(double lo, double hi) => lo + rng.NextDouble() * (hi - lo);
         for (int i = 0; i < 5000; i++)
         {
-            var p = new Vec3(U(-220, 220), U(-220, 220), U(0, 25));
+            // z up to 60 m: well above every obstacle here, so most points now sit outside every shape's 3D bound,
+            // exercising the bound reject rather than only ever falling through it into Contains.
+            var p = new Vec3(U(-220, 220), U(-220, 220), U(0, 60));
             Assert.Equal(obstacles.Any(o => o.Shape.Contains(p)), grid.Hit(p) is not null);
         }
         for (int i = 0; i < 2000; i++)
         {
-            var a = new Vec3(U(-220, 220), U(-220, 220), U(0, 25));
+            var a = new Vec3(U(-220, 220), U(-220, 220), U(0, 60));
             // Mostly aircraft-sized segments, some long ones crossing several cells.
             double reach = i % 10 == 0 ? 70 : 3;
             var b = a + new Vec3(U(-reach, reach), U(-reach, reach), U(-2, 2));

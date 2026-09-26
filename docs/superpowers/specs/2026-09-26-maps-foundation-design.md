@@ -72,6 +72,12 @@ An obstacle is registered in every cell its footprint touches. A query visits on
 covers and returns the first hit. An obstacle spanning several cells may be tested twice in one query; that only costs
 time. The grid is immutable, so queries are thread-safe.
 
+Cell registration stays 2D (the footprint above), but each shape also exposes a vertical bound (`IObstacleShape.
+Bounds`, its z extent). The grid precomputes these bounds once and, before calling a shape's `Contains`/`Intersects`
+(some of which sample 10–20 points per call), rejects it with a cheap point-in-range or segment-range overlap test
+against that bound. This cuts the cost of a dense grove at any altitude, since most candidates in a visited cell sit
+well above or below the query there.
+
 ### 1.3 `ITerrain` and crash detection
 
 `ITerrain.HitsObstacle(Vec3)` becomes:
@@ -97,9 +103,11 @@ The first obstacle hit sets the cause:
 | `Structure` | `StructureStrike` (new) | Contre un obstacle | Hit a structure |
 | `Wire` | `WireStrike` (new) | Dans les câbles | Into the wires |
 
-**Tunnelling bound:** crash detection runs at 500 Hz, so at 100 m/s the aircraft moves 0.20 m per step. Wires
-therefore collide with a radius of at least **0.10 m** (0.20 m diameter), even though they are drawn thinner. Every
-other obstacle is thicker than 0.20 m.
+**Tunnelling bound:** crash detection runs at 500 Hz, so at 100 m/s the aircraft moves 0.20 m per step. The 0.20 m
+rule applies to wires: they collide with a radius of at least **0.10 m** (0.20 m diameter), even though they are
+drawn thinner. Other obstacles thinner than 0.20 m, such as the 0.10 m fence, are not caught by this radius margin
+but by the hull-pair check above instead: hull segments have extent along the flight path, so one spanning a thin
+structure between two probe points still catches it even when no single probe point ever lands inside it.
 
 ## 2. Map model — `SimLab.App.Maps`
 
@@ -172,7 +180,7 @@ lobes or skirts that reach the envelope, so the 85 % hitbox is always inside vis
 | `Car` | size, colour | oriented box (exact) |
 | `Table` | size | oriented box (exact) |
 | `Fence` | length | thin oriented box (exact) |
-| `PowerLine` | pole positions, pole height, sag | pole cylinders + 4 capsules per span following the sag, radius 0.10 m |
+| `PowerLine` | pole positions, pole height, sag | pole cylinders + 8 segments per span per wire following the sag, radius 0.10 m |
 
 The 85 % rule means brushing the outer foliage survives, while the trunk and the heart of the crown are always a
 crash (the user's choice). The trunk is exact because it is solid and easy to see.

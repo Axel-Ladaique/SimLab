@@ -17,14 +17,17 @@ public sealed class ObstacleGrid
     public const double CellSize = 32;
 
     readonly Obstacle[] _all;
+    readonly VerticalBounds[] _bounds;
     readonly Dictionary<long, int[]> _cells;
 
     public ObstacleGrid(IEnumerable<Obstacle> obstacles)
     {
         _all = obstacles.ToArray();
+        _bounds = new VerticalBounds[_all.Length];
         var lists = new Dictionary<long, List<int>>();
         for (int i = 0; i < _all.Length; i++)
         {
+            _bounds[i] = _all[i].Shape.Bounds;
             var f = _all[i].Shape.Footprint;
             for (int cx = Cell(f.MinX); cx <= Cell(f.MaxX); cx++)
             for (int cy = Cell(f.MinY); cy <= Cell(f.MaxY); cy++)
@@ -44,19 +47,28 @@ public sealed class ObstacleGrid
     {
         if (!_cells.TryGetValue(Key(Cell(p.X), Cell(p.Y)), out var ids)) return null;
         foreach (int i in ids)
+        {
+            var b = _bounds[i];
+            if (p.Z < b.MinZ || p.Z > b.MaxZ) continue;
             if (_all[i].Shape.Contains(p)) return _all[i].Kind;
+        }
         return null;
     }
 
     /// <summary>Kind of the first obstacle crossed by the segment a→b, or null.</summary>
     public ObstacleKind? Hit(Vec3 a, Vec3 b)
     {
+        double segMinZ = Math.Min(a.Z, b.Z), segMaxZ = Math.Max(a.Z, b.Z);
         for (int cx = Cell(Math.Min(a.X, b.X)); cx <= Cell(Math.Max(a.X, b.X)); cx++)
         for (int cy = Cell(Math.Min(a.Y, b.Y)); cy <= Cell(Math.Max(a.Y, b.Y)); cy++)
         {
             if (!_cells.TryGetValue(Key(cx, cy), out var ids)) continue;
             foreach (int i in ids)
+            {
+                var bounds = _bounds[i];
+                if (segMaxZ < bounds.MinZ || segMinZ > bounds.MaxZ) continue;
                 if (_all[i].Shape.Intersects(a, b)) return _all[i].Kind;
+            }
         }
         return null;
     }

@@ -88,15 +88,12 @@ public partial class MenuAircraftView : ControlPreview
             child.QueueFree();
         }
         _field = MapBuilder.Build(_sceneryRoot, map, _conditions);
-        // The windsock only takes a pose once its own _Ready has run (its _sock child is built there), which is
-        // deferred to idle time even though it is already inside the tree right after AddChild; ApplyConditions'
-        // IsNodeReady() guard would just skip it if called now, so defer the whole re-apply by one frame instead.
-        CallDeferred(nameof(ReapplyConditions));
+        // _sceneryRoot is already inside the tree here (this view was already built), so Godot readies the
+        // windsock synchronously as part of AddChild above: its _sock child (built in its own _Ready) already
+        // exists by now, and ApplyConditions' IsNodeReady() guard passes on this very call.
+        ApplyConditions(_conditions);
     }
 
-    void ReapplyConditions() => ApplyConditions(_conditions);
-
-    // The windsock builds its sock in its own _Ready, so its pose can only be applied once it is in the tree.
     public override void _Ready()
     {
         FitToPixels();
@@ -123,8 +120,9 @@ public partial class MenuAircraftView : ControlPreview
         _conditions = conditions;
         if (_field is not { } field) return;
         MapBuilder.AimSun(field.Sun, conditions);
-        // IsInsideTree() alone isn't enough: a windsock just added to the tree is inside it immediately, but its
-        // _sock child (built in _Ready) isn't there yet until _Ready actually runs, which happens at idle time.
+        // Guards the one caller (BuildScenery, via Init) where the windsock's parent is not yet inside the tree:
+        // Godot only readies a node once it is, so the windsock's _sock child (built in its own _Ready) does not
+        // exist yet there. ShowField's rebuild does not need this guard, since by then the parent already is.
         if (!field.Windsock.IsNodeReady()) return;
         var wind = new WindField(conditions.ToWindSettings(), conditions.Seed).SteadyAt(WindsockNode.PoleHeight);
         field.Windsock.Apply(Windsock.Pose(wind));

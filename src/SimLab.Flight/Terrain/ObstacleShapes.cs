@@ -5,6 +5,9 @@ namespace SimLab.Flight.Terrain;
 /// <summary>Horizontal bounding rectangle (world x east, y north) of an obstacle, for the spatial grid.</summary>
 public readonly record struct Footprint(double MinX, double MinY, double MaxX, double MaxY);
 
+/// <summary>Vertical extent (world z up) of an obstacle, for the grid's cheap reject before Contains/Intersects.</summary>
+public readonly record struct VerticalBounds(double MinZ, double MaxZ);
+
 /// <summary>A solid volume the aircraft must not enter. World ENU axes (x east, y north, z up).</summary>
 public interface IObstacleShape
 {
@@ -14,6 +17,10 @@ public interface IObstacleShape
     bool Intersects(Vec3 a, Vec3 b);
 
     Footprint Footprint { get; }
+
+    /// <summary>The shape's z extent, so the grid can reject a point or segment well above or below it without
+    /// running the shape's full (possibly sampled) test.</summary>
+    VerticalBounds Bounds { get; }
 }
 
 static class ShapeMath
@@ -109,6 +116,8 @@ public sealed record VerticalCylinder(Vec3 Base, double Radius, double Height) :
     }
 
     public Footprint Footprint => new(Base.X - Radius, Base.Y - Radius, Base.X + Radius, Base.Y + Radius);
+
+    public VerticalBounds Bounds => new(Base.Z, Base.Z + Height);
 }
 
 /// <summary>Upright cone with its base disc at <see cref="Base"/> and its tip <see cref="Height"/> above: a conifer
@@ -126,6 +135,8 @@ public sealed record VerticalCone(Vec3 Base, double BaseRadius, double Height) :
     public bool Intersects(Vec3 a, Vec3 b) => ShapeMath.SampledIntersects(this, a, b);
 
     public Footprint Footprint => new(Base.X - BaseRadius, Base.Y - BaseRadius, Base.X + BaseRadius, Base.Y + BaseRadius);
+
+    public VerticalBounds Bounds => new(Base.Z, Base.Z + Height);
 }
 
 /// <summary>Ellipsoid of revolution about the vertical: a broadleaf crown or a bush. Sampled segment test.</summary>
@@ -141,6 +152,8 @@ public sealed record Ellipsoid(Vec3 Centre, double HorizontalRadius, double Vert
 
     public Footprint Footprint => new(Centre.X - HorizontalRadius, Centre.Y - HorizontalRadius,
         Centre.X + HorizontalRadius, Centre.Y + HorizontalRadius);
+
+    public VerticalBounds Bounds => new(Centre.Z - VerticalRadius, Centre.Z + VerticalRadius);
 }
 
 /// <summary>Box turned by <see cref="YawDeg"/> (see <see cref="PlanarYaw"/>) about the vertical through its centre;
@@ -173,6 +186,8 @@ public sealed record OrientedBox(Vec3 Centre, Vec3 HalfExtents, double YawDeg) :
         }
     }
 
+    public VerticalBounds Bounds => new(Centre.Z - HalfExtents.Z, Centre.Z + HalfExtents.Z);
+
     Vec3 ToLocal(Vec3 p)
     {
         var (x, y) = PlanarYaw.ToLocal(p.X - Centre.X, p.Y - Centre.Y, YawDeg);
@@ -189,4 +204,6 @@ public sealed record Capsule(Vec3 A, Vec3 B, double Radius) : IObstacleShape
 
     public Footprint Footprint => new(Math.Min(A.X, B.X) - Radius, Math.Min(A.Y, B.Y) - Radius,
         Math.Max(A.X, B.X) + Radius, Math.Max(A.Y, B.Y) + Radius);
+
+    public VerticalBounds Bounds => new(Math.Min(A.Z, B.Z) - Radius, Math.Max(A.Z, B.Z) + Radius);
 }

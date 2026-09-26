@@ -144,7 +144,8 @@ public partial class Main : Node
 
     bool RunCommandLine(string[] args)
     {
-        // Map for the scripted modes; kept in memory only, never saved.
+        // Map for the other modes. Scripted modes never save settings, so this never persists there; an
+        // interactive run started with --field does save it on the first settings save, like a menu chip choice.
         if (ArgValue(args, "--field") is { } field)
             _services.Settings = _services.Settings with { LastField = FieldCatalog.Find(field).Id };
         if (Has(args, "--smoke-boot"))

@@ -91,4 +91,12 @@ public class MapModelTests
         Assert.Equal(ObstacleKind.Structure, terrain.HitObstacle(new Vec3(0, 5, 3), new Vec3(10, 5, 3)));
         Assert.Null(terrain.HitObstacle(new Vec3(8, 5, 3)));
     }
+
+    [Fact]
+    public void Power_line_rejects_fewer_than_two_poles()
+    {
+        Assert.Throws<ArgumentException>(() => new PowerLine([new Vec3(0, 0, 0)]));
+        Assert.Throws<ArgumentException>(() => new PowerLine([]));
+        Assert.Equal(2, new PowerLine([new Vec3(0, 0, 0), new Vec3(10, 0, 0)]).Poles.Count);
+    }
 }

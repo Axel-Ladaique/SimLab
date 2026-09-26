@@ -36,7 +36,7 @@ User data (settings, radio profiles, flight recordings): `~/Library/Application 
 | `--screen radio` | Opens the radio screen directly |
 | `--smoke-flight <id> <s>` | Headless scripted flight, prints `SIMLAB_SMOKE_OK ...` (or `SIMLAB_SMOKE_FAIL <message>` and exit code 1 if the flight cannot start) |
 | `--screenshot-field <png>` | Pilot's view of the selected field (no aircraft) |
-| `--field <id>` | Map used by the other modes (e.g. `club`), in memory only; the saved choice is unchanged |
+| `--field <id>` | Map used by the other modes (e.g. `club`); scripted modes never save it, but an interactive run saves it like a menu chip choice |
 | `--screenshot-aircraft <id> <png>` | Close-up of an aircraft with deflected controls |
 | `--screenshot-flight <id> <s> <png>` | Scripted takeoff seen from the pilot box, or with `--view fpv\|chase` from that camera (the saved view is unchanged) |
 | `--screenshot-diagnostics <id> <s> <png>` | Same scripted takeoff with the F3 diagnostics overlay forced on |

@@ -138,6 +138,9 @@ public partial class MainMenu : Control
             chip.ButtonPressed = field.Id == _services.Settings.LastField;
             chip.Pressed += () =>
             {
+                // A pressed toggle in a ButtonGroup re-emits Pressed on every click, even when it was already the
+                // selected chip: skip the save and the scenery rebuild in that case.
+                if (field.Id == _services.Settings.LastField) return;
                 _services.Settings = _services.Settings with { LastField = field.Id };
                 _services.SaveSettings();
                 _view.ShowField(FieldCatalog.Load(field.Id));
