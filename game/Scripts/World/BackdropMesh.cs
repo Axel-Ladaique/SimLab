@@ -8,16 +8,17 @@ namespace SimLab.Game.World;
 /// <summary>
 /// Draws a polar ring of far scenery beyond the map's grid, so the horizon never shows a cliff at the grid edge.
 /// The inner boundary follows the grid's square edge (height from <see cref="HeightGrid.Height"/>, clamped to the
-/// edge there, for a seamless join with <see cref="TerrainChunks"/>); rings beyond it grow geometrically out to
-/// <see cref="OuterRadius"/>, with height and surface mix from <see cref="FieldMap.Backdrop"/> and
-/// <see cref="FieldMap.BackdropSurface"/>. Same vertex format as the terrain chunks, same material; no LOD and no
+/// edge there, for a seamless join with <see cref="TerrainChunks"/>); along each ray the rings beyond it grow
+/// geometrically from that edge point out to <see cref="OuterRadius"/> (about 100 m apart at the edge, so the rise
+/// just beyond it is drawn with fine rows, not stretched over one long band of triangles), with height and surface
+/// mix from <see cref="FieldMap.Backdrop"/> and <see cref="FieldMap.BackdropSurface"/>. Same vertex format as the terrain chunks, same material; no LOD and no
 /// shadow casting — it is scenery, seen but never touched.
 /// </summary>
 public static class BackdropMesh
 {
     public const double OuterRadius = 15000;
     const int AngularSegments = 256;
-    const int RingCount = 24;
+    const int RingCount = 40;
 
     public static void Add(Node3D root, FieldMap map, Material material)
     {
@@ -27,8 +28,6 @@ public static class BackdropMesh
         var grid = map.Grid;
 
         int rows = RingCount + 1, cols = AngularSegments, count = rows * cols;
-        double innerRadius = grid.HalfSize * Math.Sqrt(2);
-        double growth = Math.Pow(OuterRadius / innerRadius, 1.0 / (RingCount - 1));
 
         var verts = new Vector3[count];
         var normals = new Vector3[count];
@@ -40,21 +39,21 @@ public static class BackdropMesh
         {
             double theta = 2 * Math.PI * c / cols;
             double cos = Math.Cos(theta), sin = Math.Sin(theta);
+            // The square edge along this ray: the boundary is hit where the larger axis reaches HalfSize.
+            double edge = grid.HalfSize / Math.Max(Math.Abs(cos), Math.Abs(sin));
             for (int r = 0; r < rows; r++)
             {
                 double x, y, h;
                 Vector3 normal;
                 if (r == 0)
                 {
-                    // The square edge along this ray: the boundary is hit where the larger axis reaches HalfSize.
-                    double t = grid.HalfSize / Math.Max(Math.Abs(cos), Math.Abs(sin));
-                    x = t * cos; y = t * sin;
+                    x = edge * cos; y = edge * sin;
                     h = grid.Height(x, y);
                     normal = GridNormal(grid, x, y);
                 }
                 else
                 {
-                    double radius = innerRadius * Math.Pow(growth, r - 1);
+                    double radius = edge * Math.Pow(OuterRadius / edge, (double)r / RingCount);
                     x = radius * cos; y = radius * sin;
                     h = backdrop(x, y);
                     // Finite-difference step comparable to the mesh spacing at this ring (its own tangential spacing).
