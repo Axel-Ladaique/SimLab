@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 using SimLab.App.Maps;
 using SimLab.Flight.Geometry;
@@ -13,17 +14,20 @@ public static class GroundOverlays
     const double ThresholdInset = 5;
     const double ThresholdWidth = 1.5;
     const double RibbonStep = 5;
-    static readonly Color StripeLight = new(0.24f, 0.50f, 0.17f);
-    static readonly Color StripeDark = new(0.19f, 0.42f, 0.13f);
-    static readonly Color Threshold = new(0.32f, 0.58f, 0.24f);
-    static readonly Color Gravel = new(0.55f, 0.52f, 0.47f);
-    static readonly Color Dirt = new(0.40f, 0.31f, 0.21f);
+    // Tints over the textures below, brightened so the textured result matches the old flat colours.
+    static readonly Color StripeLight = new(0.55f, 1.05f, 0.42f);
+    static readonly Color StripeDark = new(0.42f, 0.88f, 0.32f);
+    static readonly Color Threshold = new(0.68f, 1.15f, 0.55f);
+    static readonly Color Gravel = new(1.15f, 1.10f, 1.00f);
+    static readonly Color Dirt = new(1.05f, 0.85f, 0.62f);
+
+    static readonly Dictionary<(string Texture, Color Tint), StandardMaterial3D> MaterialCache = new();
 
     public static void Add(Node3D root, FieldMap map)
     {
         AddRunway(root, map);
         var pilot = map.Layout.PilotPosition;
-        root.AddChild(Patch(map, pilot.X, pilot.Y, 8, 4, 0, Gravel, 0));
+        root.AddChild(Patch(map, pilot.X, pilot.Y, 8, 4, 0, "gravel", Gravel, 0));
         foreach (var overlay in map.Overlays) root.AddChild(Ribbon(map, overlay));
     }
 
@@ -37,23 +41,43 @@ public static class GroundOverlays
             double along = -l.RunwayLength / 2 + (i + 0.5) * StripeLength;
             var (dx, dy) = PlanarYaw.ToWorld(along, 0, yaw);
             root.AddChild(Patch(map, l.RunwayCentre.X + dx, l.RunwayCentre.Y + dy, StripeLength, l.RunwayWidth, yaw,
-                i % 2 == 0 ? StripeLight : StripeDark, 0));
+                "grass", i % 2 == 0 ? StripeLight : StripeDark, 0));
         }
         foreach (int end in new[] { -1, 1 })
         {
             var (dx, dy) = PlanarYaw.ToWorld(end * (l.RunwayLength / 2 - ThresholdInset), 0, yaw);
-            root.AddChild(Patch(map, l.RunwayCentre.X + dx, l.RunwayCentre.Y + dy, ThresholdWidth, l.RunwayWidth, yaw, Threshold, 0.005f));
+            root.AddChild(Patch(map, l.RunwayCentre.X + dx, l.RunwayCentre.Y + dy, ThresholdWidth, l.RunwayWidth, yaw, "grass", Threshold, 0.005f));
         }
     }
 
     /// <summary>A flat rectangle (length along the yawed local x) at the terrain height of its centre.</summary>
-    static MeshInstance3D Patch(FieldMap map, double x, double y, double length, double width, double yawDeg, Color color, float extraLift) => new()
+    static MeshInstance3D Patch(FieldMap map, double x, double y, double length, double width, double yawDeg, string texture, Color tint, float extraLift) => new()
     {
         Mesh = new PlaneMesh { Size = new Vector2((float)length, (float)width) },
         Transform = new Transform3D(new Basis(Vector3.Up, -Mathf.DegToRad((float)yawDeg)),
             new Vec3(x, y, map.Terrain.Height(x, y)).WorldToGodot() + new Vector3(0, Lift + extraLift, 0)),
-        MaterialOverride = new StandardMaterial3D { AlbedoColor = color, Roughness = 1f },
+        MaterialOverride = OverlayMaterial(texture, tint),
     };
+
+    static StandardMaterial3D OverlayMaterial(string texture, Color tint)
+    {
+        var key = (texture, tint);
+        if (MaterialCache.TryGetValue(key, out var cached)) return cached;
+        var material = new StandardMaterial3D
+        {
+            AlbedoTexture = GD.Load<Texture2D>($"res://Textures/terrain/{texture}_albedo.jpg"),
+            AlbedoColor = tint,
+            NormalEnabled = true,
+            NormalTexture = GD.Load<Texture2D>($"res://Textures/terrain/{texture}_normal.jpg"),
+            Uv1Triplanar = true,
+            Uv1WorldTriplanar = true,
+            Uv1Scale = Vector3.One / 4f,
+            Roughness = 1f,
+            CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        };
+        MaterialCache[key] = material;
+        return material;
+    }
 
     static MeshInstance3D Ribbon(FieldMap map, MapOverlay overlay)
     {
@@ -84,12 +108,9 @@ public static class GroundOverlays
         return new MeshInstance3D
         {
             Mesh = st.Commit(),
-            MaterialOverride = new StandardMaterial3D
-            {
-                AlbedoColor = overlay.Kind == SurfaceKind.Gravel ? Gravel : Dirt,
-                Roughness = 1f,
-                CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-            },
+            MaterialOverride = overlay.Kind == SurfaceKind.Gravel
+                ? OverlayMaterial("gravel", Gravel)
+                : OverlayMaterial("dirt", Dirt),
         };
     }
 }

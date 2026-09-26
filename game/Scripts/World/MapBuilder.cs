@@ -102,7 +102,16 @@ public static class MapBuilder
         return new MeshInstance3D
         {
             Mesh = st.Commit(),
-            MaterialOverride = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/terrain.gdshader") },
+            MaterialOverride = TerrainMaterial(),
         };
+    }
+
+    static ShaderMaterial TerrainMaterial()
+    {
+        var material = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/terrain.gdshader") };
+        foreach (var name in new[] { "grass", "dirt", "gravel", "soil" })
+        foreach (var map in new[] { "albedo", "normal" })
+            material.SetShaderParameter($"{name}_{map}", GD.Load<Texture2D>($"res://Textures/terrain/{name}_{map}.jpg"));
+        return material;
     }
 }
