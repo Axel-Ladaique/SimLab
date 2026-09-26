@@ -14,7 +14,7 @@ namespace SimLab.App.Tests.Session;
 /// east wind, and the flying wing staying up on the ridge with the motor off.</summary>
 public class MountainSoaringTests(ITestOutputHelper output)
 {
-    const double WindSpeed = 8;
+    const double WindSpeed = 8, PropMargin = 5;
 
     static FlightSession Session(string aircraft, double windFromDeg) =>
         new(TestData.Aircraft(aircraft), new FlightConditions(WindSpeed: WindSpeed, WindFromDeg: windFromDeg, Turbulence: 0),
@@ -56,27 +56,30 @@ public class MountainSoaringTests(ITestOutputHelper output)
         var autopilot = new RidgeAutopilot();
         const double dt = RidgeAutopilot.Dt;
 
-        // The hand launch point is on the level pad, 30–40 m short of the face: a pusher wing launched into the wind
-        // there sinks onto the pad before reaching the lift, so the motor carries it out over the face, then stops.
-        double launchTime = 0;
-        while (session.Aircraft.State.Position.X > MountainRelief.CrestX(session.Aircraft.State.Position.Y) - 40)
-        {
-            Assert.True(launchTime < 10, "the wing did not reach the face within 10 s of the launch");
-            var s = session.Aircraft.State;
-            session.Tick(dt, autopilot.Command(s, Airspeed(session)) with { Throttle = 1 });
-            launchTime += dt;
-            Assert.Equal(CrashCause.None, session.Aircraft.Crash);
-        }
-        output.WriteLine($"over the face {launchTime:F1} s after the launch; motor off from here");
+        // Every prop part near the ridge, as (x, y, horizontal reach, top): the climb-out and the beat must stay clear.
+        var parts = session.Map.Props
+            .Where(p => Math.Abs(p.Base.Y - pilot.Y) < 600 && p.Base.X > pilot.X - 400 && p.Base.X < pilot.X + 100)
+            .SelectMany(p => p.Parts())
+            .Select(q => (q.Centre.X, q.Centre.Y, Reach: Math.Max(q.Size.X, q.Size.Y), Top: q.Centre.Z + q.Size.Z))
+            .ToList();
+        double tallest = parts.Select(q => q.Top - session.Terrain.Height(q.X, q.Y)).DefaultIfEmpty(0).Max();
+        double propClearance = double.PositiveInfinity;
 
-        double maxDistance = 0, minAgl = double.PositiveInfinity;
+        double maxDistance = 0, minAgl = double.PositiveInfinity, launchMinAgl = double.PositiveInfinity;
         int steps = (int)Math.Round(180 / dt);
         for (int n = 0; n <= steps; n++)
         {
             var s = session.Aircraft.State;
             double airspeed = Airspeed(session);
             maxDistance = Math.Max(maxDistance, Math.Sqrt(Sq(s.Position.X - pilot.X) + Sq(s.Position.Y - pilot.Y)));
-            minAgl = Math.Min(minAgl, session.HeightAgl);
+            // The hand launch is 1.8 m up and 6 m short of the crest: over the pad and the brow the wing must only not
+            // sink below its launch height; from 10 m past the crest it must keep 3 m of ground clearance.
+            if (s.Position.X < MountainRelief.CrestX(s.Position.Y) - 10) minAgl = Math.Min(minAgl, session.HeightAgl);
+            else launchMinAgl = Math.Min(launchMinAgl, session.HeightAgl);
+            if (session.HeightAgl < tallest + PropMargin)
+                foreach (var q in parts)
+                    if (Math.Abs(s.Position.X - q.X) < q.Reach + PropMargin && Math.Abs(s.Position.Y - q.Y) < q.Reach + PropMargin)
+                        propClearance = Math.Min(propClearance, s.Position.Z - q.Top);
             if (n % (int)Math.Round(10 / dt) == 0)
                 output.WriteLine($"t={n * dt,4:F0} s  x={s.Position.X,7:F1}  y={s.Position.Y,7:F1}  " +
                                  $"above pilot={s.Position.Z - pilotZ,6:F1} m  AGL={session.HeightAgl,6:F1} m  airspeed={airspeed,5:F1} m/s");
@@ -86,10 +89,14 @@ public class MountainSoaringTests(ITestOutputHelper output)
         }
 
         double height = session.Aircraft.State.Position.Z - pilotZ;
-        output.WriteLine($"max distance from the pilot {maxDistance:F0} m, lowest {minAgl:F1} m above the ground");
+        output.WriteLine($"max distance from the pilot {maxDistance:F0} m, lowest {launchMinAgl:F1} m above the ground " +
+                         $"over the pad and brow, {minAgl:F1} m beyond, " +
+                         $"{parts.Count} prop parts near the ridge, lowest pass {propClearance:F1} m above one");
         Assert.True(height >= -20, $"height above the pilot after 180 s: {height:F1} m");
         Assert.True(maxDistance <= 500, $"max distance from the pilot: {maxDistance:F0} m");
+        Assert.True(launchMinAgl > 1.5, $"sank to {launchMinAgl:F1} m above the ground after the launch");
         Assert.True(minAgl > 3, $"came down to {minAgl:F1} m above the ground");
+        Assert.True(propClearance > PropMargin, $"passed {propClearance:F1} m above a prop");
     }
 
     static double Airspeed(FlightSession session)

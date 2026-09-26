@@ -31,11 +31,13 @@ public class MountainMapTests
             Assert.True(Math.Abs(H(x, y)) < 0.05, $"runway height {H(x, y)} at ({x}, {y})");
             Assert.True(Mountain.Terrain.Normal(x, y).Z > 0.999, $"runway normal at ({x}, {y})");
         }
+        // The pilot's pad stops just short of the crest: check the disc east of the first grid line past its edge.
         var p = layout.PilotPosition;
         for (double x = -25; x <= 25; x += 1)
         for (double y = -25; y <= 25; y += 1)
         {
             if (x * x + y * y > 25 * 25) continue;
+            if (p.X + x < MountainRelief.CrestX(p.Y + y) + MountainRelief.PadCrestSetback + MountainMap.GridStep) continue;
             Assert.True(Math.Abs(H(p.X + x, p.Y + y)) < 0.05, $"pilot area height at ({p.X + x}, {p.Y + y})");
             Assert.True(Mountain.Terrain.Normal(p.X + x, p.Y + y).Z > 0.999, $"pilot area normal at ({p.X + x}, {p.Y + y})");
         }
@@ -155,6 +157,34 @@ public class MountainMapTests
         Assert.Equal(270, heading);
         double dx = x - layout.PilotPosition.X, dy = y - layout.PilotPosition.Y;
         Assert.True(Math.Sqrt(dx * dx + dy * dy) < 5);
+        // The hand launch is from flat ground at the edge, the crest a few metres ahead.
+        Assert.True(Math.Abs(H(x, y)) < 0.05, $"launch ground {H(x, y):F2}");
+        Assert.True(Mountain.Terrain.Normal(x, y).Z > 0.999);
+        Assert.InRange(x - MountainRelief.CrestX(y), 3, 10);
+    }
+
+    [Fact]
+    public void Pilot_stands_at_the_brow_of_the_face()
+    {
+        var pilot = MountainMap.Layout.PilotPosition;
+        Assert.InRange(pilot.X - MountainRelief.CrestX(pilot.Y), 4, 8);
+        // West of the pad the ground only falls: no lip where the pad ends, and the brow is not levelled away.
+        for (double y = pilot.Y - 25; y <= pilot.Y + 25; y += 5)
+        {
+            double crest = MountainRelief.CrestX(y);
+            for (double x = pilot.X; x > crest - 100; x -= 1)
+                Assert.True(H(x - 1, y) <= H(x, y) + 0.02, $"ground rises west of ({x}, {y}): {H(x - 1, y):F2} vs {H(x, y):F2}");
+        }
+        // Right in front of the pilot the brow keeps the relief's shape, only lowered to meet the pad.
+        for (double y = pilot.Y - 15; y <= pilot.Y + 15; y += 5)
+        {
+            double crest = MountainRelief.CrestX(y), edge = crest + MountainRelief.PadCrestSetback;
+            foreach (double x in new[] { crest, crest - 5, crest - 10 })
+                Assert.Equal(MountainRelief.Height(x, y) - MountainRelief.Height(edge, y), H(x, y), 1);
+        }
+        var windsock = MountainMap.Layout.WindsockPosition;
+        Assert.True(windsock.X > pilot.X, "the windsock is not in front of the pilot");
+        Assert.True(Math.Abs(H(windsock.X, windsock.Y)) < 0.05);
     }
 
     static double Distance(double x0, double y0, double x1, double y1) => Math.Sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));

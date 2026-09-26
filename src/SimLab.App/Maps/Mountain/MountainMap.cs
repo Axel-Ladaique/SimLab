@@ -5,7 +5,7 @@ namespace SimLab.App.Maps.Mountain;
 
 /// <summary>
 /// The mountain slope site (world ENU, z = 0 at 1 500 m): a strip on the shoulder just east of a curved crest, the
-/// pilot at its western edge facing a 350 m drop into a valley with a lake and a stream, a switchback road climbing
+/// pilot 6 m behind the crest facing a 350 m drop into a valley with a lake and a stream, a switchback road climbing
 /// the face, and the ground rising east to a snowy summit. With wind from the west aircraft take off toward the drop.
 /// </summary>
 public static class MountainMap
@@ -15,7 +15,7 @@ public static class MountainMap
     public const double HalfSize = 2000, GridStep = 4, DatumElevationM = 1500, LakeLevel = -350;
 
     public static readonly MapLayout Layout = new(
-        PilotPosition: new Vec3(0, -22, 0), EyeHeight: 1.7, WindsockPosition: new Vec3(12, -30, 0),
+        PilotPosition: new Vec3(-24, -22, 0), EyeHeight: 1.7, WindsockPosition: new Vec3(-18, -28, 0),
         RunwayCentre: new Vec3(95, 0, 0), RunwayLength: 130, RunwayWidth: 20, RunwayHeadingDeg: 90);
 
     /// <summary>A deeper blue sky and less haze than the lowland club.</summary>

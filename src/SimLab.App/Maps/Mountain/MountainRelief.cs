@@ -37,6 +37,9 @@ public static class MountainRelief
 
     const double StripBlend = 20, PilotRadius = 25, PilotBlend = 15;
 
+    /// <summary>The pilot's pad stops this far east of the crest, so the brow in front of the pilot keeps its shape.</summary>
+    public const double PadCrestSetback = 1;
+
     /// <summary>A grid cell's diagonal: flattening that much beyond an area keeps every triangle touching it flat.</summary>
     const double CellMargin = 6;
 
@@ -226,7 +229,11 @@ public static class MountainRelief
         return Math.Max(bank + (h - bank) * SmoothStep(outside / LakeBlend), bank);
     }
 
-    /// <summary>The strip rectangle and the pilot's disc (each widened by a grid cell) exactly at 0.</summary>
+    /// <summary>
+    /// The strip rectangle and the pilot's disc (each widened by a grid cell) exactly at 0. The pilot stands just
+    /// behind the crest, so the disc is flattened only east of <see cref="CrestX"/> + <see cref="PadCrestSetback"/>; west of it the ground is
+    /// lowered by the same amount as the pad's edge instead, keeping the brow's shape without a lip in front of the pilot.
+    /// </summary>
     static double Level(double x, double y, double h)
     {
         double sx = Math.Max(Math.Max(25 - x, x - 165), 0), sy = Math.Max(Math.Abs(y) - 16, 0);
@@ -234,7 +241,9 @@ public static class MountainRelief
         var pilot = MountainMap.Layout.PilotPosition;
         double pd = Math.Sqrt((x - pilot.X) * (x - pilot.X) + (y - pilot.Y) * (y - pilot.Y));
         double pilotArea = SmoothStep((pd - PilotRadius - CellMargin) / PilotBlend);
-        return h * strip * pilotArea;
+        double padEdge = CrestX(y) + PadCrestSetback;
+        if (x >= padEdge) return h * strip * pilotArea;
+        return (h - (1 - pilotArea) * Height(padEdge, y)) * strip;
     }
 
     static double Profile(double below)
