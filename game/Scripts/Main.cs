@@ -224,6 +224,14 @@ public partial class Main : Node
             CaptureAfterFrames(30, args[radioPreviewShot + 2]);
             return true;
         }
+        int radioShot = System.Array.IndexOf(args, "--screenshot-radio");
+        if (radioShot >= 0 && radioShot + 2 < args.Length)
+        {
+            ShowRadio();
+            ((RadioScreen)_current!).SelectTab(int.Parse(args[radioShot + 1], CultureInfo.InvariantCulture));
+            CaptureAfterFrames(30, args[radioShot + 2]);
+            return true;
+        }
         int render = System.Array.IndexOf(args, "--render-audio");
         if (render >= 0 && render + 2 < args.Length)
         {
