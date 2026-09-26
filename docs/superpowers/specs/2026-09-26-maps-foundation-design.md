@@ -69,7 +69,8 @@ public sealed class ObstacleGrid        // 2D uniform grid, 32 m cells
 ```
 
 An obstacle is registered in every cell its footprint touches. A query visits only the cells the point or segment
-covers, and checks each candidate once.
+covers and returns the first hit. An obstacle spanning several cells may be tested twice in one query; that only costs
+time. The grid is immutable, so queries are thread-safe.
 
 ### 1.3 `ITerrain` and crash detection
 
@@ -102,19 +103,22 @@ other obstacle is thicker than 0.20 m.
 
 ## 2. Map model — `SimLab.App.Maps`
 
-### 2.1 `IFieldMap`
+### 2.1 `FieldMap`
+
+A sealed class. Each map is a static factory that returns one (`ClubMap.Create()`).
 
 ```csharp
-public interface IFieldMap
+public sealed class FieldMap
 {
-    string Id { get; }
-    string NameKey { get; }
-    MapTerrain Terrain { get; }                 // implements ITerrain: height, normal, obstacles
-    MapLayout Layout { get; }
-    MapAmbience Ambience { get; }
-    IReadOnlyList<Prop> Props { get; }          // everything drawn on top of the terrain
-    SurfaceWeights Surface(double x, double y); // ground material mix at a point
-    double HalfSize { get; }                    // the terrain covers [−HalfSize, HalfSize]²
+    public string Id { get; }
+    public string NameKey { get; }
+    public double HalfSize { get; }                    // the terrain covers [−HalfSize, HalfSize]²
+    public MapTerrain Terrain { get; }                 // implements ITerrain: height, normal, obstacles
+    public MapLayout Layout { get; }
+    public MapAmbience Ambience { get; }
+    public IReadOnlyList<Prop> Props { get; }          // everything drawn on top of the terrain
+    public IReadOnlyList<MapOverlay> Overlays { get; } // tracks and roads drawn as ribbons on the ground
+    public SurfaceWeights Surface(double x, double y); // ground material mix at a point
 }
 ```
 
@@ -141,20 +145,22 @@ The methods now in `ClubField` move here and are generalised to any runway headi
 
 ### 2.3 `MapAmbience`
 
-Sky top and horizon colours, ground-horizon colours, fog density, and an ambience sound id. The club keeps today's
-values and today's birds and wind loop.
+Sky top and horizon colours, ground-horizon colours and fog density. The club keeps today's values. The ambience sound
+stays the birds-and-wind loop for now; a per-map sound comes with the beach cycle.
 
 ### 2.4 Props — one source for render and collision
 
 ```csharp
 public abstract record Prop(Vec3 Base, double YawDeg)
 {
-    public abstract IEnumerable<Obstacle> Collision { get; }
+    public abstract IEnumerable<Obstacle> Collision();
+    public abstract IEnumerable<PropPart> Parts();   // what the game draws: unit mesh, centre, size, yaw, pitch, tint
 }
 ```
 
-Every prop type defines its **visible dimensions**. The game draws from those dimensions, and `Collision` derives
-the hitbox from them. There is no separate hitbox number anywhere else.
+Every prop type defines its **visible dimensions** once. `Parts()` (drawn) and `Collision()` (hitbox) both derive
+from them, so there is no separate hitbox number anywhere else. Foliage is drawn as a core at 90 % of the envelope plus
+lobes or skirts that reach the envelope, so the 85 % hitbox is always inside visible foliage.
 
 | Prop | Visible parameters | Collision |
 |---|---|---|
@@ -165,6 +171,7 @@ the hitbox from them. There is no separate hitbox number anywhere else.
 | `Building` (hangar, shelter) | size, roof type | oriented box (exact) |
 | `Car` | size, colour | oriented box (exact) |
 | `Table` | size | oriented box (exact) |
+| `Fence` | length | thin oriented box (exact) |
 | `PowerLine` | pole positions, pole height, sag | pole cylinders + 4 capsules per span following the sag, radius 0.10 m |
 
 The 85 % rule means brushing the outer foliage survives, while the trunk and the heart of the crown are always a
@@ -177,12 +184,15 @@ public enum SurfaceKind { Grass, MowedGrass, Dirt, Gravel, Wheat, Ploughed }
 public readonly record struct SurfaceWeights(...);   // one weight per kind, summing to 1
 ```
 
-The ground mesh stores these weights per vertex. The runway, pilot box and paths may also be drawn as flat overlays,
-as the runway is today.
+The ground mesh stores these weights per vertex, which suits large zones (fields, the pits, the mowed apron). Narrow
+features are drawn on top: the runway (mowing stripes, thresholds) and the pilot box from the layout, and tracks and
+roads from `MapOverlay(SurfaceKind Kind, IReadOnlyList<(double X, double Y)> Path, double Width)` as ribbons draped
+on the terrain.
 
 ### 2.6 Catalog
 
-`FieldCatalog.All` lists `(Id, NameKey, Func<IFieldMap> Create)`, and each map is cached after its first build.
+`FieldCatalog.All` lists `(Id, NameKey, Func<FieldMap> Create)`. `FieldCatalog.Load(id)` builds a map once and
+caches it.
 `AppSettings.LastField` still stores the id. An unknown id falls back to the club, as today.
 
 ## 3. Club map — `SimLab.App.Maps.Club.ClubMap`
@@ -203,8 +213,8 @@ as the runway is today.
 
 - Tall grass everywhere by default.
 - The runway in mowed grass with alternating 5 m mowing stripes and marked thresholds.
-- A gravel pits area around the pilot box.
-- A dirt access track from the club south to a small road running east–west at about y = −220.
+- A gravel pits area behind the pilot box (x −65…12, y −48…−27).
+- A dirt access track from the pits (x = −50) south to a gravel road running east–west at y = −220.
 - Farmland parcels beyond about 350 m: wheat, ploughed fields and meadow, as rotated rectangles 80–200 m across,
   bordered by hedges.
 - Large-scale tint variation (noise over 50–200 m), so repeated textures do not tile visibly.
@@ -222,18 +232,21 @@ Each tree has a random height, rotation and tint within its species' range. Targ
 
 ### 3.4 Club furniture and structures
 
-- A hangar or shipping container and a shade shelter with picnic tables, west of the pilot box.
-- Pit tables along the fence.
-- 3 or 4 parked cars on the gravel near the track.
-- The existing fence, extended.
-- A power line along the road: poles 9 m tall, 50 m spans, 1.5 m sag.
+- A hangar and a shade shelter, west of the pilot box.
+- Pit tables behind the pilot.
+- 3 parked cars on the gravel at the west end of the pits.
+- The fence moves behind the pilot line (y = −27.5, 34 m long), between the pilots and the pits. Nothing collidable
+  stands between the pilot and the runway, because hand launches start 3 m in front of the pilot and fly along it.
+- A power line along the south side of the road (y = −229): poles 9 m tall, 50 m spans, 1.5 m sag.
+
+Everything is on the west side, so the menu's live view (looking north, east of the pilot) keeps its current framing.
 
 All are collidable.
 
 ## 4. Rendering — `game/Scripts/World`
 
 - **`MapBuilder`** replaces `FieldBuilder`. It builds the environment and sun (reusing `AimSun`), the terrain mesh,
-  the overlays, the props and the windsock, all from an `IFieldMap`.
+  the overlays, the props and the windsock, all from a `FieldMap`.
 - **Terrain mesh:** 5 m grid, indexed, with vertex normals from the terrain. Surface weights go in `COLOR` and
   `CUSTOM0`.
 - **Terrain shader:** a `ShaderMaterial` blends the surface textures by those weights. It uses world-space UVs and a
@@ -246,11 +259,12 @@ All are collidable.
 
 ## 5. Integration
 
-- `FlightSession(AircraftDefinition, FlightConditions, IFieldMap)`. `Terrain` is exposed as `ITerrain`, and `Map`
-  as `IFieldMap`. `TreeSeed` moves into `ClubMap`.
+- `FlightSession(AircraftDefinition, FlightConditions, FieldMap)`. `Terrain` is exposed as `ITerrain`, and `Map`
+  as `FieldMap`. `TreeSeed` moves into `ClubMap`.
 - These read `session.Map.Layout` instead of `ClubField`: `FlightScene` (ground camera eye, OSD home), `Main`
   (screenshot modes) and `MapBuilder`.
-- `MenuAircraftView` shows the selected map and rebuilds it when the « Terrain » chip changes.
+- `MenuAircraftView` shows the selected map and rebuilds it when the « Terrain » chip changes. Its flying position is
+  now relative to the pilot: 20 m east, 21 m south, 4 m above the ground.
 - A new option, `--field <id>`, selects the map for the smoke and screenshot modes. It is documented in
   `docs/dev-setup.md`.
 - `CrashCause` gains `StructureStrike` and `WireStrike`, with `CRASH_STRUCTURESTRIKE` and `CRASH_WIRESTRIKE` in
@@ -262,8 +276,8 @@ All are collidable.
 **Shapes and grid** (`SimLab.Flight.Tests`)
 - For each shape, `Contains` and `Intersects` on inside, outside, boundary and tangent cases.
 - A segment crossing a thin cylinder or a capsule is detected, although neither end point is inside.
-- `ObstacleGrid` gives the same result as a brute-force scan over random points and segments. An obstacle spanning
-  several cells is reported once.
+- `ObstacleGrid` gives the same result as a brute-force scan over random points and segments, including obstacles
+  that span several cells.
 
 **Crash detection**
 - Existing `GroundContactTests` still pass, with `TreeStrike` via points.
