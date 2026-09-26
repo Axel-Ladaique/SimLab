@@ -167,9 +167,13 @@ public partial class FlightHud : CanvasLayer
         _height.Text = $"{osd.HeightM.ToString("0", Inv)} m";
         double vario = System.Math.Round(osd.VarioMs, 1);
         _vario.Text = $"{(vario >= 0 ? "↑" : "↓")} {System.Math.Abs(vario).ToString("0.0", Inv)} m/s";
-        _battery.Text = osd.BatteryVolts is { } v
-            ? $"{v.ToString("0.0", Inv)} V  {osd.CurrentAmps!.Value.ToString("0.0", Inv)} A  {osd.ConsumedMah!.Value.ToString("0", Inv)} mAh"
-            : "— V";
+        _battery.Text = osd switch
+        {
+            { FuelPercent: { } fuel } => $"{Ui.T("OSD_FUEL")} {fuel.ToString("0", Inv)} %  {osd.FuelMl!.Value.ToString("0", Inv)} ml",
+            { BatteryVolts: { } v } =>
+                $"{v.ToString("0.0", Inv)} V  {osd.CurrentAmps!.Value.ToString("0.0", Inv)} A  {osd.ConsumedMah!.Value.ToString("0", Inv)} mAh",
+            _ => "— V",
+        };
         _throttle.Text = $"{Ui.T("OSD_THROTTLE")} {osd.ThrottlePercent.ToString("0", Inv)} %";
         _gear.Text = osd.Gear switch
         {

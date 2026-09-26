@@ -62,4 +62,35 @@ public class SoundModelTests
         Assert.True(RollingSoundModel.Gain(3, 10) > RollingSoundModel.Gain(3, 2));
         Assert.InRange(RollingSoundModel.Gain(3, 50), 0, 1);
     }
+
+    static readonly EngineSoundModel Piston = new(new SoundSpec(Blades: 2, PolePairs: 1), staticRpm: 7000, staticThrust: 200, maxCurrent: 0,
+        source: SimLab.Flight.Propulsion.PowerSource.Piston);
+    static readonly EngineSoundModel Turbine = new(new SoundSpec(Blades: 1, PolePairs: 1), staticRpm: 117000, staticThrust: 220, maxCurrent: 0,
+        source: SimLab.Flight.Propulsion.PowerSource.Turbine);
+
+    [Fact]
+    public void Piston_engine_barks_at_its_firing_rate_already_at_idle_and_louder_with_power()
+    {
+        var idle = Piston.Evaluate(rpm: 1800, thrust: 10, motorCurrent: 0);
+        var full = Piston.Evaluate(rpm: 7000, thrust: 200, motorCurrent: 0);
+        Assert.Equal(30, idle.ShaftHz, 9);   // a single-cylinder two-stroke fires once per revolution
+        Assert.InRange(idle.ExhaustGain, 0.2, 0.5);
+        Assert.Equal(1, full.ExhaustGain, 9);
+        Assert.Equal(0, full.WhineGain);
+        Assert.Equal(0, full.RoarGain);
+        Assert.Equal(0, Piston.Evaluate(0, 0, 0).ExhaustGain);
+    }
+
+    [Fact]
+    public void Turbine_whines_with_its_spool_and_roars_with_its_thrust()
+    {
+        var idle = Turbine.Evaluate(rpm: 33000, thrust: 9, motorCurrent: 0);
+        var full = Turbine.Evaluate(rpm: 117000, thrust: 220, motorCurrent: 0);
+        Assert.Equal(550, idle.BladePassHz, 9);
+        Assert.True(idle.PropGain > 0 && idle.RoarGain > 0);
+        Assert.True(full.RoarGain > 3 * idle.RoarGain);
+        Assert.Equal(1, full.RoarGain, 9);
+        Assert.Equal(0, full.WhineGain);
+        Assert.Equal(0, full.ExhaustGain);
+    }
 }

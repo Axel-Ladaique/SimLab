@@ -107,8 +107,8 @@ public static class AircraftMeshBuilder
             parts.Add(new MeshPart("gear", -1, Vec3.Zero, BodyAxes.Right, gear, DarkColor));
         }
 
-        if (definition.Power is { } power && (visual?.PropellerDisc ?? true))
-            parts.Add(new MeshPart("propeller", -1, power.Position, power.ThrustAxis, Disc(power.Position, power.ThrustAxis, power.Propeller.DiameterM / 2), DarkColor));
+        if (definition.Power is { Propeller: { } propeller } power && (visual?.PropellerDisc ?? true))
+            parts.Add(new MeshPart("propeller", -1, power.Position, power.ThrustAxis, Disc(power.Position, power.ThrustAxis, propeller.DiameterM / 2), DarkColor));
 
         return parts;
     }

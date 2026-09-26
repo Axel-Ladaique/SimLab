@@ -40,7 +40,7 @@ public class FleetDefinitionTests
         var def = Fleet.Load("trainer");
         var half = new PowerPlant(def.Power!).SteadyState(0.5, 0, Isa.SeaLevelDensity);
         double batteryCurrent = half.Current * def.Power!.Esc.Map(0.5);
-        double minutes = def.Power.Battery.CapacityAh / batteryCurrent * 60;
+        double minutes = def.Power.Battery!.CapacityAh / batteryCurrent * 60;
         Assert.InRange(minutes, 10, 45);
     }
 

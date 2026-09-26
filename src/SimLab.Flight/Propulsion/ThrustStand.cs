@@ -27,13 +27,15 @@ public static class ThrustStand
 
     public static PowerPlantSpec Calibrate(PowerPlantSpec spec, IReadOnlyList<ThrustStandPoint> points, double density = 1.225)
     {
+        if (spec.Source != PowerSource.Electric || spec.Propeller is null)
+            throw new ArgumentException("Thrust-stand calibration needs an electric motor and a propeller.");
         var usable = points.Where(p => p.Throttle > 0.05 && p.ThrustN > 0 && p.CurrentA > 0).ToArray();
         if (usable.Length == 0) throw new ArgumentException("Thrust-stand data needs at least one point above 5% throttle.");
 
         double ctScale = 1, cpScale = 1;
         for (int iteration = 0; iteration < 12; iteration++)
         {
-            var plant = new PowerPlant(spec with { Propeller = spec.Propeller.Scaled(ctScale, cpScale) });
+            var plant = new PowerPlant(spec with { Propeller = spec.Propeller!.Scaled(ctScale, cpScale) });
             double currentRatio = 0, thrustRatio = 0;
             foreach (var p in usable)
             {
@@ -44,7 +46,7 @@ public static class ThrustStand
             cpScale *= Math.Pow(currentRatio / usable.Length, 1.5);
             ctScale *= thrustRatio / usable.Length;
         }
-        return spec with { Propeller = spec.Propeller.Scaled(ctScale, cpScale) };
+        return spec with { Propeller = spec.Propeller!.Scaled(ctScale, cpScale) };
     }
 
     static bool TryParse(string s, out double value) =>

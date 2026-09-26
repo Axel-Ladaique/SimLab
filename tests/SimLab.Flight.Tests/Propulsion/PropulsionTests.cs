@@ -52,7 +52,7 @@ public class PropulsionTests
     public void Battery_voltage_sags_under_load()
     {
         var plant = SpunUp();
-        double open = plant.Spec.Battery.OpenCircuitVoltage(plant.StateOfCharge);
+        double open = plant.Spec.Battery!.OpenCircuitVoltage(plant.StateOfCharge);
         Assert.True(plant.Telemetry.BatteryVoltage < open - 0.5, $"loaded {plant.Telemetry.BatteryVoltage} V, open {open} V");
     }
 
@@ -123,7 +123,7 @@ public class PropulsionTests
         const double inducedVelocity = 11;
         double Yaw(double drift) => PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(0, 0, -drift), Vec3.Zero, inducedVelocity).Moment.Z -
                                     PowerPlantLoads.Compute(TrainerLike(), t, 0, Vec3.Zero, Vec3.Zero, inducedVelocity).Moment.Z;
-        double full = 20 * 0.1 * TrainerLike().Propeller.DiameterM;   // the offset at a 90° inflow angle
+        double full = 20 * 0.1 * TrainerLike().Propeller!.DiameterM;   // the offset at a 90° inflow angle
         Assert.InRange(Math.Abs(Yaw(1.0)), 0.05 * full, 0.12 * full);
         Assert.True(Math.Abs(Yaw(1.01) - Yaw(0.99)) < 0.01 * full, "no jump at 1 m/s");
         Assert.True(Math.Abs(Yaw(0.5)) < Math.Abs(Yaw(1.0)));

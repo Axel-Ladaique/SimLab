@@ -20,7 +20,7 @@ public class ThrustStandTests
     public void Calibration_recovers_measured_static_thrust_and_current()
     {
         var nominal = PropulsionTests.TrainerLike();
-        var truth = nominal with { Propeller = nominal.Propeller.Scaled(1.2, 0.9) };
+        var truth = nominal with { Propeller = nominal.Propeller!.Scaled(1.2, 0.9) };
         var truthPlant = new PowerPlant(truth);
         var measured = new[] { 0.5, 0.75, 1.0 }
             .Select(t => { var s = truthPlant.SteadyState(t, 0, 1.225); return new ThrustStandPoint(t, s.Thrust, s.Current); })

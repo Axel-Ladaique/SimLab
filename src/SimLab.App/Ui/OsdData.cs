@@ -12,13 +12,15 @@ public enum GearIndicator { Down, Moving, Up }
 /// </summary>
 /// <param name="HomeRelativeBearingDeg">Direction of the pilot relative to the nose, (−180, 180], positive to the right.</param>
 /// <param name="Gear">Retractable gear state, null for fixed gear.</param>
+/// <param name="FuelPercent">Fuel left for piston and turbine engines (the battery fields are then null).</param>
 public sealed record OsdData(
     double AirspeedKmh, double HeightM, double VarioMs,
     double HeadingDeg, double RollDeg, double PitchDeg,
     double HomeDistanceM, double HomeRelativeBearingDeg,
     double ThrottlePercent, double? BatteryVolts, double? CurrentAmps, double? ConsumedMah,
     double FlightTimeSeconds,
-    GearIndicator? Gear = null)
+    GearIndicator? Gear = null,
+    double? FuelPercent = null, double? FuelMl = null)
 {
     public static OsdData From(Aircraft aircraft, in RigidBodyState display, double heightAgl, double flightTimeSeconds,
         double throttle, Vec3 pilot)
@@ -28,14 +30,19 @@ public sealed record OsdData(
         double dx = pilot.X - display.Position.X, dy = pilot.Y - display.Position.Y;
         double bearing = Angle.Deg(Math.Atan2(dx, dy));
 
-        double? volts = null, amps = null, mah = null;
-        if (aircraft.Power is { } power)
+        double? volts = null, amps = null, mah = null, fuelPercent = null, fuelMl = null;
+        if (aircraft.Power is { Spec.TankMl: { } tank } engine)
+        {
+            fuelPercent = engine.StateOfCharge * 100;
+            fuelMl = engine.StateOfCharge * tank;
+        }
+        else if (aircraft.Power is { Spec.Battery: { } battery } power)
         {
             var t = power.Telemetry;
             // Before the first physics step the telemetry is empty: show the resting voltage instead.
-            volts = t.BatteryVoltage > 0 ? t.BatteryVoltage : power.Spec.Battery.OpenCircuitVoltage(power.StateOfCharge);
+            volts = t.BatteryVoltage > 0 ? t.BatteryVoltage : battery.OpenCircuitVoltage(power.StateOfCharge);
             amps = t.BatteryCurrent;
-            mah = (1 - power.StateOfCharge) * power.Spec.Battery.CapacityAh * 1000;
+            mah = (1 - power.StateOfCharge) * battery.CapacityAh * 1000;
         }
 
         return new OsdData(
@@ -47,7 +54,8 @@ public sealed record OsdData(
             aircraft.Definition.GearRetract is null ? null
                 : aircraft.GearPosition == 0 ? GearIndicator.Down
                 : aircraft.GearPosition == 1 ? GearIndicator.Up
-                : GearIndicator.Moving);
+                : GearIndicator.Moving,
+            fuelPercent, fuelMl);
     }
 
     /// <summary>An angle in degrees brought into (−180, 180].</summary>

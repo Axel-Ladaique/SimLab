@@ -26,13 +26,13 @@ public static class PowerPlantLoads
         double through = Math.Abs(axial) + Math.Max(inducedVelocity, 0);
         double diskFlow = Math.Sqrt(crossflow.LengthSquared + through * through);
         var offset = diskFlow > 1e-6
-            ? Vec3.Cross(axis, crossflow) * (-spec.SpinDirection * spec.PFactor * spec.Propeller.DiameterM / diskFlow)
+            ? Vec3.Cross(axis, crossflow) * (-spec.SpinDirection * spec.PFactor * (spec.Propeller?.DiameterM ?? 0) / diskFlow)
             : Vec3.Zero;
 
         var moment = Vec3.Cross(spec.Position + offset, thrust);
         double airframeTorque = telemetry.ReactionTorque - spec.DuctStatorRecovery * telemetry.PropTorque;
         moment += axis * (-spec.SpinDirection * airframeTorque);
-        var rotorMomentum = axis * (spec.SpinDirection * spec.Motor.RotorInertia * propOmega);
+        var rotorMomentum = axis * (spec.SpinDirection * spec.RotorInertia * propOmega);
         moment -= Vec3.Cross(angularVelocityBody, rotorMomentum);
         return new BodyLoad(thrust, moment);
     }
