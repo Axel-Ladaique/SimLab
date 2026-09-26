@@ -7,7 +7,7 @@ namespace SimLab.App.Ui;
 
 public enum TakeoffKind { Tricycle, TailDragger, HandLaunch }
 
-public enum SheetChannel { Ailerons, Elevons, Elevator, Rudder, Throttle }
+public enum SheetChannel { Ailerons, Elevons, Elevator, Rudder, Flaps, Throttle }
 
 /// <summary>Power plant facts: Kv and pack for electric motors, peak power for piston engines, thrust for turbines;
 /// propeller size when there is one, tank size for fuel engines.</summary>
@@ -73,6 +73,7 @@ public sealed record AircraftSheet(
             else if (aileron) found.Add(SheetChannel.Ailerons);
             else if (elevator) found.Add(SheetChannel.Elevator);
             if (control.Mix.ContainsKey("rudder")) found.Add(SheetChannel.Rudder);
+            if (control.Mix.ContainsKey("flap")) found.Add(SheetChannel.Flaps);
         }
         if (definition.Power is not null) found.Add(SheetChannel.Throttle);
         return Enum.GetValues<SheetChannel>().Where(found.Contains).ToList();

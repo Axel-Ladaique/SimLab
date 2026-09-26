@@ -24,7 +24,7 @@ Next: VSPAERO/CFD import and telemetry replay (sub-project 2), VTOL/drones (sub-
 ## Keyboard (without a radio)
 
 W/S (Z/S on AZERTY) throttle · arrows aileron/elevator (↓ = pull) · A/D (Q/D on AZERTY) rudder ·
-R reset · P pause · V wind on/off · C camera view · G gear up/down (retractable gear) · H HUD · F3 diagnostics · Esc menu.
+R reset · P pause · V wind on/off · C camera view · G gear up/down (retractable gear) · F flaps up/half/landing · H HUD · F3 diagnostics · Esc menu.
 
 ## Build and test
 

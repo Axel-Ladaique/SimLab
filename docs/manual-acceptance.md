@@ -111,3 +111,4 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] P-51: idles at start (exhaust bark audible), stays put with the throttle closed (brakes), rolls as soon as the throttle opens; needs right rudder on the takeoff run; OSD shows CARBURANT % and ml.
 - [ ] F-18: the turbine whines at idle; full throttle takes about 4–5 s to reach full thrust (roar grows); fuel drops about 750 ml/min at full power.
 - [ ] Both: G raises and lowers the gear; the sheet in the menu shows "Moteur thermique 5.0 kW · 23×9 in · 700 ml" / "Turbine 220 N · 4.5 L".
+- [ ] P-51 flaps: F steps VOLETS RENTRÉS → MI-COURSE → ATTERRISSAGE → RENTRÉS on the OSD; the flaps move slowly (about 1 s) and the nose rises slightly; a radio flap switch (radio screen) sets them by position; approach slower with landing flaps.

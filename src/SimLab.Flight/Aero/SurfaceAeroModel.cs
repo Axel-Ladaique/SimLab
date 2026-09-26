@@ -12,6 +12,11 @@ public sealed class SurfaceAeroModel : IAeroModel
 {
     const double DownwashGain = 1.6;
     const double FlapEfficiency = 0.85;
+    // High-lift flaps (driven by the flap channel): this share of the flap's equivalent alpha shift is applied as a lift
+    // increment on top of the section polar, so the maximum lift rises and the stall angle drops only by the rest, as for
+    // plain flaps (DATCOM section 6.1.1.3). Other controls stay a pure alpha shift.
+    const double HighLiftIncrementShare = 0.6;
+    const double SectionLiftSlope = 5.7;
     const double MaxDownwash = 0.3;
 
     /// <summary>Points per strip at which the prop wash is sampled (overlap weighting).</summary>
@@ -94,14 +99,16 @@ public sealed class SurfaceAeroModel : IAeroModel
             // Plain flaps lose effectiveness at large deflections as the flow separates on the flap.
             double flap = delta == 0 ? 0 : seg.ControlCoverage * FlapEfficiency * SurfaceGeometry.LargeDeflectionFactor(delta, seg.ControlChordFraction) * delta;
 
-            double alphaGeo = alpha + seg.FlapEffectiveness * flap;
+            double shift = seg.FlapEffectiveness * flap;
+            double increment = seg.HighLift ? HighLiftIncrementShare * shift : 0;
+            double alphaGeo = alpha + shift - increment;
             if (seg.Role == SurfaceRole.HorizontalTail) alphaGeo -= Downwash * groundEffect;
 
             double reynolds = ctx.Density * v * seg.Chord / Isa.DynamicViscosity;
             double ai = InducedFlow.SolveInducedAngle(seg.Airfoil, reynolds, alphaGeo, seg.InducedFactor * groundEffect);
             var coeff = seg.Airfoil.Evaluate(alphaGeo - ai, reynolds);
             double sinDelta = Math.Sin(delta);
-            double cl = coeff.Cl * Math.Cos(ai);
+            double cl = (coeff.Cl + SectionLiftSlope * increment) * Math.Cos(ai);
             double cd = coeff.Cd + coeff.Cl * Math.Sin(ai) + seg.ControlCoverage * seg.ControlChordFraction * sinDelta * sinDelta;
 
             var liftDir = (c * -un + n * uc) / v;
@@ -238,6 +245,7 @@ public sealed class SurfaceAeroModel : IAeroModel
             seg.FlapEffectiveness = SurfaceGeometry.FlapEffectiveness(control.ChordFraction);
             seg.FlapMomentEffectiveness = SurfaceGeometry.FlapMomentCoefficient(control.ChordFraction);
             seg.ControlChordFraction = control.ChordFraction;
+            seg.HighLift = control.Mix.ContainsKey("flap");
         }
         if (covered == 0)
             throw new ArgumentException($"Control '{control.Name}' does not cover any segment of surface '{control.Surface}'.");

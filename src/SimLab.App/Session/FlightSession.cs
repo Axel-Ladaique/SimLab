@@ -85,6 +85,7 @@ public sealed class FlightSession : IDisposable
             case SwitchAction.ToggleWind: SetWind(!WindEnabled); break;
             case SwitchAction.NextCamera: break;
             case SwitchAction.GearUp: break;
+            case SwitchAction.Flaps: break;
         }
     }
 

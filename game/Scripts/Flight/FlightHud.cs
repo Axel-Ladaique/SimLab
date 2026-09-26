@@ -24,7 +24,7 @@ public partial class FlightHud : CanvasLayer
     OsdHorizon _horizon = null!;
     OsdHomeArrow _homeArrow = null!;
     Label _home = null!, _heading = null!, _speed = null!, _height = null!, _vario = null!;
-    Label _battery = null!, _throttle = null!, _timer = null!, _gear = null!, _help = null!, _banner = null!;
+    Label _battery = null!, _throttle = null!, _timer = null!, _gear = null!, _flaps = null!, _help = null!, _banner = null!;
 
     System.Action _toggleHud = () => { };
     System.Action _nextView = () => { };
@@ -73,6 +73,7 @@ public partial class FlightHud : CanvasLayer
         _throttle = Add(big, 1f, 1f, -40, -102, HorizontalAlignment.Right);
         _timer = Add(big, 1f, 1f, -40, -70, HorizontalAlignment.Right);
         _gear = Add(big, 1f, 1f, -40, -134, HorizontalAlignment.Right);
+        _flaps = Add(big, 1f, 1f, -40, -166, HorizontalAlignment.Right);
         _help = Add(small, 0f, 1f, 24, -24, HorizontalAlignment.Left);
 
         _banner = Ui.Text("", 44);
@@ -180,6 +181,13 @@ public partial class FlightHud : CanvasLayer
             GearIndicator.Down => Ui.T("OSD_GEAR_DOWN"),
             GearIndicator.Up => Ui.T("OSD_GEAR_UP"),
             GearIndicator.Moving => Ui.T("OSD_GEAR_MOVING"),
+            _ => "",
+        };
+        _flaps.Text = osd.Flaps switch
+        {
+            FlapIndicator.Up => Ui.T("OSD_FLAPS_UP"),
+            FlapIndicator.Half => Ui.T("OSD_FLAPS_HALF"),
+            FlapIndicator.Landing => Ui.T("OSD_FLAPS_LANDING"),
             _ => "",
         };
         int seconds = (int)System.Math.Max(0, osd.FlightTimeSeconds);
