@@ -43,7 +43,7 @@ public static class MountainMap
         MapOverlay[] overlays =
         [
             new(SurfaceKind.Dirt, Road.Path, Road.Width),
-            new(SurfaceKind.Gravel, MountainRelief.Stream, 3), // drawn as water on top
+            new(SurfaceKind.Gravel, MountainRelief.Stream, 3, Water: true),
         ];
         return new FieldMap(Id, "FIELD_MOUNTAIN", grid, surface.At, Layout, Ambience, props, overlays, [MountainRelief.Lake])
         {

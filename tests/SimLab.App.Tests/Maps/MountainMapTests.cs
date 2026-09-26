@@ -397,9 +397,11 @@ public class MountainMapTests
         var road = Assert.Single(Mountain.Overlays, o => o.Kind == SurfaceKind.Dirt);
         Assert.Equal(5, road.Width);
         Assert.Equal(MountainMap.Road.Path, road.Path);
+        Assert.False(road.Water);
         var stream = Assert.Single(Mountain.Overlays, o => o.Kind == SurfaceKind.Gravel);
         Assert.Equal(3, stream.Width);
         Assert.Equal(MountainRelief.Stream, stream.Path);
+        Assert.True(stream.Water);
     }
 
     [Fact]
