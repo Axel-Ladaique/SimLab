@@ -92,6 +92,9 @@ public static class MapBuilder
         for (int i = 0; i < n; i++)
         {
             int a = j * (n + 1) + i, b = a + 1, c = a + n + 1, d = c + 1;
+            // Wound so the up-facing side is the front face seen from above (a,b,d / a,d,c would put it on the
+            // back face for this grid): with cull_disabled the shader mirrors the normal on back-facing triangles,
+            // which would flip our upward per-vertex normals downward and leave the terrain unlit.
             st.AddIndex(a); st.AddIndex(d); st.AddIndex(b);
             st.AddIndex(a); st.AddIndex(c); st.AddIndex(d);
         }

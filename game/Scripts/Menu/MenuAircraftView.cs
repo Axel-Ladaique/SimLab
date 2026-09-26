@@ -88,8 +88,9 @@ public partial class MenuAircraftView : ControlPreview
             child.QueueFree();
         }
         _field = MapBuilder.Build(_sceneryRoot, map, _conditions);
-        ApplyConditions(_conditions);
-        // The windsock only takes a pose once it is inside the tree; it just got added this frame.
+        // The windsock only takes a pose once its own _Ready has run (its _sock child is built there), which is
+        // deferred to idle time even though it is already inside the tree right after AddChild; ApplyConditions'
+        // IsNodeReady() guard would just skip it if called now, so defer the whole re-apply by one frame instead.
         CallDeferred(nameof(ReapplyConditions));
     }
 
@@ -122,7 +123,9 @@ public partial class MenuAircraftView : ControlPreview
         _conditions = conditions;
         if (_field is not { } field) return;
         MapBuilder.AimSun(field.Sun, conditions);
-        if (!field.Windsock.IsInsideTree()) return;
+        // IsInsideTree() alone isn't enough: a windsock just added to the tree is inside it immediately, but its
+        // _sock child (built in _Ready) isn't there yet until _Ready actually runs, which happens at idle time.
+        if (!field.Windsock.IsNodeReady()) return;
         var wind = new WindField(conditions.ToWindSettings(), conditions.Seed).SteadyAt(WindsockNode.PoleHeight);
         field.Windsock.Apply(Windsock.Pose(wind));
     }
