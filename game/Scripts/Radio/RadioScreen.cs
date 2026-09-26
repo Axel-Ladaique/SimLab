@@ -33,8 +33,6 @@ public partial class RadioScreen : Control
     string? _selectedGuid;
     string? _pinnedGuid;
     CalibrationWizard? _wizard;
-    SwitchCapture? _capture;
-    SwitchAction _captureAction;
     ControlPreview _preview = null!;
     Label _previewError = null!;
     readonly Dictionary<StickFunction, (CheckBox Reverse, Label Readout)> _channels = new();
@@ -91,13 +89,6 @@ public partial class RadioScreen : Control
         _next = Ui.Button(Ui.T("RADIO_NEXT"), Next);
         _cancel = Ui.Button(Ui.T("RADIO_CANCEL"), Cancel);
         column.AddChild(Ui.Row(Ui.Button(Ui.T("RADIO_CALIBRATE"), StartCalibration), _next, _cancel));
-        column.AddChild(Ui.Row(
-            Ui.Button(Ui.T("RADIO_BIND_RESET"), () => StartCapture(SwitchAction.Reset)),
-            Ui.Button(Ui.T("RADIO_BIND_PAUSE"), () => StartCapture(SwitchAction.Pause)),
-            Ui.Button(Ui.T("RADIO_BIND_WIND"), () => StartCapture(SwitchAction.ToggleWind)),
-            Ui.Button(Ui.T("RADIO_BIND_CAMERA"), () => StartCapture(SwitchAction.NextCamera)),
-            Ui.Button(Ui.T("RADIO_BIND_GEAR"), () => StartCapture(SwitchAction.GearUp)),
-            Ui.Button(Ui.T("RADIO_BIND_FLAPS"), () => StartCapture(SwitchAction.Flaps))));
         column.AddChild(Ui.Text(Ui.T("RADIO_HELP"), 16));
         column.AddChild(Ui.Button(Ui.T("BACK"), back));
         BuildControlCheck(columns);
@@ -237,31 +228,19 @@ public partial class RadioScreen : Control
         _pads = JoypadReader.Poll();
         RefreshDevices();
 
-        if (_wizard is not null || _capture is not null)
+        if (_wizard is not null)
         {
             if (Pinned is not { } active)
             {
                 _wizard = null;
-                _capture = null;
                 _pinnedGuid = null;
                 _prompt.Text = Ui.T("RADIO_CANCEL") + " — " + Ui.T("RADIO_NO_DEVICE");
                 SetBusy(false);
             }
             else
             {
-                if (_wizard is not null)
-                {
-                    _wizard.Feed(active.Frame);
-                    _prompt.Text = PromptText(_wizard);
-                }
-                if (_capture is not null && _capture.Update(_captureAction, active.Frame) is { } binding)
-                {
-                    SaveBinding(active, binding);
-                    _capture = null;
-                    _pinnedGuid = null;
-                    _prompt.Text = Ui.T("RADIO_BIND_DONE");
-                    SetBusy(false);
-                }
+                _wizard.Feed(active.Frame);
+                _prompt.Text = PromptText(_wizard);
             }
         }
 
@@ -314,7 +293,6 @@ public partial class RadioScreen : Control
     void StartCalibration()
     {
         if (Selected is not { } pad) return;
-        _capture = null;
         _pinnedGuid = pad.Guid;
         _wizard = new CalibrationWizard(pad.Frame.Axes.Length);
         SetBusy(true);
@@ -350,42 +328,14 @@ public partial class RadioScreen : Control
     void Cancel()
     {
         _wizard = null;
-        _capture = null;
         _pinnedGuid = null;
         _prompt.Text = "";
         SetBusy(false);
     }
 
-    void StartCapture(SwitchAction action)
-    {
-        if (Selected is not { } pad || !(_calibrated.TryGetValue(pad.Guid, out var cal) && cal))
-        {
-            _prompt.Text = Ui.T("RADIO_DEVICE_UNCALIBRATED");
-            return;
-        }
-        _wizard = null;
-        _pinnedGuid = pad.Guid;
-        _capture = new SwitchCapture();
-        _captureAction = action;
-        _prompt.Text = Ui.T("RADIO_BIND_WAIT");
-        SetBusy(true);
-    }
-
-    void SaveBinding(JoypadSnapshot pad, SwitchBinding binding)
-    {
-        var profile = _services.Radios.Load(pad.Guid, out _);
-        if (profile is null) return;
-        profile.Switches.RemoveAll(s => s.Action == binding.Action);
-        profile.Switches.Add(binding);
-        _services.Radios.Save(profile);
-        _services.Router.InvalidateProfiles();
-        _profileStale = true;
-        _calibrated[pad.Guid] = true;
-    }
-
     void SetBusy(bool busy)
     {
-        _next.Disabled = !busy || _capture is not null;
+        _next.Disabled = !busy;
         _cancel.Disabled = !busy;
     }
 }

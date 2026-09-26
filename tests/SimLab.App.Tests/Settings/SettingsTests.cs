@@ -133,7 +133,7 @@ public sealed class SettingsTests : IDisposable
         {
             DeviceGuid = "tx16s",
             Channels = { [StickFunction.Rudder] = new ChannelSettings(3, true, AxisCalibration.Identity) },
-            Switches = { new SwitchBinding(SwitchAction.Reset, ButtonIndex: 3) },
+            Switches = { new SwitchAssignment(SwitchFunction.Reset, new SwitchSource(ButtonIndex: 3), [new(-1, null), new(1, SwitchStates.ResetFire)]) },
         });
 
         Assert.True(store.SetReversed("tx16s", StickFunction.Rudder, false));

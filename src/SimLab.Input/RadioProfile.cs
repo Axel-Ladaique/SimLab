@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace SimLab.Input;
@@ -15,7 +16,7 @@ public sealed class RadioProfile
     public string DeviceGuid { get; set; } = "";
     public string DeviceName { get; set; } = "";
     public Dictionary<StickFunction, ChannelSettings> Channels { get; set; } = new();
-    public List<SwitchBinding> Switches { get; set; } = [];
+    public List<SwitchAssignment> Switches { get; set; } = [];
 
     public StickState Read(RawInputFrame frame)
     {
@@ -41,6 +42,15 @@ public sealed class RadioProfile
         return true;
     }
 
+    /// <summary>Assigns a switch to its function, replacing any earlier assignment of that function.</summary>
+    public void SetSwitch(SwitchAssignment assignment)
+    {
+        ClearSwitch(assignment.Function);
+        Switches.Add(assignment);
+    }
+
+    public void ClearSwitch(SwitchFunction function) => Switches.RemoveAll(s => s.Function == function);
+
     public string ToJson() => JsonSerializer.Serialize(this, Options);
 
     /// <summary>Parses and validates a profile; malformed or inconsistent data throws <see cref="InvalidDataException"/>.</summary>
@@ -49,7 +59,10 @@ public sealed class RadioProfile
         RadioProfile profile;
         try
         {
-            profile = JsonSerializer.Deserialize<RadioProfile>(json, Options) ?? throw new InvalidDataException("Empty radio profile.");
+            var node = JsonNode.Parse(json) as JsonObject ?? throw new InvalidDataException("Empty radio profile.");
+            if (node["Switches"] is JsonArray switches && LegacySwitches.IsLegacy(switches))
+                node["Switches"] = JsonSerializer.SerializeToNode(LegacySwitches.Convert(switches, Options), Options);
+            profile = node.Deserialize<RadioProfile>(Options) ?? throw new InvalidDataException("Empty radio profile.");
         }
         catch (JsonException ex)
         {
@@ -65,6 +78,23 @@ public sealed class RadioProfile
             var cal = c.Calibration;
             if (!(cal.Min <= cal.Center && cal.Center <= cal.Max))
                 throw new InvalidDataException($"Channel {function}: calibration must satisfy Min <= Center <= Max.");
+        }
+        var assigned = new HashSet<SwitchFunction>();
+        foreach (var s in profile.Switches)
+        {
+            if (s is null) throw new InvalidDataException("Empty switch assignment.");
+            if (!assigned.Add(s.Function)) throw new InvalidDataException($"Switch {s.Function} is assigned twice.");
+            if ((s.Source.AxisIndex is null) == (s.Source.ButtonIndex is null))
+                throw new InvalidDataException($"Switch {s.Function} needs exactly one axis or one button.");
+            if (s.Source.AxisIndex < 0 || s.Source.ButtonIndex < 0) throw new InvalidDataException($"Switch {s.Function}: negative index.");
+            if (s.Positions is null || s.Positions.Count is < 2 or > 3)
+                throw new InvalidDataException($"Switch {s.Function} needs 2 or 3 positions.");
+            foreach (var p in s.Positions)
+            {
+                if (p is null) throw new InvalidDataException($"Switch {s.Function} has an empty position.");
+                if (p.State is int state && (state < 0 || state >= SwitchStates.Count(s.Function)))
+                    throw new InvalidDataException($"Switch {s.Function}: unknown state {state}.");
+            }
         }
         return profile;
     }
