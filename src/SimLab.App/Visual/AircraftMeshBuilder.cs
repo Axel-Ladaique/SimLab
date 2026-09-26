@@ -10,9 +10,10 @@ public readonly record struct Rgb(float R, float G, float B);
 /// A renderable piece of the aircraft. Vertices are in body axes, three per triangle. For control parts, rotating the
 /// vertices about <see cref="HingeAxis"/> through <see cref="HingePoint"/> by the deflection (rad, positive = trailing
 /// edge down) reproduces the physical deflection. <see cref="Smooth"/> parts are shaded with shared vertex normals.
+/// A <see cref="Retracts"/> part is a retractable gear leg: rotating it about its hinge by the gear travel × 90° folds it.
 /// </summary>
 public sealed record MeshPart(string Name, int ControlIndex, Vec3 HingePoint, Vec3 HingeAxis, IReadOnlyList<Vec3> Triangles, Rgb Color,
-    bool Smooth = false);
+    bool Smooth = false, bool Retracts = false);
 
 /// <summary>
 /// Builds a simple flat-panel model of an aircraft directly from its aerodynamic geometry, with the display-only shapes,
@@ -27,6 +28,7 @@ public static class AircraftMeshBuilder
     const double FuselageWidth = 0.09;
     const double FuselageHeight = 0.11;
     const double GearSize = 0.05;
+    const double StrutSize = 0.006;
     const int PropSides = 16;
 
     public static IReadOnlyList<MeshPart> Build(AircraftDefinition definition, IReadOnlyList<SurfaceSegment> segments) =>
@@ -85,7 +87,20 @@ public static class AircraftMeshBuilder
         foreach (var plate in visual?.Plates ?? [])
             parts.Add(new MeshPart(plate.Name, -1, Vec3.Zero, BodyAxes.Right, Plate(plate), plate.Color));
 
-        if (definition.Wheels.Count > 0)
+        if (definition.GearRetract is not null)
+        {
+            // One leg per wheel, hanging from the CG level above it and folding forward (positive angle about body right).
+            foreach (var w in definition.Wheels)
+            {
+                var leg = new List<Vec3>();
+                var hinge = new Vec3(w.Position.X, w.Position.Y, 0);
+                AddBox(leg, w.Position + BodyAxes.Up * (GearSize / 2), GearSize / 2, GearSize / 2, GearSize / 4);
+                double strut = Math.Max(0, -w.Position.Z - GearSize);
+                if (strut > 0) AddBox(leg, hinge - BodyAxes.Up * (strut / 2), StrutSize, strut / 2, StrutSize);
+                parts.Add(new MeshPart("gear:" + w.Name, -1, hinge, BodyAxes.Right, leg, DarkColor, Retracts: true));
+            }
+        }
+        else if (definition.Wheels.Count > 0)
         {
             var gear = new List<Vec3>();
             foreach (var w in definition.Wheels) AddBox(gear, w.Position, GearSize, GearSize, GearSize / 2);

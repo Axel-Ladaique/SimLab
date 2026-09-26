@@ -18,7 +18,14 @@ internal sealed class AircraftDto
     public List<HullDto> Hull { get; set; } = new();
     public CrashDto Crash { get; set; } = new();
     public FpvCameraDto? FpvCamera { get; set; }
+    public GearRetractDto? GearRetract { get; set; }
     public Dictionary<string, string> Provenance { get; set; } = new();
+}
+
+internal sealed class GearRetractDto
+{
+    public double Seconds { get; set; } = 3;
+    public Vec3 CdA { get; set; }
 }
 
 internal sealed class InertiaDto

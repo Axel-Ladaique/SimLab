@@ -123,16 +123,23 @@ public sealed class SurfaceAeroModel : IAeroModel
 
         foreach (var body in _bodies)
         {
-            var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, body.Position);
-            double k = -0.5 * ctx.Density * u.Length;
-            var f = new Vec3(u.X * body.CdA.X, u.Y * body.CdA.Y, u.Z * body.CdA.Z) * k;
-            force += f;
-            moment += Vec3.Cross(body.Position, f);
+            var drag = BodyDrag(body.Position, body.CdA, ctx.AirVelocityBody, ctx.AngularVelocityBody, ctx.Density);
+            force += drag.Force;
+            moment += drag.Moment;
         }
 
         _lastWingCl = wingQa > 0 ? wingLift / wingQa : 0;
         _lastAirspeed = ctx.AirVelocityBody.Length;
         return new BodyLoad(force, moment);
+    }
+
+    /// <summary>Drag of a bluff body with per-axis drag areas (m², body order [frontal, side, top]) at a body-axes point.</summary>
+    public static BodyLoad BodyDrag(Vec3 position, Vec3 cdA, Vec3 airVelocityBody, Vec3 angularVelocityBody, double density)
+    {
+        var u = airVelocityBody + Vec3.Cross(angularVelocityBody, position);
+        double k = -0.5 * density * u.Length;
+        var f = new Vec3(u.X * cdA.X, u.Y * cdA.Y, u.Z * cdA.Z) * k;
+        return new BodyLoad(f, Vec3.Cross(position, f));
     }
 
     public void Advance(double dt)

@@ -75,6 +75,18 @@ and a wheel is below the CG datum line so it normally has negative z. A steerabl
 (nosewheel, tailwheel) gets a non-zero `maxSteerDeg` and a `steerMix` (see Controls below);
 a free or fixed wheel uses `"steerMix": {}`.
 
+## Retractable gear (optional)
+
+```json
+"gearRetract": { "seconds": 5.0, "cdA": [0.004, 0.003, 0.002] }
+```
+
+Every wheel in `gear` retracts together, over `seconds` each way. The wheels carry load only when the gear is fully down
+and locked; up or travelling, the hull points (belly, nose…) meet the ground instead. `cdA` is the extended gear's drag
+area (m², body order [frontal, side, top] like a body's), applied at the wheels' centroid and scaled by how far the gear
+is down. The pilot raises it with the G key or a radio gear switch (read by position: bind it on the radio screen by
+flipping it to gear up); after a start or reset, a switch left up is ignored until it has been seen down.
+
 ## Hull points
 
 ```json

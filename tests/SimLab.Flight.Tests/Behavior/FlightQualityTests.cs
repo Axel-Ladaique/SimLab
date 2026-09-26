@@ -9,13 +9,12 @@ public class FlightQualityTests
 {
     static Simulation Trimmed(string id)
     {
-        var (speed, throttle) = Fleet.Cruise(id);
-        var sim = Fleet.InFlight(id, 150, speed);
-        Fleet.Fly(sim, 20, _ => new ControlInputs(throttle, 0, 0, 0));
+        var sim = Fleet.InFlight(id, 150, Fleet.Cruise(id).Airspeed);
+        Fleet.Fly(sim, 20, _ => Fleet.CruiseInputs(id));
         return sim;
     }
 
-    static ControlInputs Cruise(string id) => new(Fleet.Cruise(id).Throttle, 0, 0, 0);
+    static ControlInputs Cruise(string id) => Fleet.CruiseInputs(id);
 
     [Fact]
     public void Trainer_flies_hands_off_for_thirty_seconds()

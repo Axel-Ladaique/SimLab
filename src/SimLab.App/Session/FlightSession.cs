@@ -49,6 +49,9 @@ public sealed class FlightSession : IDisposable
     /// <summary>Number of <see cref="Reset"/> calls, including the constructor's own one. Lets observers tell a real
     /// reset apart from a wind toggle, which swaps in a new <see cref="Simulation"/> whose clock also restarts at 0.</summary>
     public int ResetCount { get; private set; }
+
+    /// <summary>Whether a gear-up command is obeyed: false from each start or reset until the command is seen down.</summary>
+    bool _gearArmed;
     public double Span { get; }
     public FlightRecorder? Recorder { get; private set; }
 
@@ -66,6 +69,7 @@ public sealed class FlightSession : IDisposable
 
     public void Reset()
     {
+        _gearArmed = false;
         Simulation.Reset(StartState());
         FlightTime = 0;
         Paused = false;
@@ -80,14 +84,19 @@ public sealed class FlightSession : IDisposable
             case SwitchAction.Pause: Paused = !Paused; break;
             case SwitchAction.ToggleWind: SetWind(!WindEnabled); break;
             case SwitchAction.NextCamera: break;
+            case SwitchAction.GearUp: break;
         }
     }
 
     public int Tick(double frameDt, in ControlInputs input)
     {
         if (Paused) return 0;
+        // Like a retract controller at power-up: a gear switch left up only counts once it has been seen down, so a
+        // start or reset never drops the aircraft on its belly.
+        if (!input.GearUp) _gearArmed = true;
+        var command = input with { GearUp = input.GearUp && _gearArmed };
         bool flying = Aircraft.Crash == CrashCause.None;
-        int steps = Simulation.Advance(frameDt, input);
+        int steps = Simulation.Advance(frameDt, command);
         if (flying && Aircraft.Crash == CrashCause.None) FlightTime += steps * Simulation.FixedStep;
         return steps;
     }

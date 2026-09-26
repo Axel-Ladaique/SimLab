@@ -31,6 +31,11 @@ public sealed class GroundContactModel
 
     public IReadOnlyList<WheelSpec> Wheels => _wheels;
 
+    /// <summary>False while retractable gear is up or travelling: the wheels then neither touch nor carry anything.</summary>
+    public bool WheelsExtended { get; set; } = true;
+
+    ReadOnlySpan<WheelSpec> ActiveWheels => WheelsExtended ? _wheels : [];
+
     readonly record struct Probe(Vec3 Point, double Depth, Vec3 Normal, Vec3 Velocity)
     {
         public double NormalSpeed => Vec3.Dot(Velocity, Normal);
@@ -39,8 +44,9 @@ public sealed class GroundContactModel
     public BodyLoad Evaluate(in RigidBodyState s, ITerrain terrain, IReadOnlyList<double> steerRad)
     {
         var total = BodyLoad.Zero;
-        for (int i = 0; i < _wheels.Length; i++)
-            total += WheelLoad(_wheels[i], s, terrain, i < steerRad.Count ? steerRad[i] : 0);
+        var wheels = ActiveWheels;
+        for (int i = 0; i < wheels.Length; i++)
+            total += WheelLoad(wheels[i], s, terrain, i < steerRad.Count ? steerRad[i] : 0);
         foreach (var h in _hull)
             total += HullLoad(h, s, terrain);
         return total;
@@ -49,7 +55,7 @@ public sealed class GroundContactModel
     public int WheelsInContact(in RigidBodyState s, ITerrain terrain)
     {
         int count = 0;
-        foreach (var w in _wheels)
+        foreach (var w in ActiveWheels)
             if (ProbePoint(w.Position, s, terrain).Depth > 0) count++;
         return count;
     }
@@ -59,7 +65,7 @@ public sealed class GroundContactModel
     public IReadOnlyList<ContactSample> Contacts(in RigidBodyState s, ITerrain terrain)
     {
         var list = new List<ContactSample>(_wheels.Length + _hull.Length);
-        foreach (var w in _wheels)
+        foreach (var w in ActiveWheels)
         {
             var p = ProbePoint(w.Position, s, terrain);
             list.Add(new ContactSample(w.Name, true, "wheel", p.Depth, p.NormalSpeed));
@@ -74,7 +80,7 @@ public sealed class GroundContactModel
 
     public CrashCause DetectCrash(in RigidBodyState s, ITerrain terrain, CrashLimits limits)
     {
-        foreach (var w in _wheels)
+        foreach (var w in ActiveWheels)
         {
             var p = ProbePoint(w.Position, s, terrain);
             if (p.Depth > 0 && -p.NormalSpeed > limits.MaxGearSinkRate) return CrashCause.HardLanding;

@@ -255,7 +255,8 @@ public partial class Main : Node
             _smokeAircraft = args[shot + 1];
             _smokeSeconds = double.Parse(args[shot + 2], CultureInfo.InvariantCulture);
             _smokeScreenshot = args[shot + 3];
-            if (StartFlight(_smokeAircraft, t => new ControlInputs(1, 0, t > 3.5 && t < 5 ? 0.25 : 0.05, 0)))
+            // Scripted takeoff: rotate at 3.5 s, raise retractable gear from 6 s (fixed gear ignores it).
+            if (StartFlight(_smokeAircraft, t => new ControlInputs(1, 0, t > 3.5 && t < 5 ? 0.25 : 0.05, 0) { GearUp = t > 6 }))
             {
                 var scene = (FlightScene)_current!;
                 if (diagnostics) scene.Diagnostics.Shown = true;

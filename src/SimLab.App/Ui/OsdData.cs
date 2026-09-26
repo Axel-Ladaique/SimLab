@@ -4,17 +4,21 @@ using SimLab.Flight.Geometry;
 
 namespace SimLab.App.Ui;
 
+public enum GearIndicator { Down, Moving, Up }
+
 /// <summary>
 /// Everything the flight OSD shows, in pilot units: km/h, m, m/s, degrees (heading clockwise from north, roll right
 /// and pitch up positive), percent, volts, amps and mAh. Battery fields are null without a power plant.
 /// </summary>
 /// <param name="HomeRelativeBearingDeg">Direction of the pilot relative to the nose, (−180, 180], positive to the right.</param>
+/// <param name="Gear">Retractable gear state, null for fixed gear.</param>
 public sealed record OsdData(
     double AirspeedKmh, double HeightM, double VarioMs,
     double HeadingDeg, double RollDeg, double PitchDeg,
     double HomeDistanceM, double HomeRelativeBearingDeg,
     double ThrottlePercent, double? BatteryVolts, double? CurrentAmps, double? ConsumedMah,
-    double FlightTimeSeconds)
+    double FlightTimeSeconds,
+    GearIndicator? Gear = null)
 {
     public static OsdData From(Aircraft aircraft, in RigidBodyState display, double heightAgl, double flightTimeSeconds,
         double throttle, Vec3 pilot)
@@ -39,7 +43,11 @@ public sealed record OsdData(
             heading, Angle.Deg(attitude.Roll), Angle.Deg(attitude.Pitch),
             Math.Sqrt(dx * dx + dy * dy), WrapDeg(bearing - heading),
             Math.Clamp(throttle, 0, 1) * 100, volts, amps, mah,
-            flightTimeSeconds);
+            flightTimeSeconds,
+            aircraft.Definition.GearRetract is null ? null
+                : aircraft.GearPosition == 0 ? GearIndicator.Down
+                : aircraft.GearPosition == 1 ? GearIndicator.Up
+                : GearIndicator.Moving);
     }
 
     /// <summary>An angle in degrees brought into (−180, 180].</summary>

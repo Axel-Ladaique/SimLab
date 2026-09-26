@@ -133,4 +133,43 @@ public class InputTests
         Assert.Empty(router.Update(0.016, [], default, default).Actions);
         Assert.Equal(SwitchAction.NextCamera, Assert.Single(router.Update(0.016, [], default, c).Actions));
     }
+
+    [Fact]
+    public void G_key_toggles_the_gear_and_a_new_flight_starts_with_it_down()
+    {
+        var router = new InputRouter(_ => null);
+        var g = new KeyboardCommands(false, false, false, ToggleGear: true);
+        Assert.False(router.Update(0.016, [], default, default).Controls.GearUp);
+        Assert.True(router.Update(0.016, [], default, g).Controls.GearUp);
+        Assert.True(router.Update(0.016, [], default, g).Controls.GearUp);
+        Assert.True(router.Update(0.016, [], default, default).Controls.GearUp);
+        Assert.False(router.Update(0.016, [], default, g).Controls.GearUp);
+        router.Update(0.016, [], default, default);
+        router.Update(0.016, [], default, g);
+        router.ResetForNewFlight();
+        Assert.False(router.Update(0.016, [], default, default).Controls.GearUp);
+    }
+
+    [Fact]
+    public void A_radio_gear_switch_sets_the_gear_by_its_position_otherwise_the_g_key_does()
+    {
+        var gear = new SwitchBinding(SwitchAction.GearUp, AxisIndex: 4, Threshold: 0.5);
+        var router = new InputRouter(guid => guid == "radio-1" ? Profile(gear) : guid == "radio-2" ? Profile() : null);
+        var g = new KeyboardCommands(false, false, false, ToggleGear: true);
+        Assert.False(router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0, -1])], default, g).Controls.GearUp);
+        Assert.True(router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0, 1])], default, default).Controls.GearUp);
+
+        var other = new InputRouter(guid => guid == "radio-2" ? Profile() : null);
+        Assert.True(other.Update(0.016, [Pad("radio-2", [0, 0, 0, 0, 1])], default, g).Controls.GearUp);
+    }
+
+    [Fact]
+    public void Reset_puts_the_keyboard_gear_back_down()
+    {
+        var router = new InputRouter(_ => null);
+        router.Update(0.016, [], default, new KeyboardCommands(false, false, false, ToggleGear: true));
+        var output = router.Update(0.016, [], default, new KeyboardCommands(Reset: true, false, false));
+        Assert.Contains(SwitchAction.Reset, output.Actions);
+        Assert.False(output.Controls.GearUp);
+    }
 }

@@ -38,4 +38,15 @@ public class SwitchTrackerTests
         t.Update(Frame(false));
         Assert.Empty(t.Update(Frame(true)));
     }
+
+    [Fact]
+    public void Gear_switch_is_read_by_position_and_never_fires_an_action()
+    {
+        var t = new SwitchTracker([new SwitchBinding(SwitchAction.GearUp, AxisIndex: 4, Threshold: 0.5)]);
+        Assert.Empty(t.Update(Frame(false, -1)));
+        Assert.False(t.IsOn(SwitchAction.GearUp, Frame(false, -1)));
+        Assert.Empty(t.Update(Frame(false, 1)));
+        Assert.True(t.IsOn(SwitchAction.GearUp, Frame(false, 1)));
+        Assert.Null(t.IsOn(SwitchAction.Reset, Frame(false, 1)));
+    }
 }
