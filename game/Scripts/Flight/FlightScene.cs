@@ -118,11 +118,14 @@ public partial class FlightScene : Node3D
         _retrackDoppler = true;
     }
 
-    /// <summary>Shows or hides the OSD and remembers it (H key, HUD button). Scripted runs keep it on.</summary>
-    public void ToggleHud()
+    /// <summary>Shows or hides the OSD (H key, HUD button). Scripted runs keep it on.</summary>
+    public void ToggleHud() => SetHud(!_services.Settings.ShowFlightData);
+
+    /// <summary>Shows or hides the OSD and remembers it (radio OSD switch). Scripted runs keep it on.</summary>
+    public void SetHud(bool on)
     {
-        if (_script is not null) return;
-        _services.Settings = _services.Settings with { ShowFlightData = !_services.Settings.ShowFlightData };
+        if (_script is not null || _services.Settings.ShowFlightData == on) return;
+        _services.Settings = _services.Settings with { ShowFlightData = on };
         _services.SaveSettings();
     }
 
@@ -139,10 +142,15 @@ public partial class FlightScene : Node3D
         LastInput = _script is null
             ? _services.Router.Update(delta, JoypadReader.Poll(), KeyboardInput.Keys(), KeyboardInput.Commands())
             : new RouterOutput(_script(_session.Simulation.Time), [], InputSource.Keyboard, "script");
-        foreach (var action in LastInput.Actions)
+        foreach (var command in LastInput.Commands)
         {
-            if (action == SwitchAction.NextCamera && _script is null) NextCamera();
-            else _session.Handle(action);
+            switch (command.Kind)
+            {
+                case FlightCommandKind.NextCamera: if (_script is null) NextCamera(); break;
+                case FlightCommandKind.SelectCamera: if (_script is null) SelectCamera(command.View); break;
+                case FlightCommandKind.SetOsd: SetHud(command.On); break;
+                default: _session.Handle(command); break;
+            }
         }
         if (_session.Recorder is { } recorder) recorder.RawChannels = LastInput.RawFrame?.Axes;
         LastSteps = _session.Tick(delta, LastInput.Controls);
@@ -174,7 +182,7 @@ public partial class FlightScene : Node3D
         }
         _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
         var osd = OsdData.From(_session.Aircraft, _session.DisplayState, _session.HeightAgl, _session.FlightTime,
-            LastInput.Controls.Throttle, _session.Map.Layout.PilotPosition, LastInput.Controls.Flap);
+            LastInput.Controls.Throttle, _session.Map.Layout.PilotPosition, LastInput.Controls.Flap, LastInput.Controls.ThrottleCut);
         _hud.UpdateHud(_session, LastInput, osd, HudShown, _cameras.Current);
         _crash.UpdateCrash(_session.Aircraft.Crash);
         _diagnostics.UpdateDiagnostics(this);

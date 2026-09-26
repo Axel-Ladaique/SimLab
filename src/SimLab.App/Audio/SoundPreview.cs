@@ -39,7 +39,7 @@ public static class SoundPreview
         double rollGain = RollingSoundModel.Gain(rolling ? 1 : 0, rolling ? RollGroundSpeed : 0);
 
         return new SynthParams(voice.BladePassHz, voice.ShaftHz, voice.ElectricalHz, voice.PropGain, voice.WhineGain,
-            windGain, cutoff, rollGain, voice.ExhaustGain, voice.RoarGain);
+            windGain, cutoff, rollGain, voice.ExhaustGain, voice.RoarGain, voice.SpoolGain);
     }
 
     /// <summary>Whether the loop's one impact instant (t = 11.5 s modulo <see cref="LoopSeconds"/>) was crossed

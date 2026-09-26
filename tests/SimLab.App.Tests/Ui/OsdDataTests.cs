@@ -141,4 +141,13 @@ public class OsdDataTests
         Assert.Equal(FlapIndicator.Half, Osd(level, p51, flap: SimLab.App.Session.FlapSetting.Half).Flaps);
         Assert.Equal(FlapIndicator.Landing, Osd(level, p51, flap: 1).Flaps);
     }
+
+    [Fact]
+    public void Throttle_cut_is_reported()
+    {
+        var aircraft = new Aircraft(TestData.Aircraft("trainer"));
+        var state = State(new Vec3(0, 75, 20), 0, 0, 0);
+        Assert.True(OsdData.From(aircraft, state, 12.3, 75, 0.5, Pilot, 0, throttleCut: true).ThrottleCut);
+        Assert.False(OsdData.From(aircraft, state, 12.3, 75, 0.5, Pilot).ThrottleCut);
+    }
 }

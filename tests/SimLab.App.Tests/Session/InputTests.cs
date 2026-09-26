@@ -1,3 +1,4 @@
+using SimLab.App.Cameras;
 using SimLab.App.Session;
 using SimLab.Flight.Sim;
 using SimLab.Input;
@@ -6,7 +7,7 @@ namespace SimLab.App.Tests.Session;
 
 public class InputTests
 {
-    static RadioProfile Profile(params SwitchBinding[] switches)
+    static RadioProfile Profile(params SwitchAssignment[] switches)
     {
         var p = new RadioProfile { DeviceGuid = "radio-1", DeviceName = "TX16S" };
         p.Channels[StickFunction.Throttle] = new ChannelSettings(2, false, AxisCalibration.Identity);
@@ -19,6 +20,12 @@ public class InputTests
 
     static JoypadSnapshot Pad(string guid, double[] axes, bool[]? buttons = null) =>
         new(guid, "TX16S", new RawInputFrame(axes, buttons ?? new bool[4]));
+
+    static SwitchAssignment OnAxis4(SwitchFunction f, params (double Value, int? State)[] positions) =>
+        new(f, new SwitchSource(AxisIndex: 4), positions.Select(p => new SwitchPosition(p.Value, p.State)).ToList());
+
+    static JoypadSnapshot Radio(double axis4, bool button1 = false) =>
+        Pad("radio-1", [0, 0, -1, 0, axis4], [false, button1, false, false]);
 
     [Fact]
     public void Calibrated_radio_drives_the_aircraft()
@@ -77,44 +84,6 @@ public class InputTests
     }
 
     [Fact]
-    public void Radio_switches_and_keyboard_commands_fire_once_per_press()
-    {
-        var router = new InputRouter(_ => Profile(new SwitchBinding(SwitchAction.Reset, ButtonIndex: 1)));
-        bool[] off = [false, false, false, false], on = [false, true, false, false];
-        router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0], off)], default, default);
-        Assert.Equal(SwitchAction.Reset, Assert.Single(router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0], on)], default, default).Actions));
-        Assert.Empty(router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0], on)], default, default).Actions);
-
-        var pause = new KeyboardCommands(false, true, false);
-        Assert.Equal(SwitchAction.Pause, Assert.Single(router.Update(0.016, [], default, pause).Actions));
-        Assert.Empty(router.Update(0.016, [], default, pause).Actions);
-    }
-
-    [Fact]
-    public void Switch_capture_binds_a_new_button_or_a_rising_axis()
-    {
-        var capture = new SwitchCapture();
-        Assert.Null(capture.Update(SwitchAction.Reset, new RawInputFrame([0, -1], [false, false])));
-        Assert.Null(capture.Update(SwitchAction.Reset, new RawInputFrame([0.2, -1], [false, false])));
-        var byButton = capture.Update(SwitchAction.Reset, new RawInputFrame([0.2, -1], [false, true]));
-        Assert.Equal(new SwitchBinding(SwitchAction.Reset, ButtonIndex: 1), byButton);
-
-        var axisCapture = new SwitchCapture();
-        axisCapture.Update(SwitchAction.ToggleWind, new RawInputFrame([0, -1], [false]));
-        var byAxis = axisCapture.Update(SwitchAction.ToggleWind, new RawInputFrame([0, 1], [false]));
-        Assert.Equal(new SwitchBinding(SwitchAction.ToggleWind, AxisIndex: 1, Threshold: 0), byAxis);
-    }
-
-    [Fact]
-    public void Switch_capture_ignores_an_axis_moving_down()
-    {
-        var capture = new SwitchCapture();
-        capture.Update(SwitchAction.Pause, new RawInputFrame([1], []));
-        Assert.Null(capture.Update(SwitchAction.Pause, new RawInputFrame([-1], [])));
-        Assert.Equal(new SwitchBinding(SwitchAction.Pause, AxisIndex: 0, Threshold: 0), capture.Update(SwitchAction.Pause, new RawInputFrame([1], [])));
-    }
-
-    [Fact]
     public void Latency_estimate_adds_processing_frame_and_interpolation_delay()
     {
         var meter = new LatencyMeter();
@@ -128,10 +97,10 @@ public class InputTests
     {
         var router = new InputRouter(_ => null);
         var c = new KeyboardCommands(false, false, false, NextCamera: true);
-        Assert.Equal(SwitchAction.NextCamera, Assert.Single(router.Update(0.016, [], default, c).Actions));
-        Assert.Empty(router.Update(0.016, [], default, c).Actions);
-        Assert.Empty(router.Update(0.016, [], default, default).Actions);
-        Assert.Equal(SwitchAction.NextCamera, Assert.Single(router.Update(0.016, [], default, c).Actions));
+        Assert.Equal(new FlightCommand(FlightCommandKind.NextCamera), Assert.Single(router.Update(0.016, [], default, c).Commands));
+        Assert.Empty(router.Update(0.016, [], default, c).Commands);
+        Assert.Empty(router.Update(0.016, [], default, default).Commands);
+        Assert.Equal(new FlightCommand(FlightCommandKind.NextCamera), Assert.Single(router.Update(0.016, [], default, c).Commands));
     }
 
     [Fact]
@@ -151,25 +120,12 @@ public class InputTests
     }
 
     [Fact]
-    public void A_radio_gear_switch_sets_the_gear_by_its_position_otherwise_the_g_key_does()
-    {
-        var gear = new SwitchBinding(SwitchAction.GearUp, AxisIndex: 4, Threshold: 0.5);
-        var router = new InputRouter(guid => guid == "radio-1" ? Profile(gear) : guid == "radio-2" ? Profile() : null);
-        var g = new KeyboardCommands(false, false, false, ToggleGear: true);
-        Assert.False(router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0, -1])], default, g).Controls.GearUp);
-        Assert.True(router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0, 1])], default, default).Controls.GearUp);
-
-        var other = new InputRouter(guid => guid == "radio-2" ? Profile() : null);
-        Assert.True(other.Update(0.016, [Pad("radio-2", [0, 0, 0, 0, 1])], default, g).Controls.GearUp);
-    }
-
-    [Fact]
     public void Reset_puts_the_keyboard_gear_back_down()
     {
         var router = new InputRouter(_ => null);
         router.Update(0.016, [], default, new KeyboardCommands(false, false, false, ToggleGear: true));
         var output = router.Update(0.016, [], default, new KeyboardCommands(Reset: true, false, false));
-        Assert.Contains(SwitchAction.Reset, output.Actions);
+        Assert.Contains(new FlightCommand(FlightCommandKind.Reset), output.Commands);
         Assert.False(output.Controls.GearUp);
     }
 
@@ -190,24 +146,154 @@ public class InputTests
         Assert.Equal(0, router.Update(0.016, [], default, new KeyboardCommands(Reset: true, false, false)).Controls.Flap);
     }
 
-    [Theory]
-    [InlineData(-1.0, 0.0)]
-    [InlineData(-0.5, 0.0)]
-    [InlineData(0.0, FlapSetting.Half)]
-    [InlineData(0.2, FlapSetting.Half)]
-    [InlineData(1.0, FlapSetting.Landing)]
-    public void A_radio_flap_switch_sets_up_half_or_landing_by_position(double axis, double flap)
+    [Fact]
+    public void Keyboard_commands_fire_once_per_press()
     {
-        var binding = new SwitchBinding(SwitchAction.Flaps, AxisIndex: 4, Threshold: 0);
-        var router = new InputRouter(guid => guid == "radio-1" ? Profile(binding) : null);
-        Assert.Equal(flap, router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0, axis])], default, default).Controls.Flap);
+        var router = new InputRouter(_ => null);
+        var pause = new KeyboardCommands(false, true, false);
+        Assert.Equal(new FlightCommand(FlightCommandKind.TogglePause), Assert.Single(router.Update(0.016, [], default, pause).Commands));
+        Assert.Empty(router.Update(0.016, [], default, pause).Commands);
+        var wind = new KeyboardCommands(false, false, true);
+        Assert.Equal(new FlightCommand(FlightCommandKind.ToggleWind), Assert.Single(router.Update(0.016, [], default, wind).Commands));
     }
 
     [Fact]
-    public void A_flap_button_gives_landing_flaps_while_held()
+    public void A_reset_button_fires_once_per_press_but_not_at_startup()
     {
-        var router = new InputRouter(guid => guid == "radio-1" ? Profile(new SwitchBinding(SwitchAction.Flaps, ButtonIndex: 1)) : null);
-        Assert.Equal(0, router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0], [false, false, false, false])], default, default).Controls.Flap);
-        Assert.Equal(FlapSetting.Landing, router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0], [false, true, false, false])], default, default).Controls.Flap);
+        var reset = new SwitchAssignment(SwitchFunction.Reset, new SwitchSource(ButtonIndex: 1), [new(-1, null), new(1, SwitchStates.ResetFire)]);
+        var router = new InputRouter(_ => Profile(reset));
+        Assert.Empty(router.Update(0.016, [Radio(0, button1: true)], default, default).Commands);
+        Assert.Empty(router.Update(0.016, [Radio(0)], default, default).Commands);
+        Assert.Equal(new FlightCommand(FlightCommandKind.Reset), Assert.Single(router.Update(0.016, [Radio(0, button1: true)], default, default).Commands));
+        Assert.Empty(router.Update(0.016, [Radio(0, button1: true)], default, default).Commands);
+    }
+
+    [Fact]
+    public void A_gear_switch_holds_the_gear_and_the_g_key_only_acts_on_a_no_effect_position()
+    {
+        var gear = OnAxis4(SwitchFunction.Gear, (-1, SwitchStates.GearDown), (0, null), (1, SwitchStates.GearUp));
+        var router = new InputRouter(_ => Profile(gear));
+        var g = new KeyboardCommands(false, false, false, ToggleGear: true);
+        Assert.False(router.Update(0.016, [Radio(-1)], default, g).Controls.GearUp);
+        Assert.True(router.Update(0.016, [Radio(1)], default, default).Controls.GearUp);
+        Assert.True(router.Update(0.016, [Radio(0)], default, default).Controls.GearUp);
+        Assert.False(router.Update(0.016, [Radio(0)], default, g).Controls.GearUp);
+    }
+
+    [Fact]
+    public void A_radio_without_a_gear_switch_leaves_the_gear_to_the_g_key()
+    {
+        var router = new InputRouter(_ => Profile());
+        var g = new KeyboardCommands(false, false, false, ToggleGear: true);
+        Assert.True(router.Update(0.016, [Radio(1)], default, g).Controls.GearUp);
+    }
+
+    [Theory]
+    [InlineData(-1.0, 0.0)]
+    [InlineData(-0.6, 0.0)]
+    [InlineData(0.0, FlapSetting.Half)]
+    [InlineData(0.2, FlapSetting.Half)]
+    [InlineData(1.0, FlapSetting.Landing)]
+    public void A_three_position_flap_switch_gives_up_takeoff_or_landing(double axis, double flap)
+    {
+        var flaps = OnAxis4(SwitchFunction.Flaps, (-1, SwitchStates.FlapsUp), (0, SwitchStates.FlapsTakeoff), (1, SwitchStates.FlapsLanding));
+        var router = new InputRouter(_ => Profile(flaps));
+        Assert.Equal(flap, router.Update(0.016, [Radio(axis)], default, default).Controls.Flap);
+    }
+
+    [Fact]
+    public void A_reversed_flap_switch_follows_its_learned_states()
+    {
+        var flaps = OnAxis4(SwitchFunction.Flaps, (-1, SwitchStates.FlapsLanding), (1, SwitchStates.FlapsUp));
+        var router = new InputRouter(_ => Profile(flaps));
+        Assert.Equal(FlapSetting.Landing, router.Update(0.016, [Radio(-1)], default, default).Controls.Flap);
+        Assert.Equal(0, router.Update(0.016, [Radio(1)], default, default).Controls.Flap);
+    }
+
+    [Fact]
+    public void Throttle_cut_forces_the_throttle_to_zero_and_flags_it()
+    {
+        var cut = OnAxis4(SwitchFunction.ThrottleCut, (-1, SwitchStates.ThrottleArmed), (1, SwitchStates.ThrottleCut));
+        var router = new InputRouter(_ => Profile(cut));
+        var full = Pad("radio-1", [0, 0, 1, 0, 1]);
+        var output = router.Update(0.016, [full], default, default);
+        Assert.Equal(0, output.Controls.Throttle);
+        Assert.True(output.Controls.ThrottleCut);
+        output = router.Update(0.016, [Pad("radio-1", [0, 0, 1, 0, -1])], default, default);
+        Assert.Equal(1, output.Controls.Throttle, 9);
+        Assert.False(output.Controls.ThrottleCut);
+    }
+
+    [Fact]
+    public void A_new_flight_arms_the_throttle_again_unless_the_radio_says_cut()
+    {
+        var cut = OnAxis4(SwitchFunction.ThrottleCut, (-1, null), (1, SwitchStates.ThrottleCut));
+        var router = new InputRouter(_ => Profile(cut));
+        Assert.True(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+        router.ResetForNewFlight();
+        Assert.False(router.Update(0.016, [Radio(-1)], default, default).Controls.ThrottleCut);
+    }
+
+    [Fact]
+    public void Unplugging_the_radio_on_cut_falls_back_to_the_uncut_keyboard_throttle()
+    {
+        var cut = OnAxis4(SwitchFunction.ThrottleCut, (-1, SwitchStates.ThrottleArmed), (1, SwitchStates.ThrottleCut));
+        var router = new InputRouter(_ => Profile(cut));
+        Assert.True(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+        var up = default(KeyboardKeys) with { ThrottleUp = true };
+        var output = router.Update(1.0, [], up, default);
+        Assert.False(output.Controls.ThrottleCut);
+        Assert.True(output.Controls.Throttle > 0.4);
+    }
+
+    [Fact]
+    public void Clearing_the_throttle_cut_assignment_uncuts_the_throttle()
+    {
+        var cut = OnAxis4(SwitchFunction.ThrottleCut, (-1, SwitchStates.ThrottleArmed), (1, SwitchStates.ThrottleCut));
+        RadioProfile? profile = Profile(cut);
+        var router = new InputRouter(_ => profile);
+        Assert.True(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+        profile = Profile();
+        router.InvalidateProfiles();
+        Assert.False(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+    }
+
+    [Fact]
+    public void A_no_effect_throttle_cut_position_keeps_the_last_state()
+    {
+        var cut = OnAxis4(SwitchFunction.ThrottleCut, (-1, SwitchStates.ThrottleCut), (1, null));
+        var router = new InputRouter(_ => Profile(cut));
+        Assert.True(router.Update(0.016, [Radio(-1)], default, default).Controls.ThrottleCut);
+        Assert.True(router.Update(0.016, [Radio(1)], default, default).Controls.ThrottleCut);
+    }
+
+    [Fact]
+    public void Camera_osd_wind_and_pause_switches_set_their_state_at_startup_and_on_each_move()
+    {
+        var camera = OnAxis4(SwitchFunction.Camera, (-1, SwitchStates.CameraGround), (0, SwitchStates.CameraFpv), (1, SwitchStates.CameraChase));
+        var osd = new SwitchAssignment(SwitchFunction.Osd, new SwitchSource(ButtonIndex: 1), [new(-1, SwitchStates.OsdOff), new(1, SwitchStates.OsdOn)]);
+        var router = new InputRouter(_ => Profile(camera, osd));
+        Assert.Equal([new FlightCommand(FlightCommandKind.SelectCamera, View: CameraView.Fpv), new FlightCommand(FlightCommandKind.SetOsd, On: false)],
+            router.Update(0.016, [Radio(0)], default, default).Commands);
+        Assert.Equal([new FlightCommand(FlightCommandKind.SelectCamera, View: CameraView.Chase), new FlightCommand(FlightCommandKind.SetOsd, On: true)],
+            router.Update(0.016, [Radio(1, button1: true)], default, default).Commands);
+    }
+
+    [Theory]
+    [InlineData(SwitchFunction.Wind, SwitchStates.WindOn, FlightCommandKind.SetWind, true)]
+    [InlineData(SwitchFunction.Wind, SwitchStates.WindOff, FlightCommandKind.SetWind, false)]
+    [InlineData(SwitchFunction.Pause, SwitchStates.PausePaused, FlightCommandKind.SetPause, true)]
+    [InlineData(SwitchFunction.Pause, SwitchStates.PauseRunning, FlightCommandKind.SetPause, false)]
+    [InlineData(SwitchFunction.Osd, SwitchStates.OsdOn, FlightCommandKind.SetOsd, true)]
+    public void Switch_events_map_to_setters(SwitchFunction f, int state, FlightCommandKind kind, bool on)
+        => Assert.Equal(new FlightCommand(kind, On: on), FlightCommand.FromSwitch(new SwitchEvent(f, state)));
+
+    [Fact]
+    public void The_router_exposes_the_active_radio_switch_board()
+    {
+        var router = new InputRouter(_ => Profile(OnAxis4(SwitchFunction.Gear, (-1, 0), (1, 1))));
+        Assert.Null(router.Switches);
+        router.Update(0.016, [Radio(1)], default, default);
+        Assert.Equal(1, router.Switches!.Position(SwitchFunction.Gear));
     }
 }

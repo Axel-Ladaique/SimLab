@@ -16,6 +16,7 @@ public enum FlapIndicator { Up, Half, Landing }
 /// <param name="Gear">Retractable gear state, null for fixed gear.</param>
 /// <param name="Flaps">Commanded flap setting, null for aircraft without flaps.</param>
 /// <param name="FuelPercent">Fuel left for piston and turbine engines (the battery fields are then null).</param>
+/// <param name="ThrottleCut">The throttle-cut switch is on.</param>
 public sealed record OsdData(
     double AirspeedKmh, double HeightM, double VarioMs,
     double HeadingDeg, double RollDeg, double PitchDeg,
@@ -24,10 +25,11 @@ public sealed record OsdData(
     double FlightTimeSeconds,
     GearIndicator? Gear = null,
     double? FuelPercent = null, double? FuelMl = null,
-    FlapIndicator? Flaps = null)
+    FlapIndicator? Flaps = null,
+    bool ThrottleCut = false)
 {
     public static OsdData From(Aircraft aircraft, in RigidBodyState display, double heightAgl, double flightTimeSeconds,
-        double throttle, Vec3 pilot, double flap = 0)
+        double throttle, Vec3 pilot, double flap = 0, bool throttleCut = false)
     {
         var attitude = Attitude.FromOrientation(display.Orientation);
         double heading = Angle.Deg(attitude.Heading);
@@ -63,7 +65,8 @@ public sealed record OsdData(
             !aircraft.Definition.Controls.Any(c => c.Mix.ContainsKey("flap")) ? null
                 : flap < Session.FlapSetting.Half / 2 ? FlapIndicator.Up
                 : flap < (Session.FlapSetting.Half + Session.FlapSetting.Landing) / 2 ? FlapIndicator.Half
-                : FlapIndicator.Landing);
+                : FlapIndicator.Landing,
+            throttleCut);
     }
 
     /// <summary>An angle in degrees brought into (−180, 180].</summary>

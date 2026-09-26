@@ -90,7 +90,7 @@ public class AircraftVisualSpecTests : IDisposable
             { "surfaceColor": [0.5, 0.5, 0.5], "controlColor": [0.4, 0.4, 0.4], "propellerDisc": false }
             """));
         Assert.Equal(new Rgb(0.5f, 0.5f, 0.5f), parts.Single(p => p.Name == "airframe").Color);
-        Assert.Equal(new Rgb(0.4f, 0.4f, 0.4f), parts.Single(p => p.Name == "elevator").Color);
+        Assert.All(parts.Where(p => p.Name == "elevator"), p => Assert.Equal(new Rgb(0.4f, 0.4f, 0.4f), p.Color));
         Assert.DoesNotContain(parts, p => p.Name == "propeller");
         Assert.Contains(parts, p => p.Name == "fuselage");
     }
