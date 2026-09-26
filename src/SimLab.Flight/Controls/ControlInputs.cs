@@ -3,10 +3,13 @@ using SimLab.Flight.Geometry;
 namespace SimLab.Flight.Controls;
 
 /// <summary>Pilot commands. Throttle 0..1; others −1..1 with aileron + = roll right, elevator + = pitch up, rudder + = yaw right.
-/// <see cref="GearUp"/> commands retractable gear up (it is ignored by fixed gear).</summary>
+/// <see cref="GearUp"/> commands retractable gear up (it is ignored by fixed gear). <see cref="ThrottleCut"/> is shown by the OSD.</summary>
 public readonly record struct ControlInputs(double Throttle, double Aileron, double Elevator, double Rudder, double Flap = 0)
 {
     public bool GearUp { get; init; }
+
+    /// <summary>The pilot's throttle-cut switch is on (the throttle is then already 0).</summary>
+    public bool ThrottleCut { get; init; }
 
     public static readonly ControlInputs Neutral = new(0, 0, 0, 0);
 

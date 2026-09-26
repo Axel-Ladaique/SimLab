@@ -136,6 +136,18 @@ public static class Ui
         return chip;
     }
 
+    /// <summary>Styles a TabContainer's tab bar like <see cref="Chip"/>: outlined pill when unselected, blue fill
+    /// when selected (same colours). Call once after building the tabs.</summary>
+    public static void TabsAsChips(TabContainer tabs)
+    {
+        tabs.AddThemeStyleboxOverride("tab_unselected", Fill(new Color(1, 1, 1, 0.06f), 14, 16, 8, new Color(1, 1, 1, 0.25f)));
+        tabs.AddThemeStyleboxOverride("tab_hovered", Fill(new Color(1, 1, 1, 0.14f), 14, 16, 8, new Color(1, 1, 1, 0.40f)));
+        tabs.AddThemeStyleboxOverride("tab_selected", Fill(new Color(0.09f, 0.37f, 0.65f), 14, 16, 8, new Color(0.22f, 0.54f, 0.87f)));
+        tabs.AddThemeColorOverride("font_selected_color", Colors.White);
+        tabs.AddThemeColorOverride("font_unselected_color", Colors.White);
+        tabs.AddThemeColorOverride("font_hovered_color", Colors.White);
+    }
+
     /// <summary>The one filled, coloured call to action of a screen.</summary>
     public static Button PrimaryButton(string text, System.Action pressed)
     {

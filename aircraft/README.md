@@ -90,8 +90,9 @@ opens. Aircraft with a fuel engine need them, because the engine keeps idling an
 Every wheel in `gear` retracts together, over `seconds` each way. The wheels carry load only when the gear is fully down
 and locked; up or travelling, the hull points (belly, nose…) meet the ground instead. `cdA` is the extended gear's drag
 area (m², body order [frontal, side, top] like a body's), applied at the wheels' centroid and scaled by how far the gear
-is down. The pilot raises it with the G key or a radio gear switch (read by position: bind it on the radio screen by
-flipping it to gear up); after a start or reset, a switch left up is ignored until it has been seen down.
+is down. The pilot raises it with the G key or a radio gear switch (learned on the radio screen's Switches tab,
+which position means gear up and which means gear down); after a start or reset, a switch left up is ignored until
+it has been seen down.
 
 ## Hull points
 
@@ -243,8 +244,8 @@ roll right, positive elevator = pitch up, positive rudder = yaw right) to a defl
 `deflection = clamp(Σ weight · channel, −1, 1)` × the appropriate max throw.
 
 The `flap` channel carries the flap setting: 0 (up), 0.35 (half) or 1 (landing), from the F key (which steps through
-them) or a radio flap switch (bound on the radio screen; a three-position switch gives up / half / landing, a two-position
-one up / landing). A control mixed from `flap` is a high-lift flap: besides the usual alpha shift, 60% of its effect is a
+them) or a radio flap switch (learned on the radio screen's Switches tab; each position is assigned Up, Takeoff or
+Landing, or "—" for no effect). A control mixed from `flap` is a high-lift flap: besides the usual alpha shift, 60% of its effect is a
 lift increment, so it raises the maximum lift instead of only stalling the section earlier. A flap normally has
 `maxNegativeDeg: 0` and a slow servo; an elevator can take a small negative `flap` weight for the pitch compensation
 (see `p51/aircraft.json`: flaps 13° / 40°, elevator `"flap": -0.2`).
