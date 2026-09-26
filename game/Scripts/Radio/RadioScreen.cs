@@ -48,9 +48,10 @@ public partial class RadioScreen : Control
         columns.AddThemeConstantOverride("separation", 32);
         screen.AddChild(columns);
 
-        _tabs = new TabContainer { CustomMinimumSize = new Vector2(860, 640), FocusMode = FocusModeEnum.None };
+        _tabs = new TabContainer { CustomMinimumSize = new Vector2(760, 640), FocusMode = FocusModeEnum.None };
         _tabs.AddThemeStyleboxOverride("panel", Ui.Glass(0.55f, 12, 18));
         _tabs.AddThemeFontSizeOverride("font_size", 18);
+        Ui.TabsAsChips(_tabs);
         columns.AddChild(_tabs);
         _radio = new RadioTab();
         _radio.Init(services, Reload);
@@ -88,7 +89,7 @@ public partial class RadioScreen : Control
         column.AddChild(Ui.Row(Ui.RowLabel(Ui.T("RADIO_PREVIEW_AIRCRAFT")), _picker));
 
         _preview = new ControlPreview();
-        _preview.Init(new Vector2(720, 420));
+        _preview.Init(new Vector2(640, 380));
         column.AddChild(_preview);
         _switchStatus = Ui.Text("", 18);
         column.AddChild(_switchStatus);

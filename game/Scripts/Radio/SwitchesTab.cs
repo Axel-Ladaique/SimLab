@@ -86,7 +86,7 @@ public partial class SwitchesTab : VBoxContainer
             if (pad is not { } p || p.Guid != _learnGuid)
             {
                 CancelLearn();
-                _prompt.Text = Ui.T("RADIO_CANCEL") + " — " + Ui.T("RADIO_NO_DEVICE");
+                _prompt.Text = pad is null ? Ui.T("RADIO_CANCEL") + " — " + Ui.T("RADIO_NO_DEVICE") : Ui.T("RADIO_CANCEL");
             }
             else _learner.Feed(p.Frame, dt);
         }
@@ -130,7 +130,12 @@ public partial class SwitchesTab : VBoxContainer
 
     void StartLearn(SwitchFunction function)
     {
-        if (_pad is not { } pad || _profile is null)
+        if (_pad is not { } pad)
+        {
+            _prompt.Text = Ui.T("RADIO_NO_DEVICE");
+            return;
+        }
+        if (_profile is null)
         {
             _prompt.Text = Ui.T("RADIO_DEVICE_UNCALIBRATED");
             return;
