@@ -143,4 +143,14 @@ public class SwitchBoardTests
         Assert.Equal("SWITCH_THROTTLE_CUT_CUT", SwitchStates.StateKey(SwitchFunction.ThrottleCut, SwitchStates.ThrottleCut));
         Assert.Equal("SWITCH_FLAPS_TAKEOFF", SwitchStates.StateKey(SwitchFunction.Flaps, SwitchStates.FlapsTakeoff));
     }
+
+    [Theory]
+    [InlineData(SwitchFunction.Gear, 0, 1)]
+    [InlineData(SwitchFunction.Gear, 1, null)]
+    [InlineData(SwitchFunction.Gear, null, 0)]
+    [InlineData(SwitchFunction.Flaps, 1, 2)]
+    [InlineData(SwitchFunction.Reset, 0, null)]
+    [InlineData(SwitchFunction.Reset, null, 0)]
+    public void Next_state_cycles_through_the_states_then_no_effect(SwitchFunction f, int? state, int? next)
+        => Assert.Equal(next, SwitchStates.Next(f, state));
 }

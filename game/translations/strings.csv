@@ -26,8 +26,6 @@ TIME_NOON,Midi,Noon
 TIME_EVENING,Soir,Evening
 BACK,Retour,Back
 RADIO_TITLE,Radio,Radio
-RADIO_NO_DEVICE,"Aucune radio détectée. Branchez la radio en USB et choisissez « USB Joystick (HID) » sur la radio.","No radio detected. Plug the radio in over USB and choose ""USB Joystick (HID)"" on the radio."
-RADIO_DEVICE_READY,Calibrée — prête à voler,Calibrated — ready to fly
 RADIO_DEVICE_UNCALIBRATED,Non calibrée,Not calibrated
 RADIO_CALIBRATE,Calibrer,Calibrate
 RADIO_NEXT,Suivant,Next
@@ -106,8 +104,6 @@ CRASH_STRUCTURESTRIKE,Contre un obstacle,Hit a structure
 CRASH_WIRESTRIKE,Dans les câbles,Into the wires
 RADIO_REVERSE_TITLE,Sens des voies,Channel direction
 RADIO_REVERSE,Inverser,Reverse
-RADIO_PREVIEW_TITLE,Contrôle des gouvernes,Control check
-RADIO_PREVIEW_AIRCRAFT,Maquette,Model
 CHECK_THROTTLE,Gaz,Throttle
 CHECK_AILERON,Ailerons,Aileron
 CHECK_ELEVATOR,Profondeur,Elevator
@@ -151,19 +147,30 @@ CHANNEL_ELEVATOR,profondeur,elevator
 CHANNEL_RUDDER,dérive,rudder
 CHANNEL_FLAPS,volets,flaps
 CHANNEL_THROTTLE,gaz,throttle
-RADIO_TAB_RADIO,Radio,Radio
-RADIO_TAB_CHANNELS,Voies,Channels
-RADIO_TAB_SWITCHES,Interrupteurs,Switches
-RADIO_LEARN,Apprendre,Learn
-RADIO_CLEAR,Effacer,Clear
-RADIO_LEARN_PROMPT,"« {0} » : basculez l'interrupteur dans toutes ses positions en marquant un temps sur chacune, puis Suivant.","{0}: flip the switch through all its positions, pausing on each, then Next."
-RADIO_LEARN_NONE,"Aucun interrupteur n'a bougé. Recommencez en marquant un temps sur chaque position.",No switch moved. Try again and pause on each position.
-RADIO_LEARN_DONE,"Interrupteur appris. Choisissez l'effet de chaque position.",Switch learned. Choose what each position does.
-RADIO_SWITCH_NONE,non assigné,not assigned
+RADIO_LEARN_PROMPT,"Basculez l'interrupteur dans toutes ses positions en marquant un temps sur chacune.","Flip the switch through all its positions, pausing on each."
 RADIO_SOURCE_AXIS,Voie {0},Channel {0}
 RADIO_SOURCE_BUTTON,Bouton {0},Button {0}
-RADIO_SWITCHES_HELP,"Basculez un interrupteur : sa position active s'allume. « — » = sans effet.","Flip a switch: its active position lights up. “—” = no effect."
 RADIO_CHANNEL_FREE,libre,free
+RADIO_STEP_CONNECT,Connecter,Connect
+RADIO_STEP_CALIBRATE,Calibrer,Calibrate
+RADIO_STEP_SWITCHES,Interrupteurs,Switches
+RADIO_BACK,‹ Retour,‹ Back
+RADIO_PILL_READY,Calibrée,Calibrated
+RADIO_PILL_TODO,À calibrer,To calibrate
+RADIO_EMPTY_TITLE,Aucune radio branchée,No radio connected
+RADIO_EMPTY_BODY,"Branchez la radio en USB et choisissez « USB Joystick (HID) » sur la radio. Elle apparaîtra ici.","Plug the radio in over USB and choose “USB Joystick (HID)” on the radio. It will show up here."
+RADIO_CONTINUE,Continuer,Continue
+RADIO_START_CALIBRATION,Lancer la calibration,Start calibration
+RADIO_CAL_PROGRESS,Étape {0}/{1},Step {0}/{1}
+RADIO_DETAILS,Détails,Details
+RADIO_SAVE,Enregistrer,Save
+RADIO_LEARN_TITLE,Apprendre « {0} »,Learn “{0}”
+RADIO_LEARN_WAITING,Aucune position détectée pour l'instant.,No position found yet.
+RADIO_POSITION,Position {0},Position {0}
+RADIO_ADD_SWITCH,Ajouter un interrupteur,Add a switch
+RADIO_CALIBRATED_HINT,"Radio calibrée. Vérifiez les manches ci-dessous, ou relancez la calibration.","Radio calibrated. Check the sticks below, or calibrate again."
+RADIO_CAL_UNPLUGGED,Calibration interrompue : radio débranchée.,Calibration stopped: radio unplugged.
+RADIO_CHIP_HINT,Cliquez une position pour changer son effet.,Click a position to change what it does.
 SWITCH_NO_EFFECT,—,—
 STICK_THROTTLE,Gaz,Throttle
 STICK_AILERON,Ailerons,Aileron

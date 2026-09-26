@@ -44,6 +44,8 @@ User data (settings, radio profiles, flight recordings): `~/Library/Application 
 | `--screenshot-menu-live <png> [id]` | Main menu with the live view driven by fixed commands (throttle 0.6, right aileron 0.8, up elevator 0.8, right rudder 0.8) instead of the radio, taken after ~3 s so the reaction has settled; `[id]` shows that aircraft instead of the last one flown (the saved choice is unchanged) |
 | `--screenshot-settings <png>` | Screenshot of the settings screen |
 | `--screenshot-sound <png>` | Screenshot of the sound screen (8 volume sliders and the Listen preview toggle) |
-| `--screenshot-radio-preview <id> <png>` | Radio screen with the control check showing aircraft `<id>`, driven by fixed commands (throttle 0.4, right aileron 0.8, up elevator 0.8, right rudder 0.8) instead of the radio |
-| `--screenshot-radio <tab> <png>` | Radio screen on tab 0 (radio), 1 (channels) or 2 (switches) |
+| `--screenshot-radio-preview <id> <png>` | Radio screen showing aircraft `<id>`, deflected in the live backdrop by fixed commands (throttle 0.4, right aileron 0.8, up elevator 0.8, right rudder 0.8) instead of the radio; opens on whichever step the connected/calibrated state picks |
+| `--screenshot-radio <step 0-2> <png>` | Radio screen on step 0 (Connect), 1 (Calibrate) or 2 (Switches) |
+| `--screenshot-radio-demo <png>` | Radio screen's Switches step with a built-in demo profile (gear on a 2-position axis, flaps on a 3-position axis), never saved |
+| `--screenshot-radio-learn <png>` | Radio screen's Switches step with the learning dialog open, showing two demo positions found |
 | `--render-audio <id> <wav>` | Headless scripted takeoff (idle, throttle ramp, climb, motor-off glide from 14 s), writes the synthesized aircraft voice to a 20 s mono WAV |
