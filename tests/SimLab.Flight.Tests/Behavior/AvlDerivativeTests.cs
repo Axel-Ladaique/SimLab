@@ -121,8 +121,8 @@ public class AvlDerivativeTests(ITestOutputHelper output)
     /// <summary>
     /// Criterion 6: under 100 µs per evaluation (20 % of real time at 500 Hz with four RK4 evaluations per step) in a
     /// Release build, asserted there (dotnet test tests/SimLab.Flight.Tests -c Release --filter FullyQualifiedName~Aero_evaluation_is_cheap).
-    /// A Debug build only prints the timing: its unoptimised JIT, under the parallel test suite, takes 1.2–2.5 ms per
-    /// evaluation, which is load noise, not a regression signal.
+    /// A Debug build only prints the timing: Directory.Build.props optimises it too, but it usually runs under the
+    /// parallel test suite, whose load is noise, not a regression signal.
     /// </summary>
     [Theory]
     [InlineData("trainer")]
