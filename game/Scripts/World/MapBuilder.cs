@@ -23,6 +23,7 @@ public static class MapBuilder
         root.AddChild(sun);
         root.AddChild(TerrainMesh(map));
         GroundOverlays.Add(root, map);
+        PropLayer.Add(root, map.Props);
         var w = map.Layout.WindsockPosition;
         var sock = new WindsockNode { Position = new Vec3(w.X, w.Y, map.Terrain.Height(w.X, w.Y)).WorldToGodot() };
         root.AddChild(sock);
