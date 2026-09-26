@@ -90,6 +90,28 @@ public class MountainMapTests
         Assert.Null(Mountain.Terrain.WaterSurface(0, 0));
     }
 
+    /// <summary>The drawn lake is exactly <see cref="WaterBody.Outline"/>, so the crash water and the visible water
+    /// agree only if every ground point below the level at the shore lies inside the outline: the terrain's triangles
+    /// cross the level up to about 4.5 m outside the dug ellipse (r = 1), which <see cref="MountainRelief.ShoreMargin"/>
+    /// covers. Beyond the 35 m blend (r ≈ 1.15 and more) the natural valley floor may dip below the level; it is dry
+    /// land, drawn and flown as such.</summary>
+    [Fact]
+    public void Ground_below_the_lake_level_is_inside_the_water_outline()
+    {
+        int below = 0;
+        for (double r = 0.9; r <= 1.12; r += 0.001)
+        for (int k = 0; k < 2000; k++)
+        {
+            double t = 2 * Math.PI * k / 2000;
+            double x = -1150 + r * 225 * Math.Cos(t), y = 500 + r * 125 * Math.Sin(t);
+            if (H(x, y) >= MountainMap.LakeLevel) continue;
+            below++;
+            Assert.True(Mountain.Terrain.WaterSurface(x, y) is not null,
+                $"ground {H(x, y) - MountainMap.LakeLevel:F2} m below the level outside the lake at ({x:F1}, {y:F1}), r = {r:F3}");
+        }
+        Assert.True(below > 1000, $"only {below} samples below the level");
+    }
+
     [Fact]
     public void Road_is_drivable()
     {

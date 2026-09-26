@@ -7,9 +7,8 @@ namespace SimLab.Game.World;
 
 /// <summary>
 /// The map's water: a flat surface per <see cref="WaterBody"/> at its level, and the material the stream ribbons of
-/// <see cref="GroundOverlays"/> share. The surface is an 8 m grid clipped to the outline, grown by one terrain cell so
-/// it meets the bank where the terrain grid's interpolation dips below the level just outside the outline; each vertex
-/// carries the water depth over the terrain (COLOR.r, 0…15 m scaled to 0…1) for the shader's deep tint.
+/// <see cref="GroundOverlays"/> share. The surface is an 8 m grid clipped to exactly the outline the crash test uses
+/// (<see cref="WaterBody.Contains"/>), so the visible and the crashing water agree; each vertex carries the water depth over the terrain (COLOR.r, 0…15 m scaled to 0…1) for the shader's deep tint.
 /// </summary>
 public static class WaterMeshes
 {
@@ -52,26 +51,22 @@ public static class WaterMeshes
     {
         var outline = new Vector2[body.Outline.Count];
         for (int k = 0; k < outline.Length; k++) outline[k] = new Vector2((float)body.Outline[k].X, (float)body.Outline[k].Y);
-        var grown = Geometry2D.OffsetPolygon(outline, (float)map.Grid.Step);
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
-        foreach (var shore in grown)       // growing a simple outline gives one polygon, without holes
+        var (min, max) = Bounds(outline);
+        for (double y0 = Math.Floor(min.Y / CellSize) * CellSize; y0 < max.Y; y0 += CellSize)
+        for (double x0 = Math.Floor(min.X / CellSize) * CellSize; x0 < max.X; x0 += CellSize)
         {
-            var (min, max) = Bounds(shore);
-            for (double y0 = Math.Floor(min.Y / CellSize) * CellSize; y0 < max.Y; y0 += CellSize)
-            for (double x0 = Math.Floor(min.X / CellSize) * CellSize; x0 < max.X; x0 += CellSize)
+            Vector2[] cell =
+            [
+                new((float)x0, (float)y0), new((float)(x0 + CellSize), (float)y0),
+                new((float)(x0 + CellSize), (float)(y0 + CellSize)), new((float)x0, (float)(y0 + CellSize)),
+            ];
+            foreach (var piece in Geometry2D.IntersectPolygons(cell, outline))
             {
-                Vector2[] cell =
-                [
-                    new((float)x0, (float)y0), new((float)(x0 + CellSize), (float)y0),
-                    new((float)(x0 + CellSize), (float)(y0 + CellSize)), new((float)x0, (float)(y0 + CellSize)),
-                ];
-                foreach (var piece in Geometry2D.IntersectPolygons(cell, shore))
-                {
-                    var indices = Geometry2D.TriangulatePolygon(piece);
-                    for (int t = 0; t + 2 < indices.Length; t += 3)
-                        AddTriangle(st, map, body.Level, piece[indices[t]], piece[indices[t + 1]], piece[indices[t + 2]]);
-                }
+                var indices = Geometry2D.TriangulatePolygon(piece);
+                for (int t = 0; t + 2 < indices.Length; t += 3)
+                    AddTriangle(st, map, body.Level, piece[indices[t]], piece[indices[t + 1]], piece[indices[t + 2]]);
             }
         }
         st.GenerateTangents();

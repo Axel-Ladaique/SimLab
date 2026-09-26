@@ -66,7 +66,7 @@ public static class MountainMap
         if ((x - pilot.X) * (x - pilot.X) + (y - pilot.Y) * (y - pilot.Y) < PilotClearing * PilotClearing) return true;
         double crest = MountainRelief.CrestX(y);
         if (tall && x <= crest && x >= crest - BeatDepth && Math.Abs(y - pilot.Y) < BeatHalfWidth) return true;
-        if (MountainRelief.OutsideLake(x, y) < LakeClearance) return true;
+        if (MountainRelief.OutsideLake(x, y) < MountainRelief.ShoreMargin + LakeClearance) return true;
         if (MountainRelief.StreamDistance(x, y) < StreamClearance) return true;
         if (LiftDistance(x, y) < LiftClearance) return true;
         return Road.Nearest(x, y, RoadClearance) is not null;

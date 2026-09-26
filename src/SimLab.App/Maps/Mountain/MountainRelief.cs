@@ -51,12 +51,19 @@ public static class MountainRelief
     /// <summary>Cliff bands: distance below the crest, height and width (m) at full strength.</summary>
     static readonly (double Below, double Height, double Width)[] Bands = [(110, 22, 14), (215, 18, 12), (470, 20, 14)];
 
-    /// <summary>The lake, a 450 × 250 m ellipse drawn as a 48-gon.</summary>
+    /// <summary>How far the water's outline reaches past the dug 450 × 250 m ellipse (m). The terrain grid's triangles
+    /// interpolate between the bowl's edge (2 m below the level) and the bank (0.3 m above it), so they cross the level
+    /// up to about 4.5 m outside the ellipse; the outline covers that band so the water drawn and the water that
+    /// crashes are the same everywhere the ground is below the level.</summary>
+    public const double ShoreMargin = 6;
+
+    /// <summary>The lake: the dug ellipse grown by <see cref="ShoreMargin"/>, as a 48-gon whose edges stay outside the
+    /// grown ellipse.</summary>
     public static readonly WaterBody Lake = new(
         Enumerable.Range(0, 48).Select(k =>
         {
-            double t = 2 * Math.PI * k / 48;
-            return (LakeX + LakeSemiX * Math.Cos(t), LakeY + LakeSemiY * Math.Sin(t));
+            double t = 2 * Math.PI * k / 48, grow = 1 / Math.Cos(Math.PI / 48);
+            return (LakeX + (LakeSemiX + ShoreMargin) * grow * Math.Cos(t), LakeY + (LakeSemiY + ShoreMargin) * grow * Math.Sin(t));
         }).ToArray(),
         MountainMap.LakeLevel);
 
