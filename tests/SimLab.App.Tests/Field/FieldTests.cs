@@ -129,12 +129,4 @@ public class FieldTests
         Assert.InRange(Windsock.Pose(new Vec3(0, -3, 0)).DroopDeg, 40, 70);
         Assert.Equal(180, Windsock.Pose(new Vec3(0, -3, 0)).HeadingDeg, 6);
     }
-
-    [Fact]
-    public void Field_catalog_offers_the_club_field_and_falls_back_to_it()
-    {
-        Assert.Equal(new[] { "club" }, FieldCatalog.All.Select(f => f.Id));
-        Assert.Equal("FIELD_CLUB", FieldCatalog.Find("club").NameKey);
-        Assert.Equal("club", FieldCatalog.Find("moon").Id);
-    }
 }

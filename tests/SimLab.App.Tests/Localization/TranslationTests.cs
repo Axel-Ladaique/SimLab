@@ -78,7 +78,7 @@ public class TranslationTests
                      "MENU_LIVE_HINT", "COND_WIND_SPEED", "COND_WIND_DIR", "COND_TURBULENCE", "COND_SUN_AZIMUTH",
                      "COND_SUN_ELEVATION", "SET_FULLSCREEN" })
             Assert.Contains(k, keys);
-        foreach (var field in SimLab.App.Field.FieldCatalog.All) Assert.Contains(field.NameKey, keys);
+        foreach (var field in SimLab.App.Maps.FieldCatalog.All) Assert.Contains(field.NameKey, keys);
     }
 
     [Fact]
