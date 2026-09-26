@@ -86,9 +86,9 @@ public class AvlDerivativeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Criterion 6 is 50 µs per evaluation in a Release build
-    /// (dotnet test tests/SimLab.Flight.Tests -c Release --filter FullyQualifiedName~Aero_evaluation_is_cheap);
-    /// the assertion here is a wide guard against an algorithmic regression in any build.
+    /// Criterion 6: under 50 µs per evaluation in a Release build, asserted there
+    /// (dotnet test tests/SimLab.Flight.Tests -c Release --filter FullyQualifiedName~Aero_evaluation_is_cheap). A Debug
+    /// build (unoptimised JIT) only gets a 1000 µs guard against an algorithmic regression.
     /// </summary>
     [Theory]
     [InlineData("trainer")]
@@ -114,6 +114,10 @@ public class AvlDerivativeTests(ITestOutputHelper output)
         double micro = watch.Elapsed.TotalMilliseconds * 1000 / count;
         output.WriteLine($"{id}: {aero.Segments.Count} strips, {micro:F1} µs per evaluation, last solve {aero.Line.LastIterations} iterations, " +
                          $"{aero.Line.NonConvergedSolves} non-converged");
-        Assert.True(micro < 200, $"{micro:F1} µs per evaluation");
+#if DEBUG
+        Assert.True(micro < 1000, $"{micro:F1} µs per evaluation (Debug guard)");
+#else
+        Assert.True(micro < 50, $"{micro:F1} µs per evaluation");
+#endif
     }
 }

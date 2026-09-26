@@ -8,9 +8,9 @@
     { "name": "wing", "role": "wing", "root": [0.4825, 0, 0.12], "span": 0.75, "rootChord": 0.35, "tipChord": 0.35,
       "dihedralDeg": 5, "incidenceDeg": 1.0, "airfoil": "clarky", "segments": 6, "mirror": true },
     { "name": "stab", "role": "horizontalTail", "root": [1.35, 0, 0.02], "span": 0.26, "rootChord": 0.22, "tipChord": 0.18,
-      "incidenceDeg": 0.0, "airfoil": "naca0012", "segments": 3, "mirror": true },
+      "incidenceDeg": 0.0, "airfoil": "naca0012", "segments": 12, "mirror": true },
     { "name": "fin", "role": "verticalTail", "root": [1.38, 0, 0.03], "span": 0.22, "rootChord": 0.25, "tipChord": 0.14,
-      "sweepDeg": 25, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 3, "mirror": false }
+      "sweepDeg": 25, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 12, "mirror": false }
   ],
   "controls": [
     { "name": "aileronRight", "surface": "wing", "side": "right", "chordFraction": 0.25, "spanStart": 0.4, "spanEnd": 0.95,
