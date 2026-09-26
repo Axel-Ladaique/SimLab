@@ -14,11 +14,15 @@ public static class GroundOverlays
     const double ThresholdInset = 5;
     const double ThresholdWidth = 1.5;
     const double RibbonStep = 5;
-    // Tints over the textures below, brightened so the textured result matches the old flat colours.
+    // Tints over the textures below, chosen so the rendered (lit) result matches the old flat colours' brightness
+    // and hue. The gravel texture (avg ~0.85, 0.84, 0.81) renders noticeably brighter and bluer than a flat
+    // colour of the same tint under this scene's sky ambient (fix round 1: measured ~(0.50, 0.56, 0.63) rendered
+    // with the previous (1.15, 1.10, 1.00) tint against the pilot box in t9-flight-chase.png, versus the old flat
+    // colour (0.55, 0.52, 0.47)); the tint below was derived from that measurement, not just the texture average.
     static readonly Color StripeLight = new(0.55f, 1.05f, 0.42f);
     static readonly Color StripeDark = new(0.42f, 0.88f, 0.32f);
     static readonly Color Threshold = new(0.68f, 1.15f, 0.55f);
-    static readonly Color Gravel = new(1.15f, 1.10f, 1.00f);
+    static readonly Color Gravel = new(1.28f, 1.05f, 0.78f);
     static readonly Color Dirt = new(1.05f, 0.85f, 0.62f);
 
     static readonly Dictionary<(string Texture, Color Tint), StandardMaterial3D> MaterialCache = new();
