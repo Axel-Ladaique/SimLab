@@ -7,12 +7,15 @@ public enum InputSource { Keyboard, Radio }
 
 public readonly record struct JoypadSnapshot(string Guid, string Name, RawInputFrame Frame);
 
-public readonly record struct KeyboardCommands(bool Reset, bool Pause, bool ToggleWind, bool NextCamera = false);
+public readonly record struct KeyboardCommands(bool Reset, bool Pause, bool ToggleWind, bool NextCamera = false, bool ToggleGear = false);
 
 /// <param name="RawFrame">Raw poll of the radio that produced <paramref name="Controls"/>; null on the keyboard.</param>
 public readonly record struct RouterOutput(ControlInputs Controls, IReadOnlyList<SwitchAction> Actions, InputSource Source, string DeviceName, RawInputFrame? RawFrame = null);
 
-/// <summary>Chooses the calibrated radio when one is connected, else the keyboard, and turns switches and keys into actions.</summary>
+/// <summary>
+/// Chooses the calibrated radio when one is connected, else the keyboard, and turns switches and keys into actions. The
+/// gear follows the radio's gear switch when one is bound, else the G key, which toggles it.
+/// </summary>
 public sealed class InputRouter
 {
     readonly Func<string, RadioProfile?> _loadProfile;
@@ -21,6 +24,7 @@ public sealed class InputRouter
     SwitchTracker? _switches;
     string? _activeGuid;
     KeyboardCommands _previousCommands;
+    bool _keyboardGearUp;
 
     public InputRouter(Func<string, RadioProfile?> loadProfile) => _loadProfile = loadProfile;
 
@@ -37,6 +41,7 @@ public sealed class InputRouter
         InvalidateProfiles();
         _keyboard = new KeyboardStick();
         _previousCommands = default;
+        _keyboardGearUp = false;
     }
 
     public RouterOutput Update(double dt, IReadOnlyList<JoypadSnapshot> pads, KeyboardKeys keys, KeyboardCommands commands)
@@ -46,6 +51,7 @@ public sealed class InputRouter
         if (commands.Pause && !_previousCommands.Pause) actions.Add(SwitchAction.Pause);
         if (commands.ToggleWind && !_previousCommands.ToggleWind) actions.Add(SwitchAction.ToggleWind);
         if (commands.NextCamera && !_previousCommands.NextCamera) actions.Add(SwitchAction.NextCamera);
+        if (commands.ToggleGear && !_previousCommands.ToggleGear) _keyboardGearUp = !_keyboardGearUp;
         _previousCommands = commands;
 
         var keyboardSticks = _keyboard.Update(dt, keys);
@@ -60,12 +66,18 @@ public sealed class InputRouter
                 _switches = new SwitchTracker(profile.Switches);
             }
             actions.AddRange(_switches!.Update(pad.Frame));
-            return new RouterOutput(ToControls(profile.Read(pad.Frame)), actions, InputSource.Radio, pad.Name, pad.Frame);
+            if (actions.Contains(SwitchAction.Reset)) _keyboardGearUp = false;
+            var controls = ToControls(profile.Read(pad.Frame)) with
+            {
+                GearUp = _switches.IsOn(SwitchAction.GearUp, pad.Frame) ?? _keyboardGearUp,
+            };
+            return new RouterOutput(controls, actions, InputSource.Radio, pad.Name, pad.Frame);
         }
 
         _activeGuid = null;
         _switches = null;
-        return new RouterOutput(ToControls(keyboardSticks), actions, InputSource.Keyboard, "");
+        if (actions.Contains(SwitchAction.Reset)) _keyboardGearUp = false;
+        return new RouterOutput(ToControls(keyboardSticks) with { GearUp = _keyboardGearUp }, actions, InputSource.Keyboard, "");
     }
 
     /// <summary>Calibrated sticks to simulator commands (same signs: right, pitch up, right positive).</summary>

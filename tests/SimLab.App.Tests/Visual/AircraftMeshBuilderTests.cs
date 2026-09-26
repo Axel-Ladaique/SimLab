@@ -76,4 +76,32 @@ public class AircraftMeshBuilderTests
         Assert.Equal(0.56 - 0.77, root.Min(v => v.X), 2);
         Assert.Equal(0.56 + 0.50 - 0.77, root.Max(v => v.X), 2);
     }
+
+    [Fact]
+    public void Retractable_gear_is_one_folding_leg_per_wheel()
+    {
+        var def = TestData.Aircraft("jet");
+        var parts = Parts("jet");
+        Assert.DoesNotContain(parts, p => p.Name == "gear");
+        var legs = parts.Where(p => p.Retracts).ToList();
+        Assert.Equal(def.Wheels.Select(w => "gear:" + w.Name).OrderBy(n => n), legs.Select(p => p.Name).OrderBy(n => n));
+        foreach (var leg in legs)
+        {
+            var wheel = def.Wheels.Single(w => "gear:" + w.Name == leg.Name);
+            // The leg hangs from the CG level above its wheel and folds forward and up about the body's right axis.
+            Assert.Equal(new Vec3(wheel.Position.X, wheel.Position.Y, 0), leg.HingePoint);
+            Assert.Equal(BodyAxes.Right, leg.HingeAxis);
+            Assert.Equal(wheel.Position.Z, leg.Triangles.Min(v => v.Z), 2);
+            var c = Centroid(leg.Triangles);
+            var folded = RotateAboutHinge(leg, c, Math.PI / 2);
+            Assert.True(folded.X < c.X - 0.05 && folded.Z > c.Z + 0.05, leg.Name);
+        }
+    }
+
+    [Fact]
+    public void Fixed_gear_stays_one_part()
+    {
+        var gear = Parts("trainer").Single(p => p.Name == "gear");
+        Assert.False(gear.Retracts);
+    }
 }

@@ -9,11 +9,11 @@ public class ControlResponseTests
     static void AssertResponse(string id, Func<ControlInputs, ControlInputs> apply, Func<Simulation, double> measure, double minimum,
         double inputSeconds = 0.4, Func<double, double, double>? difference = null)
     {
-        var (speed, throttle) = Fleet.Cruise(id);
+        var (speed, _) = Fleet.Cruise(id);
         double Run(bool withInput)
         {
             var sim = Fleet.InFlight(id, 80, speed);
-            var trim = new ControlInputs(throttle, 0, 0, 0);
+            var trim = Fleet.CruiseInputs(id);
             Fleet.Fly(sim, 1.0, _ => trim);
             Fleet.Fly(sim, inputSeconds, _ => withInput ? apply(trim) : trim);
             return measure(sim);

@@ -80,6 +80,15 @@ public static class AircraftLoader
             throw Invalid(path, ex.Message);
         }
 
+        GearRetractSpec? retract = null;
+        if (dto.GearRetract is { } r)
+        {
+            if (r.Seconds <= 0) throw Invalid(path, "gearRetract seconds must be positive.");
+            if (dto.Gear.Count == 0) throw Invalid(path, "gearRetract needs gear to retract.");
+            var centroid = dto.Gear.Aggregate(Vec3.Zero, (sum, w) => sum + w.Position) / dto.Gear.Count;
+            retract = new GearRetractSpec(r.Seconds, r.CdA, centroid - cg);
+        }
+
         return new AircraftDefinition(
             dto.Name,
             dto.Description,
@@ -95,7 +104,8 @@ public static class AircraftLoader
             dto.Hull.Select(h => new HullPointSpec(h.Name, h.Position - cg, h.Tag)).ToList(),
             new CrashLimits(dto.Crash.MaxGearSinkRate, dto.Crash.MaxHullImpactSpeed, dto.Crash.MaxBellyImpactSpeed),
             dto.Provenance,
-            dto.FpvCamera is { } camera ? new FpvCameraSpec(camera.Position - cg, camera.UptiltDeg, camera.FovDeg) : null);
+            dto.FpvCamera is { } camera ? new FpvCameraSpec(camera.Position - cg, camera.UptiltDeg, camera.FovDeg) : null,
+            retract);
     }
 
     static PowerPlantSpec Shift(PowerPlantSpec power, Vec3 cg) => power with { Position = power.Position - cg };

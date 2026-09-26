@@ -59,10 +59,15 @@ internal static class Fleet
     public static Simulation InFlight(string id, double altitude, double airspeed, double pitchDeg = 0, double rollDeg = 0) =>
         InFlight(Load(id), altitude, airspeed, pitchDeg, rollDeg);
 
+    /// <summary>Level cruise commands, with retractable gear up like a pilot flies it.</summary>
+    public static ControlInputs CruiseInputs(string id) => new(Cruise(id).Throttle, 0, 0, 0) { GearUp = Load(id).GearRetract is not null };
+
+    /// <summary>In flight at this airspeed; retractable gear starts up (in flight configuration).</summary>
     public static Simulation InFlight(AircraftDefinition def, double altitude, double airspeed, double pitchDeg = 0, double rollDeg = 0)
     {
         var sim = new Simulation(new Aircraft(def), FlightEnvironment.Calm());
         sim.Reset(InitialConditions.InFlight(new Vec3(0, 0, altitude), 0, airspeed, pitchDeg, rollDeg));
+        if (def.GearRetract is { } retract) sim.Aircraft.StepControls(retract.Seconds, ControlInputs.Neutral with { GearUp = true });
         return sim;
     }
 

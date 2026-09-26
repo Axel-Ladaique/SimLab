@@ -97,3 +97,11 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
   change the synthesized voices; Impacts changes bounce/crash loudness; Master/Aircraft/Ambience change the buses).
 - [ ] Leaving the screen (Back or the menu) stops the preview immediately.
 - [ ] All 8 values persist after restarting the app.
+
+## Retractable gear (F-16)
+
+- [ ] F-16, keyboard: G raises the gear (OSD "TRAIN EN MOUVEMENT" for about 5 s, then "TRAIN RENTRÉ"), G again lowers it; the legs fold forward and vanish when stowed.
+- [ ] Radio screen: "Interrupteur « train »", flip the chosen switch to gear up; in flight the switch position sets the gear.
+- [ ] Start or reset (R) with the gear switch left up: the gear stays down until the switch is put down, then obeys it.
+- [ ] Gear up on the runway: the jet sinks onto its belly without a crash message; gear down in flight costs speed.
+- [ ] Trainer, sport, 3D, wing: G does nothing and the OSD shows no gear line.

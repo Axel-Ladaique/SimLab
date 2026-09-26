@@ -39,7 +39,8 @@ leading-edge sweep and 10° anhedral; fin 47° leading-edge sweep. Inertia from 
 
 ## Known limits
 
-- Retracts are not modelled: the gear stays down (drawn and in contact) and adds no drag.
+- Retracts (added the same day): `gearRetract` in aircraft.json, see aircraft/README.md. No gear doors, and the legs all fold
+  forward the same way.
 - Symmetric NACA 0012 polars stand in for the F-16's thin NACA 64A204 section; no strake (LEX) lift, no fuselage
   destabilization, so the CG sits 56 mm behind the manual's to give a realistic static margin (tuning log).
 - The all-moving stabilator goes through the plain-flap model (τ = 1, 85% efficiency, large-deflection K'), so it is

@@ -96,4 +96,18 @@ public class OsdDataTests
         Assert.Null(osd.CurrentAmps);
         Assert.Null(osd.ConsumedMah);
     }
+
+    [Fact]
+    public void Gear_state_is_shown_only_for_retractable_gear()
+    {
+        var level = State(new Vec3(0, 0, 50), 0, 0, 0);
+        Assert.Null(Osd(level).Gear);
+        var jet = new Aircraft(TestData.Aircraft("jet"));
+        Assert.Equal(GearIndicator.Down, Osd(level, jet).Gear);
+        var up = new SimLab.Flight.Controls.ControlInputs(0, 0, 0, 0) { GearUp = true };
+        jet.StepControls(1.0, up);
+        Assert.Equal(GearIndicator.Moving, Osd(level, jet).Gear);
+        jet.StepControls(10.0, up);
+        Assert.Equal(GearIndicator.Up, Osd(level, jet).Gear);
+    }
 }

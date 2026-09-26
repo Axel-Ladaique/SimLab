@@ -14,12 +14,22 @@ public partial class AircraftVisual : Node3D
     public const int Layer = 2;
 
     readonly List<(Node3D Pivot, Vector3 Axis, int ControlIndex)> _controls = [];
+    readonly List<(Node3D Pivot, Vector3 Axis)> _gearLegs = [];
     Node3D? _propeller;
 
     public void Build(IReadOnlyList<MeshPart> parts)
     {
         foreach (var part in parts)
         {
+            if (part.Retracts)
+            {
+                var legHinge = GodotBasis.BodyToNodeLocal(part.HingePoint).ToVector3();
+                var legPivot = new Node3D { Position = legHinge };
+                legPivot.AddChild(MeshFor(part.Triangles, part.Color, legHinge, 1f));
+                AddChild(legPivot);
+                _gearLegs.Add((legPivot, GodotBasis.BodyToNodeLocal(part.HingeAxis).ToVector3().Normalized()));
+                continue;
+            }
             if (part.ControlIndex < 0)
             {
                 var mesh = MeshFor(part.Triangles, part.Color, Vector3.Zero, part.Name == "propeller" ? 0.35f : 1f, part.Smooth);
@@ -47,6 +57,12 @@ public partial class AircraftVisual : Node3D
         foreach (var (pivot, axis, index) in _controls)
             pivot.Basis = new Basis(axis, (float)aircraft.Deflections[index]);
         if (_propeller is not null) _propeller.Visible = propRpm > 200;
+        // Legs fold through 90° with the gear travel and are hidden once stowed (inside the airframe).
+        foreach (var (pivot, axis) in _gearLegs)
+        {
+            pivot.Basis = new Basis(axis, (float)(aircraft.GearPosition * Mathf.Pi / 2));
+            pivot.Visible = aircraft.GearPosition < 0.999;
+        }
     }
 
     /// <summary>Preview helper: shows every control surface at the same deflection (rad, positive = trailing edge down).</summary>

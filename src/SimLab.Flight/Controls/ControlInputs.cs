@@ -2,9 +2,12 @@ using SimLab.Flight.Geometry;
 
 namespace SimLab.Flight.Controls;
 
-/// <summary>Pilot commands. Throttle 0..1; others −1..1 with aileron + = roll right, elevator + = pitch up, rudder + = yaw right.</summary>
+/// <summary>Pilot commands. Throttle 0..1; others −1..1 with aileron + = roll right, elevator + = pitch up, rudder + = yaw right.
+/// <see cref="GearUp"/> commands retractable gear up (it is ignored by fixed gear).</summary>
 public readonly record struct ControlInputs(double Throttle, double Aileron, double Elevator, double Rudder, double Flap = 0)
 {
+    public bool GearUp { get; init; }
+
     public static readonly ControlInputs Neutral = new(0, 0, 0, 0);
 
     static readonly HashSet<string> Channels = ["throttle", "aileron", "elevator", "rudder", "flap"];

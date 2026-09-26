@@ -148,4 +148,16 @@ public class GroundContactTests
         Assert.False(contacts[1].IsWheel);
         Assert.True(contacts[1].Depth < 0);
     }
+
+    [Fact]
+    public void Retracted_wheels_carry_no_load_and_report_no_contact()
+    {
+        var model = new GroundContactModel(Tricycle, [], Cart.Mass) { WheelsExtended = false };
+        var sunk = new RigidBodyState(new Vec3(0, 0, 0.05), Vec3.Zero, Level, Vec3.Zero);
+        Assert.Equal(Vec3.Zero, model.Evaluate(sunk, new FlatTerrain(), []).Force);
+        Assert.Equal(0, model.WheelsInContact(sunk, new FlatTerrain()));
+        Assert.DoesNotContain(model.Contacts(sunk, new FlatTerrain()), c => c.IsWheel);
+        var slam = sunk with { Velocity = new Vec3(0, 0, -5) };
+        Assert.Equal(CrashCause.None, model.DetectCrash(slam, new FlatTerrain(), Limits));
+    }
 }

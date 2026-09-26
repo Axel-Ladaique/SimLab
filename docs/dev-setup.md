@@ -37,7 +37,7 @@ User data (settings, radio profiles, flight recordings): `~/Library/Application 
 | `--smoke-flight <id> <s>` | Headless scripted flight, prints `SIMLAB_SMOKE_OK ...` (or `SIMLAB_SMOKE_FAIL <message>` and exit code 1 if the flight cannot start) |
 | `--screenshot-field <png>` | Pilot's view of the empty field |
 | `--screenshot-aircraft <id> <png>` | Close-up of an aircraft with deflected controls |
-| `--screenshot-flight <id> <s> <png>` | Scripted takeoff seen from the pilot box, or with `--view fpv\|chase` from that camera (the saved view is unchanged) |
+| `--screenshot-flight <id> <s> <png>` | Scripted takeoff (rotation at 3.5 s, retractable gear raised from 6 s) seen from the pilot box, or with `--view fpv\|chase` from that camera (the saved view is unchanged) |
 | `--screenshot-diagnostics <id> <s> <png>` | Same scripted takeoff with the F3 diagnostics overlay forced on |
 | `--screenshot-menu <png>` | Screenshot of the home screen (the live view at rest, sticks centred) |
 | `--screenshot-menu-live <png> [id]` | Main menu with the live view driven by fixed commands (throttle 0.6, right aileron 0.8, up elevator 0.8, right rudder 0.8) instead of the radio, taken after ~3 s so the reaction has settled; `[id]` shows that aircraft instead of the last one flown (the saved choice is unchanged) |

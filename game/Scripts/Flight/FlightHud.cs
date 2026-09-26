@@ -24,7 +24,7 @@ public partial class FlightHud : CanvasLayer
     OsdHorizon _horizon = null!;
     OsdHomeArrow _homeArrow = null!;
     Label _home = null!, _heading = null!, _speed = null!, _height = null!, _vario = null!;
-    Label _battery = null!, _throttle = null!, _timer = null!, _help = null!, _banner = null!;
+    Label _battery = null!, _throttle = null!, _timer = null!, _gear = null!, _help = null!, _banner = null!;
 
     System.Action _toggleHud = () => { };
     System.Action _nextView = () => { };
@@ -72,6 +72,7 @@ public partial class FlightHud : CanvasLayer
         _battery = Add(big, 0f, 1f, 40, -70, HorizontalAlignment.Left);
         _throttle = Add(big, 1f, 1f, -40, -102, HorizontalAlignment.Right);
         _timer = Add(big, 1f, 1f, -40, -70, HorizontalAlignment.Right);
+        _gear = Add(big, 1f, 1f, -40, -134, HorizontalAlignment.Right);
         _help = Add(small, 0f, 1f, 24, -24, HorizontalAlignment.Left);
 
         _banner = Ui.Text("", 44);
@@ -170,6 +171,13 @@ public partial class FlightHud : CanvasLayer
             ? $"{v.ToString("0.0", Inv)} V  {osd.CurrentAmps!.Value.ToString("0.0", Inv)} A  {osd.ConsumedMah!.Value.ToString("0", Inv)} mAh"
             : "— V";
         _throttle.Text = $"{Ui.T("OSD_THROTTLE")} {osd.ThrottlePercent.ToString("0", Inv)} %";
+        _gear.Text = osd.Gear switch
+        {
+            GearIndicator.Down => Ui.T("OSD_GEAR_DOWN"),
+            GearIndicator.Up => Ui.T("OSD_GEAR_UP"),
+            GearIndicator.Moving => Ui.T("OSD_GEAR_MOVING"),
+            _ => "",
+        };
         int seconds = (int)System.Math.Max(0, osd.FlightTimeSeconds);
         _timer.Text = $"{seconds / 60:00}:{seconds % 60:00}";
         string source = input.Source == InputSource.Radio ? $"{Ui.T("HUD_INPUT")} : {input.DeviceName}" : Ui.T("HUD_KEYBOARD");

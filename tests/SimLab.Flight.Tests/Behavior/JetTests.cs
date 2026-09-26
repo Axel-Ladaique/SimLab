@@ -36,7 +36,7 @@ public class JetTests
     {
         var sim = Fleet.InFlight("jet", 150, 30);
         double maxBank = 0;
-        Fleet.Fly(sim, 3, _ => new ControlInputs(1, 0, 0, 0), s => maxBank = Math.Max(maxBank, Math.Abs(Fleet.Roll(s))));
+        Fleet.Fly(sim, 3, _ => new ControlInputs(1, 0, 0, 0) { GearUp = true }, s => maxBank = Math.Max(maxBank, Math.Abs(Fleet.Roll(s))));
         Assert.Equal(CrashCause.None, sim.Aircraft.Crash);
         Assert.True(maxBank < Angle.Rad(20), $"max bank {Angle.Deg(maxBank):F0} deg");
     }
@@ -44,9 +44,8 @@ public class JetTests
     [Fact]
     public void Cruise_is_jet_fast()
     {
-        var (speed, throttle) = Fleet.Cruise("jet");
-        var sim = Fleet.InFlight("jet", 150, speed);
-        Fleet.Fly(sim, 10, _ => new ControlInputs(throttle, 0, 0, 0));
+        var sim = Fleet.InFlight("jet", 150, Fleet.Cruise("jet").Airspeed);
+        Fleet.Fly(sim, 10, _ => Fleet.CruiseInputs("jet"));
         Assert.InRange(sim.Aircraft.AirData.Airspeed, 25, 40);
     }
 }

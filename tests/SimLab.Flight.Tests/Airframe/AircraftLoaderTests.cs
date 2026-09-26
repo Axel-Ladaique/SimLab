@@ -164,6 +164,28 @@ public sealed class AircraftLoaderTests : IDisposable
         => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"pFactor\": 0.1,", $"\"pFactor\": 0.1, \"ductStatorRecovery\": {value},"));
 
     [Fact]
+    public void Gear_retract_is_optional_and_loads_its_transit_time_and_drag_at_the_wheels()
+    {
+        Assert.Null(AircraftLoader.Load(Write(Aircraft())).GearRetract);
+        var json = Edit(Aircraft(), "\"power\": \"power.json\",", "\"gearRetract\": { \"seconds\": 2.5, \"cdA\": [0.004, 0.001, 0.002] }, \"power\": \"power.json\",");
+        var retract = AircraftLoader.Load(Write(Edit(json, "\"cg\": [0, 0, 0]", "\"cg\": [0.05, 0, 0]"))).GearRetract!;
+        Assert.Equal(2.5, retract.Seconds);
+        Assert.Equal(new Vec3(0.004, 0.001, 0.002), retract.CdA);
+        Assert.Equal(new Vec3(-0.05, 0, -0.1), retract.DragPosition); // the wheels' centroid, from the CG
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void Gear_retract_needs_a_positive_transit_time(string seconds)
+        => AssertRejected(Edit(Aircraft(), "\"power\": \"power.json\",", $"\"gearRetract\": {{ \"seconds\": {seconds} }}, \"power\": \"power.json\","));
+
+    [Fact]
+    public void Gear_retract_needs_wheels()
+        => AssertRejected(Edit(Edit(Aircraft(), "\"power\": \"power.json\",", "\"gearRetract\": { \"seconds\": 2 }, \"power\": \"power.json\","),
+            "\"gear\": [ { \"name\": \"main\", \"position\": [0, 0, -0.1], \"stiffness\": 800, \"damping\": 15, \"steerMix\": { \"rudder\": 1 }, \"maxSteerDeg\": 20 } ],", ""));
+
+    [Fact]
     public void Cg_datum_shifts_every_body_position()
     {
         var withBody = Edit(Aircraft(), "\"power\": \"power.json\",",

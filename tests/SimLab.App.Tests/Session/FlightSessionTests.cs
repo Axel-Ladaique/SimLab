@@ -123,4 +123,21 @@ public class FlightSessionTests
         Assert.True(session.Terrain.Trees.Count > 100);
         Assert.InRange(session.Span, 1.1, 1.3);
     }
+
+    [Fact]
+    public void Gear_switch_left_up_does_not_raise_the_gear_until_it_has_been_seen_down()
+    {
+        var session = Session("jet");
+        var up = new ControlInputs(0, 0, 0, 0) { GearUp = true };
+        for (int i = 0; i < 60; i++) session.Tick(1 / 60.0, up);
+        Assert.Equal(0, session.Aircraft.GearPosition);
+
+        session.Tick(1 / 60.0, ControlInputs.Neutral);
+        for (int i = 0; i < 60; i++) session.Tick(1 / 60.0, up);
+        Assert.True(session.Aircraft.GearPosition > 0.1);
+
+        session.Reset();
+        for (int i = 0; i < 60; i++) session.Tick(1 / 60.0, up);
+        Assert.Equal(0, session.Aircraft.GearPosition);
+    }
 }

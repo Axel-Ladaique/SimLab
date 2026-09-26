@@ -30,6 +30,7 @@
     { "name": "mainLeft", "position": [0.84, -0.115, -0.19], "stiffness": 3000, "damping": 70 },
     { "name": "mainRight", "position": [0.84, 0.115, -0.19], "stiffness": 3000, "damping": 70 }
   ],
+  "gearRetract": { "seconds": 5.0, "cdA": [0.004, 0.003, 0.002] },
   "hull": [
     { "name": "nose", "position": [0, 0, 0], "tag": "nose" },
     { "name": "wingtipLeft", "position": [0.983, -0.47, -0.01], "tag": "wingtip" },
@@ -49,6 +50,7 @@
     "cg": "estimated; E-flite manual gives 95 mm aft of the wing leading edge at the fuselage (about 0.714 m here), moved 46 mm aft because the strip model has no destabilizing fuselage or strakes",
     "surfaces": "General Dynamics F-16 planform (30 ft span reference wing, 300 sq ft, taper 0.227, 40 deg leading-edge sweep; stabilators 10 deg anhedral) scaled 1:10.4 to the model's 1450 mm length",
     "controls": "E-flite manual high rates: aileron 15 mm, stabilator 32 mm up / 27 mm down, rudder 21 mm, converted to degrees at the measuring point",
+    "gearRetract": "estimated: electric retracts with sequenced doors take about 5 s; drag of three legs and wheels (about 0.004 m2 frontal at Cd 1)",
     "inertia": "F-16 radii of gyration (Ixx 12875, Iyy 75674, Izz 85552, Ixz 1331 kg m2 at 9295 kg) scaled to the model"
   }
 }
