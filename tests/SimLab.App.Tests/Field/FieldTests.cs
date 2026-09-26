@@ -1,5 +1,6 @@
 using SimLab.App.Field;
 using SimLab.Flight.Geometry;
+using SimLab.Flight.Terrain;
 
 namespace SimLab.App.Tests.Field;
 
@@ -52,8 +53,8 @@ public class FieldTests
     {
         var tree = TreePlanter.Plant(7)[0];
         var terrain = new ClubFieldTerrain([tree]);
-        Assert.True(terrain.HitsObstacle(new Vec3(tree.X, tree.Y, tree.BaseZ + 1)));
-        Assert.False(terrain.HitsObstacle(new Vec3(0, 0, 5)));
+        Assert.Equal(ObstacleKind.Tree, terrain.HitObstacle(new Vec3(tree.X, tree.Y, tree.BaseZ + 1)));
+        Assert.Null(terrain.HitObstacle(new Vec3(0, 0, 5)));
     }
 
     [Theory]

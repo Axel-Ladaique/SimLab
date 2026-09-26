@@ -10,8 +10,11 @@ public interface ITerrain
     /// <summary>Unit ground normal (+z up) at a horizontal position (x east, y north).</summary>
     Vec3 Normal(double x, double y);
 
-    /// <summary>True if the world point is inside an obstacle (tree, fence, building).</summary>
-    bool HitsObstacle(Vec3 p);
+    /// <summary>Kind of the obstacle (tree, structure, wire) containing the world point, or null.</summary>
+    ObstacleKind? HitObstacle(Vec3 p);
+
+    /// <summary>Kind of the first obstacle crossed by the world segment a→b, or null.</summary>
+    ObstacleKind? HitObstacle(Vec3 a, Vec3 b);
 }
 
 /// <summary>Vertical cylinder obstacle, e.g. a tree.</summary>

@@ -8,8 +8,14 @@ public sealed class ClubFieldTerrain : ITerrain
 {
     const double NormalStep = 0.5;
     readonly CylinderObstacle[] _trees;
+    readonly ObstacleGrid _obstacles;
 
-    public ClubFieldTerrain(IEnumerable<CylinderObstacle> trees) => _trees = trees.ToArray();
+    public ClubFieldTerrain(IEnumerable<CylinderObstacle> trees)
+    {
+        _trees = trees.ToArray();
+        _obstacles = new ObstacleGrid(_trees.Select(t =>
+            new Obstacle(new VerticalCylinder(new Vec3(t.X, t.Y, t.BaseZ), t.Radius, t.Height), ObstacleKind.Tree)));
+    }
 
     public IReadOnlyList<CylinderObstacle> Trees => _trees;
 
@@ -35,12 +41,9 @@ public sealed class ClubFieldTerrain : ITerrain
         return new Vec3(-dx, -dy, 1).Normalized();
     }
 
-    public bool HitsObstacle(Vec3 p)
-    {
-        foreach (var t in _trees)
-            if (t.Contains(p)) return true;
-        return false;
-    }
+    public ObstacleKind? HitObstacle(Vec3 p) => _obstacles.Hit(p);
+
+    public ObstacleKind? HitObstacle(Vec3 a, Vec3 b) => _obstacles.Hit(a, b);
 
     static double SmoothStep(double x)
     {

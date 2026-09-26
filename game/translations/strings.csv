@@ -100,6 +100,8 @@ CRASH_TREESTRIKE,Dans les arbres,Into the trees
 CRASH_WINGTIPSTRIKE,Saumon d'aile au sol,Wingtip strike
 CRASH_NOSEOVER,Capotage,Nose-over
 CRASH_HULLIMPACT,Choc de la cellule,Airframe impact
+CRASH_STRUCTURESTRIKE,Contre un obstacle,Hit a structure
+CRASH_WIRESTRIKE,Dans les câbles,Into the wires
 RADIO_REVERSE_TITLE,Sens des voies,Channel direction
 RADIO_REVERSE,Inverser,Reverse
 RADIO_PREVIEW_TITLE,Contrôle des gouvernes,Control check
