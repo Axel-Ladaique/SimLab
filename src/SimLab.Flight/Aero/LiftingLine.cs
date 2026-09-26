@@ -51,7 +51,7 @@ public sealed class LiftingLine
     public const double Tolerance = 1e-6;
 
     /// <summary>A solve not converged after this many steps refactors the Jacobian with the local lift slopes.</summary>
-    public const int RefreshAfter = 3;
+    public const int RefreshAfter = 4;
 
     const double MinSpeed = 0.1;
     static readonly double SlopeProbe = Angle.Rad(2);
