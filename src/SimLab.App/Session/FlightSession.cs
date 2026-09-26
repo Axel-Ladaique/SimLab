@@ -30,8 +30,8 @@ public sealed class FlightSession : IDisposable
         Conditions = conditions;
         Map = map;
         Terrain = map.Terrain;
-        _windy = new FlightEnvironment(Terrain, new WindField(conditions.ToWindSettings(), conditions.Seed));
-        _calm = new FlightEnvironment(Terrain, new WindField(new WindSettings(), conditions.Seed));
+        _windy = new FlightEnvironment(Terrain, new WindField(conditions.ToWindSettings(), conditions.Seed), fieldElevationM: map.DatumElevationM);
+        _calm = new FlightEnvironment(Terrain, new WindField(new WindSettings(), conditions.Seed), fieldElevationM: map.DatumElevationM);
         Aircraft = new Aircraft(definition);
         Simulation = new Simulation(Aircraft, _windy);
         Span = definition.Surfaces.Where(s => s.Role == SimLab.Flight.Aero.SurfaceRole.Wing).Select(s => s.TotalSpan).DefaultIfEmpty(1.0).Max();

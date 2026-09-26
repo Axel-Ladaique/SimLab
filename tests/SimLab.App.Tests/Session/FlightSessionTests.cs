@@ -2,6 +2,7 @@ using SimLab.App.Maps;
 using SimLab.App.Maps.Club;
 using SimLab.App.Session;
 using SimLab.App.Settings;
+using SimLab.Flight.Atmosphere;
 using SimLab.Flight.Controls;
 using SimLab.Flight.Geometry;
 using SimLab.Flight.Ground;
@@ -140,5 +141,21 @@ public class FlightSessionTests
         session.Reset();
         for (int i = 0; i < 60; i++) session.Tick(1 / 60.0, up);
         Assert.Equal(0, session.Aircraft.GearPosition);
+    }
+
+    [Fact]
+    public void Site_elevation_drives_the_air_density()
+    {
+        using var session = Session("trainer");
+        Assert.Equal(0, session.Simulation.Environment.FieldElevationM);
+
+        var mountainMap = new FieldMap("mountain", "FIELD_MOUNTAIN", new HeightGrid(-100, -100, 100, 3, new float[9]),
+            (x, y) => SurfaceWeights.Only(SurfaceKind.Grass), ClubMap.Layout, ClubMap.Ambience, [], [])
+        { DatumElevationM = 1500 };
+        using var mountainSession = new FlightSession(TestData.Aircraft("trainer"),
+            new FlightConditions(WindSpeed: 4, WindFromDeg: 80), mountainMap);
+
+        Assert.Equal(1500, mountainSession.Simulation.Environment.FieldElevationM);
+        Assert.Equal(Isa.Density(1500, 0), mountainSession.Simulation.Environment.Density(0));
     }
 }

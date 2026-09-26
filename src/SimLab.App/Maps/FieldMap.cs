@@ -40,5 +40,14 @@ public sealed class FieldMap
     public IReadOnlyList<MapOverlay> Overlays { get; }
     public IReadOnlyList<WaterBody> Water { get; }
 
+    /// <summary>Real altitude (m above sea level) of world z = 0; sets the air density.</summary>
+    public double DatumElevationM { get; init; }
+
+    /// <summary>Height of the far scenery ring beyond the grid (world x, y → z), drawn only; null for none.</summary>
+    public Func<double, double, double>? Backdrop { get; init; }
+
+    /// <summary>Ground mix of the far ring; defaults to the map's own surface function.</summary>
+    public Func<double, double, SurfaceWeights>? BackdropSurface { get; init; }
+
     public SurfaceWeights Surface(double x, double y) => _surface(x, y);
 }
