@@ -15,5 +15,5 @@ public static class KeyboardInput
         PitchUp: Down(Key.Down), PitchDown: Down(Key.Up),
         YawLeft: Down(Key.A), YawRight: Down(Key.D));
 
-    public static KeyboardCommands Commands() => new(Down(Key.R), Down(Key.P), Down(Key.V), Down(Key.C), Down(Key.G));
+    public static KeyboardCommands Commands() => new(Down(Key.R), Down(Key.P), Down(Key.V), Down(Key.C), Down(Key.G), Down(Key.F));
 }

@@ -1,10 +1,10 @@
 namespace SimLab.Input;
 
 /// <summary>
-/// What a radio switch does. <see cref="GearUp"/> is read by position (switch on = gear up, like a real radio's gear
-/// switch); the others fire once when the switch turns on.
+/// What a radio switch does. <see cref="GearUp"/> and <see cref="Flaps"/> are read by position (like a real radio's gear
+/// and flap switches); the others fire once when the switch turns on.
 /// </summary>
-public enum SwitchAction { Reset, Pause, ToggleWind, NextCamera, GearUp }
+public enum SwitchAction { Reset, Pause, ToggleWind, NextCamera, GearUp, Flaps }
 
 /// <summary>Binds a radio button, or an axis above <see cref="Threshold"/>, to a simulator action.</summary>
 public sealed record SwitchBinding(SwitchAction Action, int? ButtonIndex = null, int? AxisIndex = null, double Threshold = 0.5);
@@ -28,11 +28,26 @@ public sealed class SwitchTracker
         for (int i = 0; i < _bindings.Length; i++)
         {
             bool on = IsOn(_bindings[i], frame);
-            if (_primed && on && !_previous[i] && _bindings[i].Action != SwitchAction.GearUp) fired.Add(_bindings[i].Action);
+            if (_primed && on && !_previous[i] && !IsPositional(_bindings[i].Action)) fired.Add(_bindings[i].Action);
             _previous[i] = on;
         }
         _primed = true;
         return fired;
+    }
+
+    static bool IsPositional(SwitchAction action) => action is SwitchAction.GearUp or SwitchAction.Flaps;
+
+    /// <summary>Raw position of the switch bound to this action: the axis value, or ±1 for a button; null when none is bound.</summary>
+    public double? Value(SwitchAction action, RawInputFrame frame)
+    {
+        foreach (var b in _bindings)
+        {
+            if (b.Action != action) continue;
+            if (b.ButtonIndex is int button) return button < frame.Buttons.Length && frame.Buttons[button] ? 1 : -1;
+            if (b.AxisIndex is int axis && axis < frame.Axes.Length) return frame.Axes[axis];
+            return null;
+        }
+        return null;
     }
 
     /// <summary>Position of the switch bound to this action, or null when none is bound.</summary>

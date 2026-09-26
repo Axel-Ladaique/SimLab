@@ -58,4 +58,5 @@ For both, `PowerTelemetry.StateOfCharge` is the fuel left (fraction) and the ele
 
 - The aircraft mass is fixed (full fuel); burning 3–4 kg of kerosene does not lighten the F-18 or move its CG.
 - No engine start/stop sequence, no kill switch, no carburettor lag; the turbine never hot-starts or overheats.
-- Flaps: the flap channel is not wired to any input yet, so the P-51 flies without them.
+- Flaps (added the same day): F key or a radio flap switch, P-51 flaps 13° / 40° with elevator compensation; landing flaps
+  raise the P-51's maximum lift by 12% (half: 8.5%), a 6% lower stall speed.

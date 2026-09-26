@@ -6,12 +6,15 @@ namespace SimLab.App.Ui;
 
 public enum GearIndicator { Down, Moving, Up }
 
+public enum FlapIndicator { Up, Half, Landing }
+
 /// <summary>
 /// Everything the flight OSD shows, in pilot units: km/h, m, m/s, degrees (heading clockwise from north, roll right
 /// and pitch up positive), percent, volts, amps and mAh. Battery fields are null without a power plant.
 /// </summary>
 /// <param name="HomeRelativeBearingDeg">Direction of the pilot relative to the nose, (−180, 180], positive to the right.</param>
 /// <param name="Gear">Retractable gear state, null for fixed gear.</param>
+/// <param name="Flaps">Commanded flap setting, null for aircraft without flaps.</param>
 /// <param name="FuelPercent">Fuel left for piston and turbine engines (the battery fields are then null).</param>
 public sealed record OsdData(
     double AirspeedKmh, double HeightM, double VarioMs,
@@ -20,10 +23,11 @@ public sealed record OsdData(
     double ThrottlePercent, double? BatteryVolts, double? CurrentAmps, double? ConsumedMah,
     double FlightTimeSeconds,
     GearIndicator? Gear = null,
-    double? FuelPercent = null, double? FuelMl = null)
+    double? FuelPercent = null, double? FuelMl = null,
+    FlapIndicator? Flaps = null)
 {
     public static OsdData From(Aircraft aircraft, in RigidBodyState display, double heightAgl, double flightTimeSeconds,
-        double throttle, Vec3 pilot)
+        double throttle, Vec3 pilot, double flap = 0)
     {
         var attitude = Attitude.FromOrientation(display.Orientation);
         double heading = Angle.Deg(attitude.Heading);
@@ -55,7 +59,11 @@ public sealed record OsdData(
                 : aircraft.GearPosition == 0 ? GearIndicator.Down
                 : aircraft.GearPosition == 1 ? GearIndicator.Up
                 : GearIndicator.Moving,
-            fuelPercent, fuelMl);
+            fuelPercent, fuelMl,
+            !aircraft.Definition.Controls.Any(c => c.Mix.ContainsKey("flap")) ? null
+                : flap < Session.FlapSetting.Half / 2 ? FlapIndicator.Up
+                : flap < (Session.FlapSetting.Half + Session.FlapSetting.Landing) / 2 ? FlapIndicator.Half
+                : FlapIndicator.Landing);
     }
 
     /// <summary>An angle in degrees brought into (−180, 180].</summary>

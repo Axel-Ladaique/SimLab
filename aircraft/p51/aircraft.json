@@ -17,8 +17,12 @@
       "maxPositiveDeg": 14, "maxNegativeDeg": 18, "servoSecondsPer60Deg": 0.12, "mix": { "aileron": -1 } },
     { "name": "aileronLeft", "surface": "wing", "side": "left", "chordFraction": 0.22, "spanStart": 0.5, "spanEnd": 0.95,
       "maxPositiveDeg": 14, "maxNegativeDeg": 18, "servoSecondsPer60Deg": 0.12, "mix": { "aileron": 1 } },
+    { "name": "flapRight", "surface": "wing", "side": "right", "chordFraction": 0.2, "spanStart": 0.08, "spanEnd": 0.5,
+      "maxPositiveDeg": 40, "maxNegativeDeg": 0, "servoSecondsPer60Deg": 1.2, "mix": { "flap": 1 } },
+    { "name": "flapLeft", "surface": "wing", "side": "left", "chordFraction": 0.2, "spanStart": 0.08, "spanEnd": 0.5,
+      "maxPositiveDeg": 40, "maxNegativeDeg": 0, "servoSecondsPer60Deg": 1.2, "mix": { "flap": 1 } },
     { "name": "elevator", "surface": "stab", "side": "both", "chordFraction": 0.4,
-      "maxPositiveDeg": 18, "maxNegativeDeg": 18, "servoSecondsPer60Deg": 0.12, "mix": { "elevator": -1 } },
+      "maxPositiveDeg": 18, "maxNegativeDeg": 18, "servoSecondsPer60Deg": 0.12, "mix": { "elevator": -1, "flap": -0.2 } },
     { "name": "rudder", "surface": "fin", "side": "both", "chordFraction": 0.4, "spanStart": 0, "spanEnd": 0.95,
       "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.12, "mix": { "rudder": 1 } }
   ],
@@ -50,7 +54,7 @@
     "mass": "Hangar 9 P-51D Mustang 60cc (HAN4770): flying weight 11.8-13.0 kg",
     "cg": "Hangar 9 manual: 171 mm behind the wing leading edge at the root",
     "surfaces": "North American P-51D (span 11.28 m, wing 21.65 m2, 5 deg dihedral) at 1/5 scale; the ARF quotes 2.26 m and 1420 in2",
-    "controls": "Hangar 9 manual high rates: aileron 22 mm up / 17 mm down, elevator 25 mm, rudder 55 mm, converted to degrees",
+    "controls": "Hangar 9 manual high rates: aileron 22 mm up / 17 mm down, elevator 25 mm, rudder 55 mm, converted to degrees; flaps 25 mm half / 72 mm landing (about 13 / 40 deg on a 110 mm root flap chord) with the manual's elevator compensation (3-5 mm up)",
     "gear": "estimated; 3-point attitude about 12 deg nose up, P-51D track 3.6 m / 5",
     "inertia": "estimated from typical single-engine fighter radii of gyration (Roskam Rx 0.26, Ry 0.31, Rz 0.39)"
   }

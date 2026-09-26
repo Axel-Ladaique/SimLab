@@ -12,8 +12,8 @@ public class OsdDataTests
     static RigidBodyState State(Vec3 position, double rollDeg, double pitchDeg, double headingDeg, Vec3 velocity = default) =>
         new(position, velocity, Attitude.ToOrientation(Angle.Rad(rollDeg), Angle.Rad(pitchDeg), Angle.Rad(headingDeg)), Vec3.Zero);
 
-    static OsdData Osd(RigidBodyState state, Aircraft? aircraft = null, double throttle = 0.5) =>
-        OsdData.From(aircraft ?? new Aircraft(TestData.Aircraft("trainer")), state, 12.3, 75, throttle, Pilot);
+    static OsdData Osd(RigidBodyState state, Aircraft? aircraft = null, double throttle = 0.5, double flap = 0) =>
+        OsdData.From(aircraft ?? new Aircraft(TestData.Aircraft("trainer")), state, 12.3, 75, throttle, Pilot, flap);
 
     [Fact]
     public void Attitude_vario_height_and_time_come_through_in_pilot_units()
@@ -129,5 +129,16 @@ public class OsdDataTests
         Assert.Equal(100, full.FuelPercent!.Value, 6);
         Assert.Equal(700, full.FuelMl!.Value, 6);
         Assert.Null(Osd(level).FuelPercent);
+    }
+
+    [Fact]
+    public void Flap_setting_is_shown_only_for_aircraft_with_flaps()
+    {
+        var level = State(new Vec3(0, 0, 50), 0, 0, 0);
+        Assert.Null(Osd(level).Flaps);
+        var p51 = new Aircraft(TestData.Aircraft("p51"));
+        Assert.Equal(FlapIndicator.Up, Osd(level, p51, flap: 0).Flaps);
+        Assert.Equal(FlapIndicator.Half, Osd(level, p51, flap: SimLab.App.Session.FlapSetting.Half).Flaps);
+        Assert.Equal(FlapIndicator.Landing, Osd(level, p51, flap: 1).Flaps);
     }
 }

@@ -242,6 +242,13 @@ single-panel surface, like the fin, always uses `both`).
 roll right, positive elevator = pitch up, positive rudder = yaw right) to a deflection command:
 `deflection = clamp(Σ weight · channel, −1, 1)` × the appropriate max throw.
 
+The `flap` channel carries the flap setting: 0 (up), 0.35 (half) or 1 (landing), from the F key (which steps through
+them) or a radio flap switch (bound on the radio screen; a three-position switch gives up / half / landing, a two-position
+one up / landing). A control mixed from `flap` is a high-lift flap: besides the usual alpha shift, 60% of its effect is a
+lift increment, so it raises the maximum lift instead of only stalling the section earlier. A flap normally has
+`maxNegativeDeg: 0` and a slow servo; an elevator can take a small negative `flap` weight for the pitch compensation
+(see `p51/aircraft.json`: flaps 13° / 40°, elevator `"flap": -0.2`).
+
 Because the fin has `dihedralDeg: 90`, its normal points **left (−y)**, not up. So "trailing
 edge down relative to the normal" for the rudder means the trailing edge moves toward −normal,
 i.e. to the **right (+y)** — which pushes the tail right and yaws the nose **right**. That is

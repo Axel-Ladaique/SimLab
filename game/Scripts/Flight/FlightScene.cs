@@ -173,7 +173,7 @@ public partial class FlightScene : Node3D
         }
         _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
         var osd = OsdData.From(_session.Aircraft, _session.DisplayState, _session.HeightAgl, _session.FlightTime,
-            LastInput.Controls.Throttle, ClubField.PilotPosition);
+            LastInput.Controls.Throttle, ClubField.PilotPosition, LastInput.Controls.Flap);
         _hud.UpdateHud(_session, LastInput, osd, HudShown, _cameras.Current);
         _crash.UpdateCrash(_session.Aircraft.Crash);
         _diagnostics.UpdateDiagnostics(this);

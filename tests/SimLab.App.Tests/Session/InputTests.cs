@@ -172,4 +172,42 @@ public class InputTests
         Assert.Contains(SwitchAction.Reset, output.Actions);
         Assert.False(output.Controls.GearUp);
     }
+
+    [Fact]
+    public void F_key_steps_the_flaps_up_half_landing_and_back_up_and_reset_raises_them()
+    {
+        var router = new InputRouter(_ => null);
+        var f = new KeyboardCommands(false, false, false, ToggleFlaps: true);
+        Assert.Equal(0, router.Update(0.016, [], default, default).Controls.Flap);
+        Assert.Equal(FlapSetting.Half, router.Update(0.016, [], default, f).Controls.Flap);
+        Assert.Equal(FlapSetting.Half, router.Update(0.016, [], default, f).Controls.Flap);
+        router.Update(0.016, [], default, default);
+        Assert.Equal(FlapSetting.Landing, router.Update(0.016, [], default, f).Controls.Flap);
+        router.Update(0.016, [], default, default);
+        Assert.Equal(0, router.Update(0.016, [], default, f).Controls.Flap);
+        router.Update(0.016, [], default, default);
+        router.Update(0.016, [], default, f);
+        Assert.Equal(0, router.Update(0.016, [], default, new KeyboardCommands(Reset: true, false, false)).Controls.Flap);
+    }
+
+    [Theory]
+    [InlineData(-1.0, 0.0)]
+    [InlineData(-0.5, 0.0)]
+    [InlineData(0.0, FlapSetting.Half)]
+    [InlineData(0.2, FlapSetting.Half)]
+    [InlineData(1.0, FlapSetting.Landing)]
+    public void A_radio_flap_switch_sets_up_half_or_landing_by_position(double axis, double flap)
+    {
+        var binding = new SwitchBinding(SwitchAction.Flaps, AxisIndex: 4, Threshold: 0);
+        var router = new InputRouter(guid => guid == "radio-1" ? Profile(binding) : null);
+        Assert.Equal(flap, router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0, axis])], default, default).Controls.Flap);
+    }
+
+    [Fact]
+    public void A_flap_button_gives_landing_flaps_while_held()
+    {
+        var router = new InputRouter(guid => guid == "radio-1" ? Profile(new SwitchBinding(SwitchAction.Flaps, ButtonIndex: 1)) : null);
+        Assert.Equal(0, router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0], [false, false, false, false])], default, default).Controls.Flap);
+        Assert.Equal(FlapSetting.Landing, router.Update(0.016, [Pad("radio-1", [0, 0, 0, 0], [false, true, false, false])], default, default).Controls.Flap);
+    }
 }
