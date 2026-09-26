@@ -20,7 +20,7 @@ public static class MapBuilder
         var sun = new DirectionalLight3D { ShadowEnabled = true, LightEnergy = 1.0f, DirectionalShadowMaxDistance = ShadowDistance };
         AimSun(sun, conditions);
         root.AddChild(sun);
-        TerrainChunks.Add(root, map, TerrainMaterial());
+        TerrainChunks.Add(root, map, TerrainMaterial.Create(map.Ambience));
         GroundOverlays.Add(root, map);
         PropLayer.Add(root, map.Props);
         var w = map.Layout.WindsockPosition;
@@ -68,14 +68,5 @@ public static class MapBuilder
             FogSkyAffect = 0f,
         };
         return new WorldEnvironment { Environment = environment };
-    }
-
-    static ShaderMaterial TerrainMaterial()
-    {
-        var material = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/terrain.gdshader") };
-        foreach (var name in new[] { "grass", "dirt", "gravel", "soil" })
-        foreach (var map in new[] { "albedo", "normal" })
-            material.SetShaderParameter($"{name}_{map}", GD.Load<Texture2D>($"res://Textures/terrain/{name}_{map}.jpg"));
-        return material;
     }
 }
