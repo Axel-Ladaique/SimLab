@@ -38,8 +38,10 @@ public static class AircraftMeshBuilder
     {
         var parts = new List<MeshPart>();
         var fixedTriangles = new List<Vec3>();
-        var controlTriangles = new SortedDictionary<int, List<Vec3>>();
-        var hinges = new Dictionary<int, (Vec3 Point, Vec3 Axis)>();
+        // One part per control and panel: a control spanning both halves of a swept or dihedral surface turns each half
+        // about that half's own hinge line.
+        var controlTriangles = new SortedDictionary<(int Control, string Surface, Side Side), List<Vec3>>();
+        var hinges = new Dictionary<(int Control, string Surface, Side Side), Hinge>();
 
         var endChords = EndChords(segments);
         foreach (var s in segments)
@@ -63,21 +65,28 @@ public static class AircraftMeshBuilder
             var hingeIn = Along(inner, innerChord, 1 - s.ControlChordFraction);
             var hingeOut = Along(outer, outerChord, 1 - s.ControlChordFraction);
             AddQuad(fixedTriangles, leadIn, leadOut, hingeOut, hingeIn);
-            if (!controlTriangles.TryGetValue(s.ControlIndex, out var list)) controlTriangles[s.ControlIndex] = list = [];
+            var key = (s.ControlIndex, s.SurfaceName, s.Side);
+            if (!controlTriangles.TryGetValue(key, out var list)) controlTriangles[key] = list = [];
             AddQuad(list, hingeIn, hingeOut, trailOut, trailIn);
-            if (!hinges.ContainsKey(s.ControlIndex))
-            {
-                var line = (hingeOut - hingeIn).Normalized();
-                var toTrailing = s.ChordAxis * -1;
-                double sign = Vec3.Dot(Vec3.Cross(line, toTrailing), s.NormalAxis * -1) >= 0 ? 1 : -1;
-                hinges[s.ControlIndex] = (hingeIn, line * sign);
-            }
+            // The hinge runs from the innermost strip's inner end to the outermost strip's outer end.
+            hinges[key] = hinges.TryGetValue(key, out var h)
+                ? h with
+                {
+                    Inner = s.SpanFraction < h.InnerFraction ? hingeIn : h.Inner,
+                    InnerFraction = Math.Min(s.SpanFraction, h.InnerFraction),
+                    Outer = s.SpanFraction > h.OuterFraction ? hingeOut : h.Outer,
+                    OuterFraction = Math.Max(s.SpanFraction, h.OuterFraction),
+                }
+                : new Hinge(hingeIn, s.SpanFraction, hingeOut, s.SpanFraction, s.ChordAxis, s.NormalAxis);
         }
 
         parts.Add(new MeshPart("airframe", -1, Vec3.Zero, BodyAxes.Right, fixedTriangles, visual?.SurfaceColor ?? SurfaceColor));
-        foreach (var (index, triangles) in controlTriangles)
-            parts.Add(new MeshPart(definition.Controls[index].Name, index, hinges[index].Point, hinges[index].Axis, triangles,
+        foreach (var (key, triangles) in controlTriangles)
+        {
+            var hinge = hinges[key];
+            parts.Add(new MeshPart(definition.Controls[key.Control].Name, key.Control, hinge.Inner, hinge.Axis, triangles,
                 visual?.ControlColor ?? ControlColor));
+        }
 
         if (visual is { Shapes.Count: > 0 })
             foreach (var shape in visual.Shapes)
@@ -203,6 +212,22 @@ public static class AircraftMeshBuilder
             triangles.Add(center + (u * Math.Cos(a1) + v * Math.Sin(a1)) * radius);
         }
         return triangles;
+    }
+
+    /// <summary>Hinge line of one control panel, from its innermost to its outermost strip, and one strip's frame.</summary>
+    sealed record Hinge(Vec3 Inner, double InnerFraction, Vec3 Outer, double OuterFraction, Vec3 ChordAxis, Vec3 NormalAxis)
+    {
+        /// <summary>Unit axis along the hinge, oriented so a positive rotation moves the trailing edge down (against
+        /// the lift normal).</summary>
+        public Vec3 Axis
+        {
+            get
+            {
+                var line = (Outer - Inner).Normalized();
+                double sign = Vec3.Dot(Vec3.Cross(line, ChordAxis * -1), NormalAxis * -1) >= 0 ? 1 : -1;
+                return line * sign;
+            }
+        }
     }
 
     static void AddQuad(List<Vec3> t, Vec3 a, Vec3 b, Vec3 c, Vec3 d)

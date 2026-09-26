@@ -50,10 +50,10 @@ public class FlightSessionTests
         using var session = Session("trainer");
         Assert.Equal(5, session.Tick(0.01, ControlInputs.Neutral));
         Assert.Equal(0.01, session.FlightTime, 9);
-        session.Handle(SwitchAction.Pause);
+        session.Handle(new FlightCommand(FlightCommandKind.TogglePause));
         Assert.True(session.Paused);
         Assert.Equal(0, session.Tick(0.01, ControlInputs.Neutral));
-        session.Handle(SwitchAction.Pause);
+        session.Handle(new FlightCommand(FlightCommandKind.TogglePause));
         Assert.Equal(5, session.Tick(0.01, ControlInputs.Neutral));
     }
 
@@ -63,7 +63,7 @@ public class FlightSessionTests
         using var session = Session("trainer");
         for (int i = 0; i < 200; i++) session.Tick(0.01, new ControlInputs(1, 0, 0, 0));
         Assert.True(session.Aircraft.State.Velocity.Length > 1);
-        session.Handle(SwitchAction.Reset);
+        session.Handle(new FlightCommand(FlightCommandKind.Reset));
         Assert.Equal(session.StartState(), session.Aircraft.State);
         Assert.Equal(0, session.FlightTime);
     }
@@ -75,11 +75,26 @@ public class FlightSessionTests
         session.Tick(0.1, ControlInputs.Neutral);
         var before = session.Aircraft.State;
         Assert.Equal(4, session.Simulation.Environment.Wind.Settings.SpeedAt10m);
-        session.Handle(SwitchAction.ToggleWind);
+        session.Handle(new FlightCommand(FlightCommandKind.ToggleWind));
         Assert.False(session.WindEnabled);
         Assert.Equal(0, session.Simulation.Environment.Wind.Settings.SpeedAt10m);
         Assert.Equal(before, session.Aircraft.State);
-        session.Handle(SwitchAction.ToggleWind);
+        session.Handle(new FlightCommand(FlightCommandKind.ToggleWind));
+        Assert.True(session.WindEnabled);
+    }
+
+    [Fact]
+    public void Set_pause_and_set_wind_put_the_session_in_that_state()
+    {
+        using var session = Session("trainer");
+        session.Handle(new FlightCommand(FlightCommandKind.SetPause, On: true));
+        session.Handle(new FlightCommand(FlightCommandKind.SetPause, On: true));
+        Assert.True(session.Paused);
+        session.Handle(new FlightCommand(FlightCommandKind.SetPause, On: false));
+        Assert.False(session.Paused);
+        session.Handle(new FlightCommand(FlightCommandKind.SetWind, On: false));
+        Assert.False(session.WindEnabled);
+        session.Handle(new FlightCommand(FlightCommandKind.SetWind, On: true));
         Assert.True(session.WindEnabled);
     }
 
@@ -88,9 +103,9 @@ public class FlightSessionTests
     {
         using var session = Session("trainer");
         int initial = session.ResetCount;
-        session.Handle(SwitchAction.ToggleWind);
+        session.Handle(new FlightCommand(FlightCommandKind.ToggleWind));
         Assert.Equal(initial, session.ResetCount);
-        session.Handle(SwitchAction.Reset);
+        session.Handle(new FlightCommand(FlightCommandKind.Reset));
         Assert.Equal(initial + 1, session.ResetCount);
         session.Reset();
         Assert.Equal(initial + 2, session.ResetCount);

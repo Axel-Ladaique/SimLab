@@ -6,7 +6,7 @@
   "inertia": { "roll": 1.08, "yaw": 2.12, "pitch": 1.16 },
   "surfaces": [
     { "name": "wing", "role": "wing", "root": [0.6575, 0, -0.10], "span": 1.13, "rootChord": 0.55, "tipChord": 0.25,
-      "sweepDeg": 0, "dihedralDeg": 5, "incidenceDeg": 1.0, "twistDeg": -1.5, "airfoil": "clarky", "segments": 14, "mirror": true },
+      "sweepDeg": 0, "dihedralDeg": 5, "incidenceDeg": 1.0, "twistDeg": -1.5, "airfoil": "clarky", "segments": 20, "mirror": true },
     { "name": "stab", "role": "horizontalTail", "root": [1.785, 0, 0.02], "span": 0.40, "rootChord": 0.26, "tipChord": 0.13,
       "sweepDeg": 0, "incidenceDeg": -1.0, "airfoil": "naca0012", "segments": 5, "mirror": true },
     { "name": "fin", "role": "verticalTail", "root": [1.745, 0, 0.06], "span": 0.30, "rootChord": 0.34, "tipChord": 0.13,

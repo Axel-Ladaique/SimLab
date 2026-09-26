@@ -17,6 +17,21 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] Reverse: tick "Inverser" on the rudder; the rudder line now reads "à gauche" for a right stick and the model
   follows. Leave the screen and come back: the box is still ticked (the profile was saved). Untick it again.
 
+## Radio switches
+- [ ] Switches tab: Learn **Gear** on a 2-position switch — the row shows two positions, flipping the switch lights
+  each one live; set them to Down and Up. In flight the gear follows the switch; G only moves the gear once the
+  gear switch assignment is cleared.
+- [ ] Learn **Flaps** on a 3-position switch; set one position to "—". In flight that position keeps the last flap
+  setting.
+- [ ] Learn **Camera** (3 positions) and **OSD**: each flip selects that camera view, or shows/hides the OSD; the
+  flight starts in the view the switch is on.
+- [ ] Learn **Throttle cut**: with the switch on "Cut" the motor stops whatever the throttle stick does, and the
+  OSD shows "GAZ COUPÉS" / "THR CUT".
+- [ ] Put Gear and Flaps on the same switch: both follow it.
+- [ ] An old profile (bound before positional switches) still drives gear, flaps, reset, pause and wind; the old
+  view switch shows "non assigné" / "not assigned" in the Switches tab. An old pause or wind *button* used to
+  toggle on each press; it now acts (pauses / turns wind on) only while held.
+
 ## Home screen
 - [ ] The app opens full screen; Settings → "Plein écran" off gives a window, on again gives full screen, and the
   choice is kept after a restart. On a 16:10 screen nothing is cut and there are no black bars.
@@ -53,7 +68,8 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 
 ## Camera views
 - [ ] In flight, C cycles ground → FPV → chase → ground; the keyboard help line shows "C vue" / "C view".
-- [ ] Radio screen → "Interrupteur « vue »" binds a switch; in flight it cycles the views like C.
+- [ ] A camera switch (learned on the Switches tab, see "Radio switches") selects the view directly by position,
+  not by cycling.
 - [ ] FPV: no part of the aircraft is seen (its shadow on the ground may be), the horizon rolls and pitches with
   it; the wing's camera looks up about 25° (the horizon sits low in level flight at speed).
 - [ ] Chase: the aircraft is seen from behind and above, the horizon stays level through banks and loops, the
@@ -122,7 +138,7 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 ## Retractable gear (F-16)
 
 - [ ] F-16, keyboard: G raises the gear (OSD "TRAIN EN MOUVEMENT" for about 5 s, then "TRAIN RENTRÉ"), G again lowers it; the legs fold forward and vanish when stowed.
-- [ ] Radio screen: "Interrupteur « train »", flip the chosen switch to gear up; in flight the switch position sets the gear.
+- [ ] Gear switch (see "Radio switches"): flip to Up; the legs fold forward and vanish when stowed.
 - [ ] Start or reset (R) with the gear switch left up: the gear stays down until the switch is put down, then obeys it.
 - [ ] Gear up on the runway: the jet sinks onto its belly without a crash message; gear down in flight costs speed.
 - [ ] Trainer, sport, 3D, wing: G does nothing and the OSD shows no gear line.

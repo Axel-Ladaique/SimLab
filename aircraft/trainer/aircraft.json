@@ -6,11 +6,11 @@
   "inertia": { "roll": 0.14, "yaw": 0.33, "pitch": 0.22 },
   "surfaces": [
     { "name": "wing", "role": "wing", "root": [0.4825, 0, 0.12], "span": 0.75, "rootChord": 0.35, "tipChord": 0.35,
-      "dihedralDeg": 5, "incidenceDeg": 1.0, "airfoil": "clarky", "segments": 6, "mirror": true },
+      "dihedralDeg": 3, "incidenceDeg": 1.0, "airfoil": "clarky", "segments": 6, "mirror": true },
     { "name": "stab", "role": "horizontalTail", "root": [1.35, 0, 0.02], "span": 0.26, "rootChord": 0.22, "tipChord": 0.18,
-      "incidenceDeg": 0.0, "airfoil": "naca0012", "segments": 3, "mirror": true },
+      "incidenceDeg": -1.0, "airfoil": "naca0012", "segments": 12, "mirror": true },
     { "name": "fin", "role": "verticalTail", "root": [1.38, 0, 0.03], "span": 0.22, "rootChord": 0.25, "tipChord": 0.14,
-      "sweepDeg": 25, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 3, "mirror": false }
+      "sweepDeg": 25, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 12, "mirror": false }
   ],
   "controls": [
     { "name": "aileronRight", "surface": "wing", "side": "right", "chordFraction": 0.25, "spanStart": 0.4, "spanEnd": 0.95,
@@ -31,8 +31,8 @@
   ],
   "hull": [
     { "name": "nose", "position": [0, 0, 0], "tag": "nose" },
-    { "name": "wingtipLeft", "position": [0.4825, -0.75, 0.185], "tag": "wingtip" },
-    { "name": "wingtipRight", "position": [0.4825, 0.75, 0.185], "tag": "wingtip" },
+    { "name": "wingtipLeft", "position": [0.4825, -0.75, 0.159], "tag": "wingtip" },
+    { "name": "wingtipRight", "position": [0.4825, 0.75, 0.159], "tag": "wingtip" },
     { "name": "tail", "position": [1.45, 0, 0], "tag": "tail" },
     { "name": "finTop", "position": [1.48, 0, 0.25], "tag": "tail" },
     { "name": "belly", "position": [0.5, 0, -0.08], "tag": "belly" },

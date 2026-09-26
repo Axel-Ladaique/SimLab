@@ -19,6 +19,24 @@ public static class Interpolation
         return ys[lo] + t * (ys[hi] - ys[lo]);
     }
 
+    /// <summary>
+    /// Interval of a strictly increasing axis (at least two points) holding x, clamped to the ends: x lies between
+    /// xs[Index] and xs[Index + 1] at fraction Weight (0..1).
+    /// </summary>
+    public static (int Index, double Weight) Locate(double[] xs, double x)
+    {
+        int n = xs.Length;
+        if (x <= xs[0]) return (0, 0);
+        if (x >= xs[n - 1]) return (n - 2, 1);
+        int lo = 0, hi = n - 1;
+        while (hi - lo > 1)
+        {
+            int mid = (lo + hi) >> 1;
+            if (xs[mid] <= x) lo = mid; else hi = mid;
+        }
+        return (lo, (x - xs[lo]) / (xs[hi] - xs[lo]));
+    }
+
     public static void RequireIncreasing(double[] xs, string what)
     {
         for (int i = 1; i < xs.Length; i++)

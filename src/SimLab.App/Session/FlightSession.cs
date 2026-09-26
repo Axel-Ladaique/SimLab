@@ -79,16 +79,16 @@ public sealed class FlightSession : IDisposable
         ResetCount++;
     }
 
-    public void Handle(SwitchAction action)
+    /// <summary>Reset, pause and wind commands; camera and OSD belong to the flight scene.</summary>
+    public void Handle(FlightCommand command)
     {
-        switch (action)
+        switch (command.Kind)
         {
-            case SwitchAction.Reset: Reset(); break;
-            case SwitchAction.Pause: Paused = !Paused; break;
-            case SwitchAction.ToggleWind: SetWind(!WindEnabled); break;
-            case SwitchAction.NextCamera: break;
-            case SwitchAction.GearUp: break;
-            case SwitchAction.Flaps: break;
+            case FlightCommandKind.Reset: Reset(); break;
+            case FlightCommandKind.TogglePause: Paused = !Paused; break;
+            case FlightCommandKind.SetPause: Paused = command.On; break;
+            case FlightCommandKind.ToggleWind: SetWind(!WindEnabled); break;
+            case FlightCommandKind.SetWind: SetWind(command.On); break;
         }
     }
 

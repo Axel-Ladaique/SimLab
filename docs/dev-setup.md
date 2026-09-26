@@ -46,4 +46,5 @@ User data (settings, radio profiles, flight recordings): `~/Library/Application 
 | `--screenshot-settings <png>` | Screenshot of the settings screen |
 | `--screenshot-sound <png>` | Screenshot of the sound screen (8 volume sliders and the Listen preview toggle) |
 | `--screenshot-radio-preview <id> <png>` | Radio screen with the control check showing aircraft `<id>`, driven by fixed commands (throttle 0.4, right aileron 0.8, up elevator 0.8, right rudder 0.8) instead of the radio |
+| `--screenshot-radio <tab> <png>` | Radio screen on tab 0 (radio), 1 (channels) or 2 (switches) |
 | `--render-audio <id> <wav>` | Headless scripted takeoff (idle, throttle ramp, climb, motor-off glide from 14 s), writes the synthesized aircraft voice to a 20 s mono WAV |

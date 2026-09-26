@@ -111,8 +111,12 @@ public sealed class AircraftLoaderTests : IDisposable
             """));
 
     [Fact]
-    public void Zero_oswald_factor_is_rejected()
-        => AssertRejected(Edit(Aircraft(), "\"segments\": 4,", "\"segments\": 4, \"oswald\": 0,"));
+    public void Removed_oswald_factor_is_rejected()
+    {
+        var json = Edit(Aircraft(), "\"segments\": 4,", "\"segments\": 4, \"oswald\": 0.9,");
+        var ex = Assert.Throws<InvalidDataException>(() => AircraftLoader.Load(Write(json)));
+        Assert.Contains("oswald is no longer used", ex.Message);
+    }
 
     [Fact]
     public void Surface_without_segments_is_rejected()

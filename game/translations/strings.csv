@@ -34,14 +34,6 @@ RADIO_NEXT,Suivant,Next
 RADIO_CANCEL,Annuler,Cancel
 RADIO_SAVED,Calibration enregistrée.,Calibration saved.
 RADIO_MODE,Mode des manches,Stick mode
-RADIO_BIND_RESET,Interrupteur « reset »,Reset switch
-RADIO_BIND_PAUSE,Interrupteur « pause »,Pause switch
-RADIO_BIND_WIND,Interrupteur « vent »,Wind switch
-RADIO_BIND_CAMERA,Interrupteur « vue »,View switch
-RADIO_BIND_FLAPS,Interrupteur « volets » (basculez sur atterrissage),Flap switch (flip to landing)
-RADIO_BIND_GEAR,Interrupteur « train » (basculez sur rentré),Gear switch (flip to gear up)
-RADIO_BIND_WAIT,Basculez l'interrupteur maintenant…,Flip the switch now…
-RADIO_BIND_DONE,Interrupteur assigné.,Switch assigned.
 RADIO_AXES,Voies brutes,Raw axes
 RADIO_HELP,"EdgeTX : Réglages radio → USB → mode Joystick. Créez un modèle « Simulateur » sans mixage (voies 1 à 4 = manches). Si la radio n'apparaît pas, débranchez-la et rebranchez-la puis choisissez « USB Joystick (HID) ».","EdgeTX: Radio settings → USB → Joystick mode. Create a ""Simulator"" model with no mixes (channels 1–4 = sticks). If the radio does not show up, unplug and replug it, then choose ""USB Joystick (HID)""."
 CAL_CENTER,"Lâchez les manches (gaz où vous voulez), puis Suivant.","Release the sticks (throttle anywhere), then Next."
@@ -82,6 +74,7 @@ SND_NO_AIRCRAFT,Aucun avion disponible pour l'écoute.,No aircraft available for
 SND_NO_POWER,"{0} : pas de groupe motopropulseur à écouter.","{0}: no power plant to preview."
 HUD_PAUSED,PAUSE,PAUSED
 OSD_THROTTLE,GAZ,THR
+OSD_THROTTLE_CUT,GAZ COUPÉS,THR CUT
 OSD_FUEL,CARBURANT,FUEL
 OSD_FLAPS_UP,VOLETS RENTRÉS,FLAPS UP
 OSD_FLAPS_HALF,VOLETS MI-COURSE,FLAPS HALF
@@ -160,3 +153,46 @@ CHANNEL_ELEVATOR,profondeur,elevator
 CHANNEL_RUDDER,dérive,rudder
 CHANNEL_FLAPS,volets,flaps
 CHANNEL_THROTTLE,gaz,throttle
+RADIO_TAB_RADIO,Radio,Radio
+RADIO_TAB_CHANNELS,Voies,Channels
+RADIO_TAB_SWITCHES,Interrupteurs,Switches
+RADIO_LEARN,Apprendre,Learn
+RADIO_CLEAR,Effacer,Clear
+RADIO_LEARN_PROMPT,"« {0} » : basculez l'interrupteur dans toutes ses positions en marquant un temps sur chacune, puis Suivant.","{0}: flip the switch through all its positions, pausing on each, then Next."
+RADIO_LEARN_NONE,"Aucun interrupteur n'a bougé. Recommencez en marquant un temps sur chaque position.",No switch moved. Try again and pause on each position.
+RADIO_LEARN_DONE,"Interrupteur appris. Choisissez l'effet de chaque position.",Switch learned. Choose what each position does.
+RADIO_SWITCH_NONE,non assigné,not assigned
+RADIO_SOURCE_AXIS,Voie {0},Channel {0}
+RADIO_SOURCE_BUTTON,Bouton {0},Button {0}
+RADIO_SWITCHES_HELP,"Basculez un interrupteur : sa position active s'allume. « — » = sans effet.","Flip a switch: its active position lights up. “—” = no effect."
+RADIO_CHANNEL_FREE,libre,free
+SWITCH_NO_EFFECT,—,—
+STICK_THROTTLE,Gaz,Throttle
+STICK_AILERON,Ailerons,Aileron
+STICK_ELEVATOR,Profondeur,Elevator
+STICK_RUDDER,Dérive,Rudder
+SWITCH_GEAR,Train,Gear
+SWITCH_GEAR_DOWN,Sorti,Down
+SWITCH_GEAR_UP,Rentré,Up
+SWITCH_FLAPS,Volets,Flaps
+SWITCH_FLAPS_UP,Rentrés,Up
+SWITCH_FLAPS_TAKEOFF,Décollage,Takeoff
+SWITCH_FLAPS_LANDING,Atterrissage,Landing
+SWITCH_THROTTLE_CUT,Coupure gaz,Throttle cut
+SWITCH_THROTTLE_CUT_ARMED,Gaz armés,Armed
+SWITCH_THROTTLE_CUT_CUT,Gaz coupés,Cut
+SWITCH_CAMERA,Caméra,Camera
+SWITCH_CAMERA_GROUND,Sol,Ground
+SWITCH_CAMERA_FPV,FPV,FPV
+SWITCH_CAMERA_CHASE,Poursuite,Chase
+SWITCH_OSD,OSD,OSD
+SWITCH_OSD_ON,Affiché,Shown
+SWITCH_OSD_OFF,Masqué,Hidden
+SWITCH_WIND,Vent,Wind
+SWITCH_WIND_ON,Actif,On
+SWITCH_WIND_OFF,Coupé,Off
+SWITCH_PAUSE,Pause,Pause
+SWITCH_PAUSE_RUNNING,En vol,Running
+SWITCH_PAUSE_PAUSED,En pause,Paused
+SWITCH_RESET,Reset,Reset
+SWITCH_RESET_RESET,Reset,Reset

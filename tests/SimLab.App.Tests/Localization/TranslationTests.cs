@@ -37,9 +37,19 @@ public class TranslationTests
         var t = Shipped();
         var keys = t.Keys.ToHashSet();
         foreach (CrashCause cause in Enum.GetValues<CrashCause>()) Assert.Contains(FlightDataFormatter.CrashKey(cause), keys);
-        foreach (var k in new[] { "OSD_THROTTLE", "VIEW_GROUND", "VIEW_FPV", "VIEW_CHASE", "HUD_VIEW_BUTTON", "HUD_BUTTON",
+        foreach (var k in new[] { "OSD_THROTTLE", "OSD_THROTTLE_CUT", "VIEW_GROUND", "VIEW_FPV", "VIEW_CHASE", "HUD_VIEW_BUTTON", "HUD_BUTTON",
                      "CAL_CENTER", "CAL_EXTREMES", "CAL_ID_THROTTLE", "CAL_ID_AILERON", "CAL_ID_ELEVATOR", "CAL_ID_RUDDER",
                      "CAL_DONE", "STICK_LEFT", "STICK_RIGHT" })
+            Assert.Contains(k, keys);
+        foreach (var f in SwitchStates.All)
+        {
+            Assert.Contains(SwitchStates.FunctionKey(f), keys);
+            for (int s = 0; s < SwitchStates.Count(f); s++) Assert.Contains(SwitchStates.StateKey(f, s), keys);
+        }
+        foreach (var k in new[] { "RADIO_TAB_RADIO", "RADIO_TAB_CHANNELS", "RADIO_TAB_SWITCHES", "RADIO_LEARN", "RADIO_CLEAR",
+                     "RADIO_LEARN_PROMPT", "RADIO_LEARN_NONE", "RADIO_LEARN_DONE", "RADIO_SWITCH_NONE", "RADIO_SOURCE_AXIS",
+                     "RADIO_SOURCE_BUTTON", "RADIO_SWITCHES_HELP", "SWITCH_NO_EFFECT", "STICK_THROTTLE", "STICK_AILERON",
+                     "STICK_ELEVATOR", "STICK_RUDDER", "RADIO_CHANNEL_FREE" })
             Assert.Contains(k, keys);
     }
 

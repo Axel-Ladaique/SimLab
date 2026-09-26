@@ -82,8 +82,12 @@ public class AircraftSoundTests
         Assert.Contains(first, k => k != ImpactKind.Crash);
         // The same drop after a reset (sim time jumps back) must sound the same: one crash again, and the
         // touchdown events must not be held back by the refractory time of the first drop.
+        // Same frames between the reset and the drop as the first time, so the aircraft starts the drop in the same state.
         session.Reset();
         session.Tick(1.0 / 60, ControlInputs.Neutral);
+        sound.Update(1.0 / 60);
+        session.Tick(1.0 / 60, ControlInputs.Neutral);
+        sound.Update(1.0 / 60);
         Assert.Equal(first, ImpactsAfterDrop(session, sound));
     }
     [Fact]
@@ -94,7 +98,7 @@ public class AircraftSoundTests
         Run(session, sound, 1.5, ControlInputs.Neutral with { Throttle = 1 });
         ImpactsAfterDrop(session, sound);
 
-        session.Handle(SwitchAction.ToggleWind);
+        session.Handle(new FlightCommand(FlightCommandKind.ToggleWind));
         for (int i = 0; i < 30; i++)
         {
             session.Tick(1.0 / 60, ControlInputs.Neutral);
@@ -110,7 +114,7 @@ public class AircraftSoundTests
         using var session = Session("trainer");
         var sound = new AircraftSound(session, SoundSpec.Default);
         var before = Run(session, sound, 1.5, ControlInputs.Neutral with { Throttle = 1 });
-        session.Handle(SwitchAction.ToggleWind);
+        session.Handle(new FlightCommand(FlightCommandKind.ToggleWind));
         session.Tick(1.0 / 60, ControlInputs.Neutral with { Throttle = 1 });
         var after = sound.Update(1.0 / 60);
         Assert.True(after.Synth.PropGain > 0.8 * before.Synth.PropGain, $"{before.Synth.PropGain} -> {after.Synth.PropGain}");
@@ -125,7 +129,7 @@ public class AircraftSoundTests
         Run(session, sound, 1, ControlInputs.Neutral);
         var first = Hop(session, sound);
         Assert.NotEmpty(first);
-        session.Handle(SwitchAction.ToggleWind);
+        session.Handle(new FlightCommand(FlightCommandKind.ToggleWind));
         Assert.Equal(first, Hop(session, sound));
     }
 
