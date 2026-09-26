@@ -3,19 +3,20 @@ render_mode cull_disabled;
 
 // Surface weights, indexed by SurfaceKind: COLOR = (grass, mowed grass, dirt, gravel),
 // CUSTOM0 = (wheat, ploughed, rock, snow), CUSTOM1.r = needles.
-// Texture layers (built by TerrainMaterial.cs): 0 grass, 1 dirt, 2 gravel, 3 soil, 4 rock, 5 snow, 6 needles.
 uniform sampler2DArray albedo_layers : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2DArray normal_layers : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 // Multiplier over each surface's layer colour (MapAmbience.TerrainTints). Some are pushed far past a "natural"
 // multiplier: the sky ambient desaturates and cools textured, normal-mapped surfaces well below a flat-coloured
 // vertex of the same albedo (wheat is tinted grass and needed 3.0/1.8/0.15 to read golden).
 uniform vec3 tints[9];
+// Texture array slot of each surface kind (set by TerrainMaterial.cs): grass, mowed grass and wheat share the
+// grass layer; a layer with no texture of its own (rock and snow so far) shares its fallback's slot instead of
+// occupying a redundant copy of it, so the tint is still per kind even though the layer is shared.
+uniform int layer_index[9];
 uniform float tile_metres = 4.0;
 
 const int SURFACES = 9;
 const int ROCK = 6;
-// Texture layer of each surface kind: grass, mowed grass and wheat are tinted grass.
-const int LAYER[9] = { 0, 0, 1, 2, 0, 3, 4, 5, 6 };
 
 varying vec4 w0;
 varying vec4 w1;
@@ -84,7 +85,7 @@ void fragment() {
     vec3 n = vec3(0.0);
     for (int k = 0; k < SURFACES; k++) {
         if (w[k] <= 0.001) continue;
-        int layer = LAYER[k];
+        int layer = layer_index[k];
         vec3 a = albedo(layer, ground);
         vec3 t = normal_tex(layer, ground);
         if (k == ROCK && steep > 0.001) {

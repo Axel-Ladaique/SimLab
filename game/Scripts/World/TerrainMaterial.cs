@@ -12,49 +12,73 @@ public static class TerrainMaterial
     const string Folder = "res://Textures/terrain/";
     const int LayerSize = 1024;
 
-    /// <summary>File stem of each texture layer, with the stem used instead while that file does not exist.
-    /// The shader's LAYER table maps each SurfaceKind to one of these indices.</summary>
+    /// <summary>File stem of each named layer, with the stem used instead while that file does not exist. In
+    /// <see cref="SurfaceKind"/> order (grass, mowed grass and wheat all read the grass layer).</summary>
     static readonly (string Stem, string Fallback)[] Layers =
     {
-        ("grass", "grass"),   // 0
-        ("dirt", "dirt"),     // 1
-        ("gravel", "gravel"), // 2
-        ("soil", "soil"),     // 3
-        ("rock", "gravel"),   // 4
-        ("snow", "gravel"),   // 5
-        ("needles", "soil"),  // 6
+        ("grass", "grass"),   // 0: grass, mowed grass, wheat
+        ("dirt", "dirt"),     // 1: dirt
+        ("gravel", "gravel"), // 2: gravel
+        ("soil", "soil"),     // 3: ploughed
+        ("rock", "gravel"),   // 4: rock
+        ("snow", "gravel"),   // 5: snow
+        ("needles", "soil"),  // 6: needles
     };
+
+    /// <summary>Named layer used by each <see cref="SurfaceKind"/>, indexing into <see cref="Layers"/>.</summary>
+    static readonly int[] KindLayer = { 0, 0, 1, 2, 0, 3, 4, 5, 6 };
 
     // Built once: the menu rebuilds the map scene on every visit.
     static Texture2DArray? _albedo, _normal;
+    static int[]? _slots;
 
     public static ShaderMaterial Create(MapAmbience ambience)
     {
-        _albedo ??= BuildArray("albedo");
-        _normal ??= BuildArray("normal");
+        // A missing layer's slot is decided once, from whether its own albedo file exists, and reused for both
+        // arrays and for the per-kind layer_index below, so a fallback (rock and snow onto gravel, needles onto
+        // soil) reads the same array slot as the layer it stands in for, rather than a redundant copy of it.
+        var slots = _slots ??= LayerSlots();
+        _albedo ??= BuildArray("albedo", slots);
+        _normal ??= BuildArray("normal", slots);
         var tints = ambience.TerrainTints ?? MapAmbience.DefaultTerrainTints;
         var material = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/terrain.gdshader") };
         material.SetShaderParameter("albedo_layers", _albedo);
         material.SetShaderParameter("normal_layers", _normal);
         material.SetShaderParameter("tints", tints.Select(t => new Vector3(t.R, t.G, t.B)).ToArray());
+        material.SetShaderParameter("layer_index", KindLayer.Select(named => slots[named]).ToArray());
         return material;
     }
 
-    static Texture2DArray BuildArray(string map)
+    /// <summary>Which array slot each named <see cref="Layers"/> entry occupies: its own slot when its albedo file
+    /// exists, otherwise the fallback layer's slot, so no layer that is only ever a stand-in gets one of its own.</summary>
+    static int[] LayerSlots()
     {
-        // Fallback layers share the same file; decode each file once.
-        var decoded = new Dictionary<string, Image>();
-        var images = new Godot.Collections.Array<Image>();
-        foreach (var (stem, fallback) in Layers)
+        var slotOfStem = new Dictionary<string, int>();
+        var slots = new int[Layers.Length];
+        for (int i = 0; i < Layers.Length; i++)
         {
+            var (stem, fallback) = Layers[i];
+            var resolved = ResourceLoader.Exists($"{Folder}{stem}_albedo.jpg") ? stem : fallback;
+            if (!slotOfStem.TryGetValue(resolved, out int slot)) slotOfStem[resolved] = slot = slotOfStem.Count;
+            slots[i] = slot;
+        }
+        return slots;
+    }
+
+    static Texture2DArray BuildArray(string map, int[] slots)
+    {
+        var images = new Image?[slots.Max() + 1];
+        for (int i = 0; i < Layers.Length; i++)
+        {
+            int slot = slots[i];
+            if (images[slot] is not null) continue;
+            var (stem, fallback) = Layers[i];
             var path = $"{Folder}{stem}_{map}.jpg";
             if (!ResourceLoader.Exists(path)) path = $"{Folder}{fallback}_{map}.jpg";
-            if (!decoded.TryGetValue(path, out var image))
-                decoded[path] = image = Uniform(GD.Load<Texture2D>(path).GetImage(), normal: map == "normal");
-            images.Add(image);
+            images[slot] = Uniform(GD.Load<Texture2D>(path).GetImage(), normal: map == "normal");
         }
         var array = new Texture2DArray();
-        var error = array.CreateFromImages(images);
+        var error = array.CreateFromImages(new Godot.Collections.Array<Image>(images!));
         if (error != Error.Ok) GD.PushError($"Terrain {map} texture array: {error}");
         return array;
     }
