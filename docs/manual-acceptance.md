@@ -65,6 +65,7 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
   it still shifts as it flies by.
 
 ## Maps
+
 - [ ] Flying close past a tree trunk (1–2 m) or over a treetop does not crash; flying into the crown does.
 - [ ] Flying into the hangar, a car or a power-line pole shows « Contre un obstacle »; into the wires, « Dans les câbles ».
 - [ ] The club shows textured grass, a striped runway, farmland, groves, poplars along the road and the power line.
