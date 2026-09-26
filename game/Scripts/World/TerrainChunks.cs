@@ -23,6 +23,12 @@ public static class TerrainChunks
     const float FadeMargin = 60f;
     const float SkirtDepth = 10f;
 
+    /// <summary>The custom-array format for COLOR/CUSTOM0/CUSTOM1 packed as RGBA floats; shared with
+    /// <see cref="BackdropMesh"/>, which uses the same vertex layout.</summary>
+    internal static readonly Godot.Mesh.ArrayFormat CustomVertexFormat =
+        (Godot.Mesh.ArrayFormat)((long)Godot.Mesh.ArrayCustomFormat.RgbaFloat << (int)Godot.Mesh.ArrayFormat.FormatCustom0Shift)
+        | (Godot.Mesh.ArrayFormat)((long)Godot.Mesh.ArrayCustomFormat.RgbaFloat << (int)Godot.Mesh.ArrayFormat.FormatCustom1Shift);
+
     public static void Add(Node3D root, FieldMap map, Material material)
     {
         var grid = map.Grid;
@@ -165,10 +171,8 @@ public static class TerrainChunks
             arrays[(int)Godot.Mesh.ArrayType.Custom0] = custom0;
             arrays[(int)Godot.Mesh.ArrayType.Custom1] = custom1;
             arrays[(int)Godot.Mesh.ArrayType.Index] = indices;
-            var format = (Godot.Mesh.ArrayFormat)((long)Godot.Mesh.ArrayCustomFormat.RgbaFloat << (int)Godot.Mesh.ArrayFormat.FormatCustom0Shift)
-                | (Godot.Mesh.ArrayFormat)((long)Godot.Mesh.ArrayCustomFormat.RgbaFloat << (int)Godot.Mesh.ArrayFormat.FormatCustom1Shift);
             var mesh = new ArrayMesh();
-            mesh.AddSurfaceFromArrays(Godot.Mesh.PrimitiveType.Triangles, arrays, flags: format);
+            mesh.AddSurfaceFromArrays(Godot.Mesh.PrimitiveType.Triangles, arrays, flags: CustomVertexFormat);
             return mesh;
         }
 

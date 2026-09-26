@@ -68,7 +68,7 @@ public partial class MenuAircraftView : ControlPreview
         Init(Vector2.Zero); // covers the parent's area in physical pixels: see FitToPixels
         Camera.Fov = FovDeg;
         Camera.Near = 0.1f;
-        Camera.Far = 4000f;
+        Camera.Far = 16000f;
     }
 
     protected override void BuildScenery(SubViewport scene)

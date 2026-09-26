@@ -20,7 +20,9 @@ public static class MapBuilder
         var sun = new DirectionalLight3D { ShadowEnabled = true, LightEnergy = 1.0f, DirectionalShadowMaxDistance = ShadowDistance };
         AimSun(sun, conditions);
         root.AddChild(sun);
-        TerrainChunks.Add(root, map, TerrainMaterial.Create(map.Ambience));
+        var terrainMaterial = TerrainMaterial.Create(map.Ambience);
+        TerrainChunks.Add(root, map, terrainMaterial);
+        BackdropMesh.Add(root, map, terrainMaterial);
         GroundOverlays.Add(root, map);
         PropLayer.Add(root, map.Props);
         var w = map.Layout.WindsockPosition;

@@ -1,0 +1,101 @@
+using System;
+using Godot;
+using SimLab.App.Maps;
+using SimLab.Flight.Geometry;
+
+namespace SimLab.Game.World;
+
+/// <summary>
+/// Draws a polar ring of far scenery beyond the map's grid, so the horizon never shows a cliff at the grid edge.
+/// The inner boundary follows the grid's square edge (height from <see cref="HeightGrid.Height"/>, clamped to the
+/// edge there, for a seamless join with <see cref="TerrainChunks"/>); rings beyond it grow geometrically out to
+/// <see cref="OuterRadius"/>, with height and surface mix from <see cref="FieldMap.Backdrop"/> and
+/// <see cref="FieldMap.BackdropSurface"/>. Same vertex format as the terrain chunks, same material; no LOD and no
+/// shadow casting — it is scenery, seen but never touched.
+/// </summary>
+public static class BackdropMesh
+{
+    public const double OuterRadius = 15000;
+    const int AngularSegments = 256;
+    const int RingCount = 24;
+
+    public static void Add(Node3D root, FieldMap map, Material material)
+    {
+        var backdrop = map.Backdrop;
+        if (backdrop is null) return;
+        var surface = map.BackdropSurface ?? map.Surface;
+        var grid = map.Grid;
+
+        int rows = RingCount + 1, cols = AngularSegments, count = rows * cols;
+        double innerRadius = grid.HalfSize * Math.Sqrt(2);
+        double growth = Math.Pow(OuterRadius / innerRadius, 1.0 / (RingCount - 1));
+
+        var verts = new Vector3[count];
+        var normals = new Vector3[count];
+        var colors = new Color[count];
+        var custom0 = new float[4 * count];
+        var custom1 = new float[4 * count];
+
+        for (int c = 0; c < cols; c++)
+        {
+            double theta = 2 * Math.PI * c / cols;
+            double cos = Math.Cos(theta), sin = Math.Sin(theta);
+            for (int r = 0; r < rows; r++)
+            {
+                double x, y, h;
+                if (r == 0)
+                {
+                    // The square edge along this ray: the boundary is hit where the larger axis reaches HalfSize.
+                    double t = grid.HalfSize / Math.Max(Math.Abs(cos), Math.Abs(sin));
+                    x = t * cos; y = t * sin;
+                    h = grid.Height(x, y);
+                }
+                else
+                {
+                    double radius = innerRadius * Math.Pow(growth, r - 1);
+                    x = radius * cos; y = radius * sin;
+                    h = backdrop(x, y);
+                }
+
+                int v = r * cols + c;
+                verts[v] = new Vec3(x, y, h).WorldToGodot();
+                normals[v] = Vector3.Up;
+                var w = surface(x, y);
+                colors[v] = new Color((float)w.Grass, (float)w.MowedGrass, (float)w.Dirt, (float)w.Gravel);
+                custom0[4 * v] = (float)w.Wheat; custom0[4 * v + 1] = (float)w.Ploughed;
+                custom0[4 * v + 2] = (float)w.Rock; custom0[4 * v + 3] = (float)w.Snow;
+                custom1[4 * v] = (float)w.Needles;
+            }
+        }
+
+        var indices = new int[6 * (rows - 1) * cols];
+        int n = 0;
+        for (int r = 0; r < rows - 1; r++)
+        for (int c = 0; c < cols; c++)
+        {
+            int c1 = (c + 1) % cols;
+            int a = r * cols + c, b = r * cols + c1, cc = (r + 1) * cols + c, d = (r + 1) * cols + c1;
+            // Same winding as TerrainChunks: the a–d diagonal, front face up.
+            indices[n++] = a; indices[n++] = d; indices[n++] = b;
+            indices[n++] = a; indices[n++] = cc; indices[n++] = d;
+        }
+
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Godot.Mesh.ArrayType.Max);
+        arrays[(int)Godot.Mesh.ArrayType.Vertex] = verts;
+        arrays[(int)Godot.Mesh.ArrayType.Normal] = normals;
+        arrays[(int)Godot.Mesh.ArrayType.Color] = colors;
+        arrays[(int)Godot.Mesh.ArrayType.Custom0] = custom0;
+        arrays[(int)Godot.Mesh.ArrayType.Custom1] = custom1;
+        arrays[(int)Godot.Mesh.ArrayType.Index] = indices;
+        var mesh = new ArrayMesh();
+        mesh.AddSurfaceFromArrays(Godot.Mesh.PrimitiveType.Triangles, arrays, flags: TerrainChunks.CustomVertexFormat);
+
+        root.AddChild(new MeshInstance3D
+        {
+            Mesh = mesh,
+            MaterialOverride = material,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        });
+    }
+}

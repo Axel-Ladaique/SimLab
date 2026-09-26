@@ -83,7 +83,7 @@ public partial class FlightScene : Node3D
         _cameras.Reset(Context());
         _resetCount = _session.ResetCount;
         _retrackDoppler = true;
-        _camera = new Camera3D { Current = true, Near = 0.1f, Far = 4000f, Fov = (float)services.Settings.FovDeg };
+        _camera = new Camera3D { Current = true, Near = 0.1f, Far = 16000f, Fov = (float)services.Settings.FovDeg };
         AddChild(_camera);
         _hud = new FlightHud();
         _hud.Init(ToggleHud, NextCamera, manageMouse: script is null);

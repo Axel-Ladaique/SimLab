@@ -143,6 +143,16 @@ public class ClubMapTests
     }
 
     [Fact]
+    public void Backdrop_height_joins_the_grid_edge_and_fades_to_zero_beyond_300m()
+    {
+        foreach (var (x, y) in new[] { (ClubMap.HalfSize, 0.0), (0.0, ClubMap.HalfSize), (ClubMap.HalfSize, 400.0), (-ClubMap.HalfSize, -300.0) })
+            Assert.Equal(Club.Grid.Height(x, y), ClubMap.BackdropHeight(x, y), 0.01);
+
+        Assert.Equal(0, ClubMap.BackdropHeight(ClubMap.HalfSize + 301, 0));
+        Assert.Equal(0, ClubMap.BackdropHeight(ClubMap.HalfSize + 2000, ClubMap.HalfSize + 2000));
+    }
+
+    [Fact]
     public void Catalog_finds_loads_and_falls_back_to_the_club()
     {
         Assert.Equal("club", FieldCatalog.Find("moon").Id);

@@ -17,6 +17,7 @@ public static class ClubMap
     public const double BlendWidth = 300;
     public const double HillAmplitude = 8;
     public const double FarmlandRadius = 350;
+    public const double BackdropBlend = 300;
     public const double RoadY = -220;
     public const double TrackX = -50;
     public const double PowerLineY = -229;
@@ -42,7 +43,21 @@ public static class ClubMap
         var props = new List<Prop>();
         props.AddRange(ClubPlanting.Plant(Seed));
         props.AddRange(ClubFurniture.Place());
-        return new FieldMap(Id, "FIELD_CLUB", HeightGrid.Sample(HalfSize, 5, Height), Surface, Layout, Ambience, props, Overlays);
+        return new FieldMap(Id, "FIELD_CLUB", HeightGrid.Sample(HalfSize, 5, Height), Surface, Layout, Ambience, props, Overlays)
+        {
+            Backdrop = BackdropHeight,
+            BackdropSurface = (x, y) => SurfaceWeights.Only(ClubParcels.KindAt(x, y)),
+        };
+    }
+
+    /// <summary>Height of the far backdrop ring: the grid edge height, faded to 0 over <see cref="BackdropBlend"/>
+    /// metres beyond the edge, so the far scenery drops to the horizon instead of trailing the relief outward.</summary>
+    public static double BackdropHeight(double x, double y)
+    {
+        double edgeHeight = Height(Math.Clamp(x, -HalfSize, HalfSize), Math.Clamp(y, -HalfSize, HalfSize));
+        double dx = Math.Max(Math.Abs(x) - HalfSize, 0), dy = Math.Max(Math.Abs(y) - HalfSize, 0);
+        double beyond = Math.Sqrt(dx * dx + dy * dy);
+        return edgeHeight * (1 - SmoothStep(beyond / BackdropBlend));
     }
 
     /// <summary>Ground height at (x east, y north). The hill formula was authored with z = south, hence z = −y.</summary>
