@@ -43,23 +43,28 @@ public static class BackdropMesh
             for (int r = 0; r < rows; r++)
             {
                 double x, y, h;
+                Vector3 normal;
                 if (r == 0)
                 {
                     // The square edge along this ray: the boundary is hit where the larger axis reaches HalfSize.
                     double t = grid.HalfSize / Math.Max(Math.Abs(cos), Math.Abs(sin));
                     x = t * cos; y = t * sin;
                     h = grid.Height(x, y);
+                    normal = GridNormal(grid, x, y);
                 }
                 else
                 {
                     double radius = innerRadius * Math.Pow(growth, r - 1);
                     x = radius * cos; y = radius * sin;
                     h = backdrop(x, y);
+                    // Finite-difference step comparable to the mesh spacing at this ring (its own tangential spacing).
+                    double step = Math.Max(2 * Math.PI * radius / cols, 1);
+                    normal = BackdropNormal(backdrop, x, y, step);
                 }
 
                 int v = r * cols + c;
                 verts[v] = new Vec3(x, y, h).WorldToGodot();
-                normals[v] = Vector3.Up;
+                normals[v] = normal;
                 var w = surface(x, y);
                 colors[v] = new Color((float)w.Grass, (float)w.MowedGrass, (float)w.Dirt, (float)w.Gravel);
                 custom0[4 * v] = (float)w.Wheat; custom0[4 * v + 1] = (float)w.Ploughed;
@@ -75,9 +80,11 @@ public static class BackdropMesh
         {
             int c1 = (c + 1) % cols;
             int a = r * cols + c, b = r * cols + c1, cc = (r + 1) * cols + c, d = (r + 1) * cols + c1;
-            // Same winding as TerrainChunks: the a–d diagonal, front face up.
-            indices[n++] = a; indices[n++] = d; indices[n++] = b;
-            indices[n++] = a; indices[n++] = cc; indices[n++] = d;
+            // b − a is tangential (angle), cc − a is radial (outward): tangential × radial = −up here, the
+            // opposite handedness from TerrainChunks' x (east) × y (north) = up, so the winding is mirrored
+            // relative to the chunks to keep the front face up.
+            indices[n++] = a; indices[n++] = b; indices[n++] = d;
+            indices[n++] = a; indices[n++] = d; indices[n++] = cc;
         }
 
         var arrays = new Godot.Collections.Array();
@@ -97,5 +104,28 @@ public static class BackdropMesh
             MaterialOverride = material,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         });
+    }
+
+    /// <summary>Smooth normal at (x, y) on the grid, by the same central-difference formula
+    /// <see cref="TerrainChunks"/> uses on its border vertices, one-sided (clamped to the grid) at its edges —
+    /// so the inner boundary row shades exactly like the chunk border it joins.</summary>
+    static Vector3 GridNormal(HeightGrid grid, double x, double y)
+    {
+        double step = grid.Step;
+        double xw = Math.Max(x - step, grid.MinX), xe = Math.Min(x + step, grid.MaxX);
+        double ys = Math.Max(y - step, grid.MinY), yn = Math.Min(y + step, grid.MaxY);
+        double dx = (grid.Height(xe, y) - grid.Height(xw, y)) / (xe - xw);
+        double dy = (grid.Height(x, yn) - grid.Height(x, ys)) / (yn - ys);
+        return new Vec3(-dx, -dy, 1).Normalized().WorldToGodot();
+    }
+
+    /// <summary>Smooth normal at (x, y) on the backdrop, by central difference over <paramref name="step"/> (the
+    /// ring's own local spacing, so the estimate matches what the mesh actually shows, not a finer or coarser
+    /// slope).</summary>
+    static Vector3 BackdropNormal(Func<double, double, double> backdrop, double x, double y, double step)
+    {
+        double dx = (backdrop(x + step, y) - backdrop(x - step, y)) / (2 * step);
+        double dy = (backdrop(x, y + step) - backdrop(x, y - step)) / (2 * step);
+        return new Vec3(-dx, -dy, 1).Normalized().WorldToGodot();
     }
 }
