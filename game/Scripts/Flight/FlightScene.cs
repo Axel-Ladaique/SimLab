@@ -172,7 +172,9 @@ public partial class FlightScene : Node3D
             _camera.DopplerTracking = Camera3D.DopplerTrackingEnum.IdleStep;
             _retrackDoppler = false;
         }
-        _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
+        var w = _session.Map.Layout.WindsockPosition;
+        double ground = _session.Terrain.Height(w.X, w.Y);
+        _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(new Vec3(w.X, w.Y, ground + WindsockNode.PoleHeight), WindsockNode.PoleHeight)));
         var osd = OsdData.From(_session.Aircraft, _session.DisplayState, _session.HeightAgl, _session.FlightTime,
             LastInput.Controls.Throttle, _session.Map.Layout.PilotPosition, LastInput.Controls.Flap);
         _hud.UpdateHud(_session, LastInput, osd, HudShown, _cameras.Current);

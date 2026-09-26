@@ -30,7 +30,8 @@ public sealed class FlightSession : IDisposable
         Conditions = conditions;
         Map = map;
         Terrain = map.Terrain;
-        _windy = new FlightEnvironment(Terrain, new WindField(conditions.ToWindSettings(), conditions.Seed), fieldElevationM: map.DatumElevationM);
+        var terrainWind = new TerrainWind(Terrain, map.Grid.MinX, map.Grid.MinY, map.Grid.MaxX, map.Grid.MaxY, conditions.WindFromDeg);
+        _windy = new FlightEnvironment(Terrain, new WindField(conditions.ToWindSettings(), conditions.Seed, terrainWind), fieldElevationM: map.DatumElevationM);
         _calm = new FlightEnvironment(Terrain, new WindField(new WindSettings(), conditions.Seed), fieldElevationM: map.DatumElevationM);
         Aircraft = new Aircraft(definition);
         Simulation = new Simulation(Aircraft, _windy);

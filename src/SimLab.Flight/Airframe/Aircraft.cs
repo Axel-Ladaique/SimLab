@@ -111,7 +111,7 @@ public sealed class Aircraft
 
         var start = State;
         double heightAgl = start.Position.Z - env.Terrain.Height(start.Position.X, start.Position.Y);
-        var wind = env.Wind.At(heightAgl);
+        var wind = env.Wind.At(start.Position, heightAgl);
         LastWind = wind;
         double density = env.Density(start.Position.Z);
 
