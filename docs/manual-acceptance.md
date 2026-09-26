@@ -64,6 +64,13 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] In FPV the motor is steady, no Doppler; in chase the pitch no longer drops steadily; from the ground view
   it still shifts as it flies by.
 
+## Maps
+- [ ] Flying close past a tree trunk (1–2 m) or over a treetop does not crash; flying into the crown does.
+- [ ] Flying into the hangar, a car or a power-line pole shows « Contre un obstacle »; into the wires, « Dans les câbles ».
+- [ ] The club shows textured grass, a striped runway, farmland, groves, poplars along the road and the power line.
+- [ ] F3 shows ≥ 60 fps in the pilot view and in the chase view over the groves.
+- [ ] The « Terrain » chip on the home screen rebuilds the background view (only the club for now).
+
 ## HUD
 
 - [ ] Existing installs keep their saved choice: if the OSD is off at first, press H once (new installs start with it on).
