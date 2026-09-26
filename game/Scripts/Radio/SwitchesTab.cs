@@ -143,7 +143,7 @@ public partial class SwitchesTab : VBoxContainer
         _learner = new SwitchLearner();
         _learning = function;
         _learnGuid = pad.Guid;
-        _prompt.Text = string.Format(Ui.T("RADIO_LEARN_PROMPT"), Ui.T(SwitchStates.FunctionKey(function)));
+        _prompt.Text = Ui.T(SwitchStates.FunctionKey(function)) + " — " + Ui.T("RADIO_LEARN_PROMPT");
         SetLearning(true);
     }
 

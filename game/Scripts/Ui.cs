@@ -6,6 +6,17 @@ namespace SimLab.Game;
 /// <summary>Small factory for the code-built UI, so every screen looks the same.</summary>
 public static class Ui
 {
+    /// <summary>Secondary text over glass panels.</summary>
+    public static readonly Color Muted = new(0.72f, 0.73f, 0.76f);
+    /// <summary>Chip / selection blue (outline and live markers).</summary>
+    public static readonly Color Accent = new(0.22f, 0.54f, 0.87f);
+    /// <summary>The primary button's orange (targets, calls to action).</summary>
+    public static readonly Color Orange = new(0.85f, 0.35f, 0.19f);
+    /// <summary>Done / OK green.</summary>
+    public static readonly Color Good = new(0.35f, 0.85f, 0.45f);
+
+    static readonly Color ChipFill = new(0.09f, 0.37f, 0.65f);
+
     public static string T(string key) => TranslationServer.Translate(key).ToString();
 
     public static VBoxContainer Screen(Control owner, string title)
@@ -128,13 +139,49 @@ public static class Ui
     public static Button Chip(string text, ButtonGroup group)
     {
         var chip = new Button { Text = text, ToggleMode = true, ButtonGroup = group, FocusMode = Control.FocusModeEnum.None };
-        Style(chip,
-            Fill(new Color(1, 1, 1, 0.06f), 14, 14, 5, new Color(1, 1, 1, 0.25f)),
-            Fill(new Color(1, 1, 1, 0.14f), 14, 14, 5, new Color(1, 1, 1, 0.40f)),
-            Fill(new Color(0.09f, 0.37f, 0.65f), 14, 14, 5, new Color(0.22f, 0.54f, 0.87f)));
+        Style(chip, ChipOff(), ChipHover(), ChipOn());
         chip.AddThemeFontSizeOverride("font_size", 16);
         return chip;
     }
+
+    /// <summary>A plain (non-toggle, non-focusable) button shaped like <see cref="Chip"/>; its look is set with
+    /// <see cref="ChipLook"/>, so the caller decides which chip is lit.</summary>
+    public static Button ChipButton(string text, System.Action pressed)
+    {
+        var chip = new Button { Text = text, FocusMode = Control.FocusModeEnum.None };
+        chip.AddThemeFontSizeOverride("font_size", 16);
+        ChipLook(chip, false);
+        chip.Pressed += pressed;
+        return chip;
+    }
+
+    /// <summary>Restyles a chip-shaped button: blue fill when <paramref name="on"/>, otherwise outlined (in
+    /// <paramref name="outline"/> when given, with the text in that colour too).</summary>
+    public static void ChipLook(Button chip, bool on, Color? outline = null)
+    {
+        if (on) Style(chip, ChipOn(), ChipOn(), ChipOn());
+        else if (outline is { } c) Style(chip, Fill(new Color(c, 0.10f), 14, 14, 5, c), Fill(new Color(c, 0.20f), 14, 14, 5, c), ChipOn());
+        else Style(chip, ChipOff(), ChipHover(), ChipOn());
+        var text = !on && outline is { } t ? t : Colors.White;
+        foreach (var name in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color" })
+            chip.AddThemeColorOverride(name, text);
+    }
+
+    /// <summary>Non-interactive pill tag: tinted fill and outline in <paramref name="color"/>, text in that colour.</summary>
+    public static PanelContainer Pill(string text, Color color, int size = 15)
+    {
+        var pill = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        pill.AddThemeStyleboxOverride("panel", Fill(new Color(color, 0.14f), 12, 12, 3, color));
+        var label = new Label { Text = text };
+        label.AddThemeFontSizeOverride("font_size", size);
+        label.AddThemeColorOverride("font_color", color);
+        pill.AddChild(label);
+        return pill;
+    }
+
+    static StyleBoxFlat ChipOff() => Fill(new Color(1, 1, 1, 0.06f), 14, 14, 5, new Color(1, 1, 1, 0.25f));
+    static StyleBoxFlat ChipHover() => Fill(new Color(1, 1, 1, 0.14f), 14, 14, 5, new Color(1, 1, 1, 0.40f));
+    static StyleBoxFlat ChipOn() => Fill(ChipFill, 14, 14, 5, Accent);
 
     /// <summary>Styles a TabContainer's tab bar like <see cref="Chip"/>: outlined pill when unselected, blue fill
     /// when selected (same colours). Call once after building the tabs.</summary>
@@ -142,7 +189,7 @@ public static class Ui
     {
         tabs.AddThemeStyleboxOverride("tab_unselected", Fill(new Color(1, 1, 1, 0.06f), 14, 16, 8, new Color(1, 1, 1, 0.25f)));
         tabs.AddThemeStyleboxOverride("tab_hovered", Fill(new Color(1, 1, 1, 0.14f), 14, 16, 8, new Color(1, 1, 1, 0.40f)));
-        tabs.AddThemeStyleboxOverride("tab_selected", Fill(new Color(0.09f, 0.37f, 0.65f), 14, 16, 8, new Color(0.22f, 0.54f, 0.87f)));
+        tabs.AddThemeStyleboxOverride("tab_selected", Fill(ChipFill, 14, 16, 8, Accent));
         tabs.AddThemeColorOverride("font_selected_color", Colors.White);
         tabs.AddThemeColorOverride("font_unselected_color", Colors.White);
         tabs.AddThemeColorOverride("font_hovered_color", Colors.White);
@@ -153,13 +200,15 @@ public static class Ui
     {
         var button = new Button { Text = text, CustomMinimumSize = new Vector2(0, 58), FocusMode = Control.FocusModeEnum.None };
         Style(button,
-            Fill(new Color(0.85f, 0.35f, 0.19f), 10, 20, 8),
+            Fill(Orange, 10, 20, 8),
             Fill(new Color(0.93f, 0.45f, 0.28f), 10, 20, 8),
             Fill(new Color(0.60f, 0.24f, 0.11f), 10, 20, 8));
+        button.AddThemeStyleboxOverride("disabled", Fill(new Color(Orange, 0.30f), 10, 20, 8));
         button.AddThemeFontSizeOverride("font_size", 26);
         button.AddThemeColorOverride("font_color", Colors.White);
         button.AddThemeColorOverride("font_hover_color", Colors.White);
         button.AddThemeColorOverride("font_pressed_color", Colors.White);
+        button.AddThemeColorOverride("font_disabled_color", new Color(1, 1, 1, 0.45f));
         button.Pressed += pressed;
         return button;
     }

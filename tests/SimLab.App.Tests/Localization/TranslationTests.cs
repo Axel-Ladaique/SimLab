@@ -51,6 +51,11 @@ public class TranslationTests
                      "RADIO_SOURCE_BUTTON", "RADIO_SWITCHES_HELP", "SWITCH_NO_EFFECT", "STICK_THROTTLE", "STICK_AILERON",
                      "STICK_ELEVATOR", "STICK_RUDDER", "RADIO_CHANNEL_FREE" })
             Assert.Contains(k, keys);
+        foreach (var k in new[] { "RADIO_STEP_CONNECT", "RADIO_STEP_CALIBRATE", "RADIO_STEP_SWITCHES", "RADIO_BACK",
+                     "RADIO_PILL_READY", "RADIO_PILL_TODO", "RADIO_EMPTY_TITLE", "RADIO_EMPTY_BODY", "RADIO_CONTINUE",
+                     "RADIO_START_CALIBRATION", "RADIO_CAL_PROGRESS", "RADIO_DETAILS", "RADIO_SAVE", "RADIO_LEARN_TITLE",
+                     "RADIO_LEARN_WAITING", "RADIO_POSITION", "RADIO_ADD_SWITCH", "RADIO_CALIBRATED_HINT" })
+            Assert.Contains(k, keys);
     }
 
     [Fact]
