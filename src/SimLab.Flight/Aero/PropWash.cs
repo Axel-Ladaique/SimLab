@@ -70,14 +70,16 @@ public readonly record struct PropWash
     /// Share of the prop torque's angular momentum flux applied to the surfaces as swirl. This is a calibration, not a
     /// measured efficiency: strip theory on the full swirl over-extracts (every surface in the jet sees the whole swirl,
     /// with no depletion by the surfaces ahead of it and 2D lift slopes on strips a few centimetres wide), so the airframe
-    /// would recover several times the torque (2.4 Q with this field at efficiency 1; 3.2 Q in the 2026-09-25 spike). It
-    /// is set so that in a static hover the sport's wing root, stab and fin recover about 40% of the prop torque, the
-    /// middle of the 30–60% plausible for a real single-engine airframe (a stator behind a prop recovers most of the
-    /// swirl; a wing root, stab and fin are a partial, badly placed stator). The recovered share is linear in this
-    /// constant: 30% → 0.124, 60% → 0.248.
+    /// would recover several times the torque (2.4 Q with this field at efficiency 1 on the strip model; 3.2 Q in the
+    /// 2026-09-25 spike). It is set so that in a static hover the sport's wing root, stab and fin recover about 40% of the
+    /// prop torque, the middle of the 30–60% plausible for a real single-engine airframe (a stator behind a prop recovers
+    /// most of the swirl; a wing root, stab and fin are a partial, badly placed stator). The wash acts strip-wise, outside
+    /// the lifting line (<see cref="SurfaceAeroModel"/>); with the lifting line in place (2026-09-26) the recovered share
+    /// is about 40% at 0.101 (40.0% with 3-strip tails, 39.8% with the 12-strip tails) and linear in this constant,
+    /// about 3.96% per 0.01: 30% → 0.076, 60% → 0.152.
     /// See docs/investigations/2026-09-25-slipstream-implementation.md.
     /// </summary>
-    public const double SwirlEfficiency = 0.165;
+    public const double SwirlEfficiency = 0.101;
 
     /// <summary>Fraction of the tube radius over which the blade loading (and so the velocity jump) falls to zero at the tip.</summary>
     public const double TipLossFraction = 0.15;

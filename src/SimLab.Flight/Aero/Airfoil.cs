@@ -57,11 +57,12 @@ public sealed class Airfoil
     static AirfoilCoefficients Sample(Prepared t, double a)
     {
         double lo = t.Alpha[0], hi = t.Alpha[^1];
-        double clamped = Math.Clamp(a, lo, hi);
+        // One search on the shared alpha axis for the three coefficients.
+        var (i, w) = Interpolation.Locate(t.Alpha, Math.Clamp(a, lo, hi));
         var attached = new AirfoilCoefficients(
-            Interpolation.Linear(t.Alpha, t.Cl, clamped),
-            Interpolation.Linear(t.Alpha, t.Cd, clamped),
-            Interpolation.Linear(t.Alpha, t.Cm, clamped));
+            t.Cl[i] + w * (t.Cl[i + 1] - t.Cl[i]),
+            t.Cd[i] + w * (t.Cd[i + 1] - t.Cd[i]),
+            t.Cm[i] + w * (t.Cm[i + 1] - t.Cm[i]));
         double excess = a > hi ? a - hi : a < lo ? lo - a : 0;
         if (excess <= 0) return attached;
         return AirfoilCoefficients.Lerp(attached, FlatPlate(a, t.Cd0), SmoothStep(excess / BlendWidthRad));

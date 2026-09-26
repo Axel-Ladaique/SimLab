@@ -82,8 +82,12 @@ public class AircraftSoundTests
         Assert.Contains(first, k => k != ImpactKind.Crash);
         // The same drop after a reset (sim time jumps back) must sound the same: one crash again, and the
         // touchdown events must not be held back by the refractory time of the first drop.
+        // Same frames between the reset and the drop as the first time, so the aircraft starts the drop in the same state.
         session.Reset();
         session.Tick(1.0 / 60, ControlInputs.Neutral);
+        sound.Update(1.0 / 60);
+        session.Tick(1.0 / 60, ControlInputs.Neutral);
+        sound.Update(1.0 / 60);
         Assert.Equal(first, ImpactsAfterDrop(session, sound));
     }
     [Fact]
