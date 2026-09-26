@@ -12,6 +12,8 @@ public readonly record struct ContactSample(string Name, bool IsWheel, string Ta
 public sealed class GroundContactModel
 {
     const double FrictionVelocity = 0.05;
+    // Brakes hold: a much sharper friction onset so an idling engine cannot creep the aircraft forward.
+    const double BrakeVelocity = 0.005;
     const double HullFriction = 0.6;
     const double HullStiffnessPerKg = 3000;
     const double HullDampingPerKg = 80;
@@ -31,6 +33,14 @@ public sealed class GroundContactModel
 
     public IReadOnlyList<WheelSpec> Wheels => _wheels;
 
+    /// <summary>False while retractable gear is up or travelling: the wheels then neither touch nor carry anything.</summary>
+    public bool WheelsExtended { get; set; } = true;
+
+    /// <summary>Brake command, 0–1, applied to every wheel that has a brake.</summary>
+    public double BrakeCommand { get; set; }
+
+    ReadOnlySpan<WheelSpec> ActiveWheels => WheelsExtended ? _wheels : [];
+
     readonly record struct Probe(Vec3 Point, double Depth, Vec3 Normal, Vec3 Velocity)
     {
         public double NormalSpeed => Vec3.Dot(Velocity, Normal);
@@ -39,8 +49,9 @@ public sealed class GroundContactModel
     public BodyLoad Evaluate(in RigidBodyState s, ITerrain terrain, IReadOnlyList<double> steerRad)
     {
         var total = BodyLoad.Zero;
-        for (int i = 0; i < _wheels.Length; i++)
-            total += WheelLoad(_wheels[i], s, terrain, i < steerRad.Count ? steerRad[i] : 0);
+        var wheels = ActiveWheels;
+        for (int i = 0; i < wheels.Length; i++)
+            total += WheelLoad(wheels[i], s, terrain, i < steerRad.Count ? steerRad[i] : 0, BrakeCommand);
         foreach (var h in _hull)
             total += HullLoad(h, s, terrain);
         return total;
@@ -49,7 +60,7 @@ public sealed class GroundContactModel
     public int WheelsInContact(in RigidBodyState s, ITerrain terrain)
     {
         int count = 0;
-        foreach (var w in _wheels)
+        foreach (var w in ActiveWheels)
             if (ProbePoint(w.Position, s, terrain).Depth > 0) count++;
         return count;
     }
@@ -59,7 +70,7 @@ public sealed class GroundContactModel
     public IReadOnlyList<ContactSample> Contacts(in RigidBodyState s, ITerrain terrain)
     {
         var list = new List<ContactSample>(_wheels.Length + _hull.Length);
-        foreach (var w in _wheels)
+        foreach (var w in ActiveWheels)
         {
             var p = ProbePoint(w.Position, s, terrain);
             list.Add(new ContactSample(w.Name, true, "wheel", p.Depth, p.NormalSpeed));
@@ -74,22 +85,37 @@ public sealed class GroundContactModel
 
     public CrashCause DetectCrash(in RigidBodyState s, ITerrain terrain, CrashLimits limits)
     {
-        foreach (var w in _wheels)
+        foreach (var w in ActiveWheels)
         {
             var p = ProbePoint(w.Position, s, terrain);
             if (p.Depth > 0 && -p.NormalSpeed > limits.MaxGearSinkRate) return CrashCause.HardLanding;
         }
-        foreach (var h in _hull)
+        Span<Vec3> points = stackalloc Vec3[_hull.Length];
+        for (int i = 0; i < _hull.Length; i++)
         {
+            var h = _hull[i];
             var p = ProbePoint(h.Position, s, terrain);
-            if (terrain.HitsObstacle(p.Point)) return CrashCause.TreeStrike;
+            points[i] = p.Point;
+            if (terrain.HitObstacle(p.Point) is { } kind) return CauseFor(kind);
             if (p.Depth <= 0) continue;
             bool belly = h.Tag == "belly";
             double limit = belly ? limits.MaxBellyImpactSpeed : limits.MaxHullImpactSpeed;
             if (-p.NormalSpeed > limit) return CauseFor(h.Tag);
         }
+        // Every pair of hull points spans the aircraft's outline, so a pole or a wire passing between two of them
+        // (with no probe point inside it) is caught too.
+        for (int i = 0; i < points.Length; i++)
+        for (int j = i + 1; j < points.Length; j++)
+            if (terrain.HitObstacle(points[i], points[j]) is { } crossed) return CauseFor(crossed);
         return CrashCause.None;
     }
+
+    static CrashCause CauseFor(ObstacleKind kind) => kind switch
+    {
+        ObstacleKind.Tree => CrashCause.TreeStrike,
+        ObstacleKind.Structure => CrashCause.StructureStrike,
+        _ => CrashCause.WireStrike,
+    };
 
     static CrashCause CauseFor(string tag) => tag switch
     {
@@ -106,7 +132,7 @@ public sealed class GroundContactModel
         return new Probe(p, terrain.Height(p.X, p.Y) - p.Z, terrain.Normal(p.X, p.Y), v);
     }
 
-    static BodyLoad WheelLoad(WheelSpec w, in RigidBodyState s, ITerrain terrain, double steer)
+    static BodyLoad WheelLoad(WheelSpec w, in RigidBodyState s, ITerrain terrain, double steer, double brake)
     {
         var c = ProbePoint(w.Position, s, terrain);
         if (c.Depth <= 0) return BodyLoad.Zero;
@@ -118,8 +144,9 @@ public sealed class GroundContactModel
         var lateral = Vec3.Cross(c.Normal, roll);
         var vt = c.Velocity - c.Normal * vn;
 
+        double along = Vec3.Dot(vt, roll);
         var force = c.Normal * normal
-            - roll * (w.RollingFriction * normal * Math.Tanh(Vec3.Dot(vt, roll) / FrictionVelocity))
+            - roll * (w.RollingFriction * normal * Math.Tanh(along / FrictionVelocity) + w.BrakeFriction * brake * normal * Math.Tanh(along / BrakeVelocity))
             - lateral * (w.LateralFriction * normal * Math.Tanh(Vec3.Dot(vt, lateral) / FrictionVelocity));
         return ToBody(s, w.Position, force);
     }

@@ -1,4 +1,5 @@
 using SimLab.App.Audio;
+using SimLab.App.Maps;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 
@@ -26,7 +27,7 @@ public class OfflineAudioTests
     [Fact]
     public void Takeoff_render_has_the_expected_length_and_gets_loud()
     {
-        using var session = new FlightSession(TestData.Aircraft("trainer"), new FlightConditions(WindSpeed: 0));
+        using var session = new FlightSession(TestData.Aircraft("trainer"), new FlightConditions(WindSpeed: 0), FieldCatalog.Load("club"));
         var sound = new AircraftSound(session, SoundSpec.Default);
         var samples = OfflineAudio.Render(session, sound, 4, 22050, OfflineAudio.TakeoffScript);
         Assert.InRange(samples.Length, 4 * 22050 - 400, 4 * 22050 + 400);

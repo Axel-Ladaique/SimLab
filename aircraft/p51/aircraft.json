@@ -1,0 +1,61 @@
+{
+  "name": "P-51D Mustang 60cc",
+  "description": "1/5-scale warbird in the class of the Hangar 9 P-51D Mustang 60cc: 2.26 m span, 12.5 kg, 62 cc gas engine on a 23x9 prop, retracts. Heavy, fast and torquey: feed the power in on takeoff.",
+  "mass": 12.5,
+  "cg": [0.691, 0, 0],
+  "inertia": { "roll": 1.08, "yaw": 2.12, "pitch": 1.16 },
+  "surfaces": [
+    { "name": "wing", "role": "wing", "root": [0.6575, 0, -0.10], "span": 1.13, "rootChord": 0.55, "tipChord": 0.25,
+      "sweepDeg": 0, "dihedralDeg": 5, "incidenceDeg": 1.0, "twistDeg": -1.5, "airfoil": "clarky", "segments": 14, "mirror": true },
+    { "name": "stab", "role": "horizontalTail", "root": [1.785, 0, 0.02], "span": 0.40, "rootChord": 0.26, "tipChord": 0.13,
+      "sweepDeg": 0, "incidenceDeg": -1.0, "airfoil": "naca0012", "segments": 5, "mirror": true },
+    { "name": "fin", "role": "verticalTail", "root": [1.745, 0, 0.06], "span": 0.30, "rootChord": 0.34, "tipChord": 0.13,
+      "sweepDeg": 12, "dihedralDeg": 90, "airfoil": "naca0012", "segments": 4, "mirror": false }
+  ],
+  "controls": [
+    { "name": "aileronRight", "surface": "wing", "side": "right", "chordFraction": 0.22, "spanStart": 0.5, "spanEnd": 0.95,
+      "maxPositiveDeg": 14, "maxNegativeDeg": 18, "servoSecondsPer60Deg": 0.12, "mix": { "aileron": -1 } },
+    { "name": "aileronLeft", "surface": "wing", "side": "left", "chordFraction": 0.22, "spanStart": 0.5, "spanEnd": 0.95,
+      "maxPositiveDeg": 14, "maxNegativeDeg": 18, "servoSecondsPer60Deg": 0.12, "mix": { "aileron": 1 } },
+    { "name": "flapRight", "surface": "wing", "side": "right", "chordFraction": 0.2, "spanStart": 0.08, "spanEnd": 0.5,
+      "maxPositiveDeg": 40, "maxNegativeDeg": 0, "servoSecondsPer60Deg": 1.2, "mix": { "flap": 1 } },
+    { "name": "flapLeft", "surface": "wing", "side": "left", "chordFraction": 0.2, "spanStart": 0.08, "spanEnd": 0.5,
+      "maxPositiveDeg": 40, "maxNegativeDeg": 0, "servoSecondsPer60Deg": 1.2, "mix": { "flap": 1 } },
+    { "name": "elevator", "surface": "stab", "side": "both", "chordFraction": 0.4,
+      "maxPositiveDeg": 18, "maxNegativeDeg": 18, "servoSecondsPer60Deg": 0.12, "mix": { "elevator": -1, "flap": -0.2 } },
+    { "name": "rudder", "surface": "fin", "side": "both", "chordFraction": 0.4, "spanStart": 0, "spanEnd": 0.95,
+      "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.12, "mix": { "rudder": 1 } }
+  ],
+  "bodies": [ { "name": "fuselage", "position": [0.9, 0, 0], "cdA": [0.018, 0.25, 0.2] } ],
+  "power": "power.json",
+  "gear": [
+    { "name": "mainLeft", "position": [0.50, -0.36, -0.36], "brakeFriction": 0.5, "stiffness": 9000, "damping": 200 },
+    { "name": "mainRight", "position": [0.50, 0.36, -0.36], "brakeFriction": 0.5, "stiffness": 9000, "damping": 200 },
+    { "name": "tailwheel", "position": [1.62, 0, -0.12], "stiffness": 3000, "damping": 60,
+      "rollingFriction": 0.05, "lateralFriction": 0.6, "maxSteerDeg": 25, "steerMix": { "rudder": -1 } }
+  ],
+  "gearRetract": { "seconds": 6.0, "cdA": [0.012, 0.004, 0.004] },
+  "hull": [
+    { "name": "nose", "position": [0, 0, 0], "tag": "nose" },
+    { "name": "propTip", "position": [0.01, 0, -0.29], "tag": "nose" },
+    { "name": "wingtipLeft", "position": [0.6575, -1.1257, -0.0015], "tag": "wingtip" },
+    { "name": "wingtipRight", "position": [0.6575, 1.1257, -0.0015], "tag": "wingtip" },
+    { "name": "tail", "position": [1.97, 0, 0.05], "tag": "tail" },
+    { "name": "finTop", "position": [1.83, 0, 0.36], "tag": "tail" },
+    { "name": "stabTipLeft", "position": [1.785, -0.40, 0.02], "tag": "tail" },
+    { "name": "stabTipRight", "position": [1.785, 0.40, 0.02], "tag": "tail" },
+    { "name": "canopy", "position": [0.78, 0, 0.19], "tag": "canopy" },
+    { "name": "belly", "position": [0.95, 0, -0.18], "tag": "belly" }
+  ],
+  "fpvCamera": { "position": [0.8, 0, 0.17], "uptiltDeg": 5, "fovDeg": 100 },
+  "crash": { "maxGearSinkRate": 3.0, "maxHullImpactSpeed": 1.5, "maxBellyImpactSpeed": 2.5 },
+  "provenance": {
+    "*": "estimated",
+    "mass": "Hangar 9 P-51D Mustang 60cc (HAN4770): flying weight 11.8-13.0 kg",
+    "cg": "Hangar 9 manual: 171 mm behind the wing leading edge at the root",
+    "surfaces": "North American P-51D (span 11.28 m, wing 21.65 m2, 5 deg dihedral) at 1/5 scale; the ARF quotes 2.26 m and 1420 in2",
+    "controls": "Hangar 9 manual high rates: aileron 22 mm up / 17 mm down, elevator 25 mm, rudder 55 mm, converted to degrees; flaps 25 mm half / 72 mm landing (about 13 / 40 deg on a 110 mm root flap chord) with the manual's elevator compensation (3-5 mm up)",
+    "gear": "estimated; 3-point attitude about 12 deg nose up, P-51D track 3.6 m / 5",
+    "inertia": "estimated from typical single-engine fighter radii of gyration (Roskam Rx 0.26, Ry 0.31, Rz 0.39)"
+  }
+}

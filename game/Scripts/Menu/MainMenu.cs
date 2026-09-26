@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using SimLab.App.Audio;
-using SimLab.App.Field;
+using SimLab.App.Maps;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 using SimLab.App.Ui;
@@ -48,7 +48,7 @@ public partial class MainMenu : Control
         SetAnchorsPreset(LayoutPreset.FullRect);
 
         _view = new MenuAircraftView();
-        _view.Init(services.Settings.Conditions);
+        _view.Init(services.Settings.Conditions, FieldCatalog.Load(services.Settings.LastField));
         AddChild(_view);
         AddChild(new FieldAmbience());
 
@@ -138,8 +138,12 @@ public partial class MainMenu : Control
             chip.ButtonPressed = field.Id == _services.Settings.LastField;
             chip.Pressed += () =>
             {
+                // A pressed toggle in a ButtonGroup re-emits Pressed on every click, even when it was already the
+                // selected chip: skip the save and the scenery rebuild in that case.
+                if (field.Id == _services.Settings.LastField) return;
                 _services.Settings = _services.Settings with { LastField = field.Id };
                 _services.SaveSettings();
+                _view.ShowField(FieldCatalog.Load(field.Id));
             };
             row.AddChild(chip);
         }

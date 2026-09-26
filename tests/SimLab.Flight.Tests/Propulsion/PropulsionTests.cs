@@ -52,7 +52,7 @@ public class PropulsionTests
     public void Battery_voltage_sags_under_load()
     {
         var plant = SpunUp();
-        double open = plant.Spec.Battery.OpenCircuitVoltage(plant.StateOfCharge);
+        double open = plant.Spec.Battery!.OpenCircuitVoltage(plant.StateOfCharge);
         Assert.True(plant.Telemetry.BatteryVoltage < open - 0.5, $"loaded {plant.Telemetry.BatteryVoltage} V, open {open} V");
     }
 
@@ -84,6 +84,19 @@ public class PropulsionTests
     }
 
     [Fact]
+    public void Duct_stators_take_back_their_share_of_the_fan_torque()
+    {
+        // Steady state: the stator vanes straighten the swirl, so the airframe keeps only (1 - recovery) of the torque.
+        var ducted = TrainerLike() with { DuctStatorRecovery = 0.9 };
+        var steady = default(PowerTelemetry) with { Thrust = 20, ReactionTorque = 0.5, PropTorque = 0.5 };
+        Assert.Equal(0.05, PowerPlantLoads.Compute(ducted, steady, 0, Vec3.Zero, Vec3.Zero, inducedVelocity: 11).Moment.X, 12);
+
+        // Spooling up, the torque that accelerates the rotor is not in the flow, so the stators cannot take it back.
+        var spooling = steady with { ReactionTorque = 0.8 };
+        Assert.Equal(0.35, PowerPlantLoads.Compute(ducted, spooling, 0, Vec3.Zero, Vec3.Zero, inducedVelocity: 11).Moment.X, 12);
+    }
+
+    [Fact]
     public void Airframe_reaction_torque_is_the_prop_torque_once_spun_up()
     {
         // Bearing and iron-loss friction act between rotor and stator, so only the prop's torque reaches the airframe.
@@ -110,7 +123,7 @@ public class PropulsionTests
         const double inducedVelocity = 11;
         double Yaw(double drift) => PowerPlantLoads.Compute(TrainerLike(), t, 0, new Vec3(0, 0, -drift), Vec3.Zero, inducedVelocity).Moment.Z -
                                     PowerPlantLoads.Compute(TrainerLike(), t, 0, Vec3.Zero, Vec3.Zero, inducedVelocity).Moment.Z;
-        double full = 20 * 0.1 * TrainerLike().Propeller.DiameterM;   // the offset at a 90° inflow angle
+        double full = 20 * 0.1 * TrainerLike().Propeller!.DiameterM;   // the offset at a 90° inflow angle
         Assert.InRange(Math.Abs(Yaw(1.0)), 0.05 * full, 0.12 * full);
         Assert.True(Math.Abs(Yaw(1.01) - Yaw(0.99)) < 0.01 * full, "no jump at 1 m/s");
         Assert.True(Math.Abs(Yaw(0.5)) < Math.Abs(Yaw(1.0)));

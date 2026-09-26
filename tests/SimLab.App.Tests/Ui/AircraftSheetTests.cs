@@ -58,4 +58,11 @@ public class AircraftSheetTests
         var glider = AircraftSheet.From(TestData.Aircraft("sport")) with { Power = null };
         Assert.Contains(new SheetLine("SHEET_POWER", "SHEET_GLIDER"), glider.Lines(key => key));
     }
+
+    [Fact]
+    public void Flaps_are_listed_as_a_channel()
+    {
+        Assert.Contains(SheetChannel.Flaps, AircraftSheet.From(TestData.Aircraft("p51")).Channels);
+        Assert.DoesNotContain(SheetChannel.Flaps, AircraftSheet.From(TestData.Aircraft("f18")).Channels);
+    }
 }

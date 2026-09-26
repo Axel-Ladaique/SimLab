@@ -52,7 +52,7 @@ public class HoverTests(ITestOutputHelper output)
         var deflections = new double[def.Controls.Count];
         Vec3 Moment(double torque)
         {
-            var wash = PropWash.Create(power.Position, power.ThrustAxis, power.Propeller.DiameterM / 2, steady.Thrust, torque, 0,
+            var wash = PropWash.Create(power.Position, power.ThrustAxis, power.WashRadius, steady.Thrust, torque, 0,
                 Isa.SeaLevelDensity, power.SpinDirection);
             aero.Reset();
             return aero.Evaluate(new AeroContext(Vec3.Zero, Vec3.Zero, Isa.SeaLevelDensity, Hover.Altitude, up, deflections, wash)).Moment;

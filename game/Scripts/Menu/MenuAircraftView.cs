@@ -1,6 +1,7 @@
 using Godot;
 using SimLab.App.Audio;
 using SimLab.App.Field;
+using SimLab.App.Maps;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 using SimLab.App.Visual;
@@ -27,10 +28,6 @@ public partial class MenuAircraftView : ControlPreview
 {
     /// <summary>Rest heading: nose toward the camera (which looks north) and to its left, into the picture.</summary>
     const double HeadingDeg = 205;
-    /// <summary>Where the aircraft flies in place (world ENU): south-east of the pilot box, some 18 m south of the
-    /// windsock and a few metres up. The camera, south of it and looking north, sees the windsock just left of the
-    /// aircraft (right of the menu panel), then the runway and the tree line beyond.</summary>
-    static readonly Vec3 Origin = new(20, -46, 4);
     const float FovDeg = 40f;
     /// <summary>Camera slightly above the aircraft: a banked wing is not seen edge-on and the horizon sits in the
     /// upper part of the image.</summary>
@@ -45,12 +42,29 @@ public partial class MenuAircraftView : ControlPreview
     StaticRunUp? _runUp;
     double _maxForward;
     FlightConditions _conditions = new();
+    FieldMap _map = null!;
+    Node3D _sceneryRoot = null!;
     FieldNodes? _field;
 
-    /// <param name="conditions">Sun and wind of the field when the menu opens.</param>
-    public void Init(FlightConditions conditions)
+    /// <summary>Where the aircraft flies in place (world ENU): south-east of the pilot box, some 18 m south of the
+    /// windsock and a few metres up. The camera, south of it and looking north, sees the windsock just left of the
+    /// aircraft (right of the menu panel), then the runway and the tree line beyond.</summary>
+    Vec3 Origin
     {
-        _conditions = conditions; // read by BuildScenery, which the base Init calls
+        get
+        {
+            var p = _map.Layout.PilotPosition;
+            double x = p.X + 20, y = p.Y - 21;
+            return new Vec3(x, y, _map.Terrain.Height(x, y) + 4);
+        }
+    }
+
+    /// <param name="conditions">Sun and wind of the field when the menu opens.</param>
+    /// <param name="map">The chosen field, read by BuildScenery, which the base Init call below runs.</param>
+    public void Init(FlightConditions conditions, FieldMap map)
+    {
+        _conditions = conditions;
+        _map = map;
         Init(Vector2.Zero); // covers the parent's area in physical pixels: see FitToPixels
         Camera.Fov = FovDeg;
         Camera.Near = 0.1f;
@@ -59,12 +73,27 @@ public partial class MenuAircraftView : ControlPreview
 
     protected override void BuildScenery(SubViewport scene)
     {
-        var root = new Node3D();
-        scene.AddChild(root);
-        _field = FieldBuilder.Build(root, new ClubFieldTerrain(TreePlanter.Plant(FlightSession.TreeSeed)), _conditions);
+        _sceneryRoot = new Node3D();
+        scene.AddChild(_sceneryRoot);
+        _field = MapBuilder.Build(_sceneryRoot, _map, _conditions);
     }
 
-    // The windsock builds its sock in its own _Ready, so its pose can only be applied once it is in the tree.
+    /// <summary>Switches to another field: rebuilds the scenery and re-aims the sun and windsock for it.</summary>
+    public void ShowField(FieldMap map)
+    {
+        _map = map;
+        foreach (var child in _sceneryRoot.GetChildren())
+        {
+            _sceneryRoot.RemoveChild(child);
+            child.QueueFree();
+        }
+        _field = MapBuilder.Build(_sceneryRoot, map, _conditions);
+        // _sceneryRoot is already inside the tree here (this view was already built), so Godot readies the
+        // windsock synchronously as part of AddChild above: its _sock child (built in its own _Ready) already
+        // exists by now, and ApplyConditions' IsNodeReady() guard passes on this very call.
+        ApplyConditions(_conditions);
+    }
+
     public override void _Ready()
     {
         FitToPixels();
@@ -90,8 +119,11 @@ public partial class MenuAircraftView : ControlPreview
     {
         _conditions = conditions;
         if (_field is not { } field) return;
-        FieldBuilder.AimSun(field.Sun, conditions);
-        if (!field.Windsock.IsInsideTree()) return;
+        MapBuilder.AimSun(field.Sun, conditions);
+        // Guards the one caller (BuildScenery, via Init) where the windsock's parent is not yet inside the tree:
+        // Godot only readies a node once it is, so the windsock's _sock child (built in its own _Ready) does not
+        // exist yet there. ShowField's rebuild does not need this guard, since by then the parent already is.
+        if (!field.Windsock.IsNodeReady()) return;
         var wind = new WindField(conditions.ToWindSettings(), conditions.Seed).SteadyAt(WindsockNode.PoleHeight);
         field.Windsock.Apply(Windsock.Pose(wind));
     }

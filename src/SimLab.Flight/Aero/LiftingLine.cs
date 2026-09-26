@@ -11,7 +11,8 @@ namespace SimLab.Flight.Aero;
 /// </param>
 /// <param name="AlphaOffset">Angle added to the section angle of attack (rad): the flap term.</param>
 /// <param name="GroundFactor">Factor on the induced flow the strip receives (McCormick ground effect, 1 out of ground effect).</param>
-public readonly record struct StripState(Vec3 Velocity, double AlphaOffset, double GroundFactor);
+/// <param name="ClIncrement">Section lift coefficient added on top of the polar: the high-lift flap increment.</param>
+public readonly record struct StripState(Vec3 Velocity, double AlphaOffset, double GroundFactor, double ClIncrement = 0);
 
 /// <summary>
 /// Weissinger-type lifting line over all strips of all surfaces, with each strip's own section polar
@@ -265,7 +266,7 @@ public sealed class LiftingLine
             var u = onset - w;
             double alpha = Math.Atan2(-Vec3.Dot(u, s.FlowNormalAxis), Vec3.Dot(u, s.FlowChordAxis)) + strips[i].AlphaOffset;
             double reynolds = density * v * s.Chord / Isa.DynamicViscosity;
-            double cl = s.Airfoil.Evaluate(alpha, reynolds).Cl;
+            double cl = s.Airfoil.Evaluate(alpha, reynolds).Cl + strips[i].ClIncrement;
             _residual[i] = 0.5 * v * _normalChord[i] * cl - _gamma[i];
             worst = Math.Max(worst, Math.Abs(_residual[i]));
         }

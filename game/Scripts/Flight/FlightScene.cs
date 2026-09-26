@@ -3,6 +3,7 @@ using Godot;
 using SimLab.App.Audio;
 using SimLab.App.Cameras;
 using SimLab.App.Field;
+using SimLab.App.Maps;
 using SimLab.App.Session;
 using SimLab.App.Ui;
 using SimLab.App.Visual;
@@ -54,10 +55,10 @@ public partial class FlightScene : Node3D
         _exit = exit;
         _script = script;
         var definition = AircraftLoader.Load(System.IO.Path.Combine(AppPaths.AircraftRoot, aircraftId));
-        _session = new FlightSession(definition, services.Settings.Conditions);
+        _session = new FlightSession(definition, services.Settings.Conditions, FieldCatalog.Load(services.Settings.LastField));
         services.Router.ResetForNewFlight();
 
-        _windsock = FieldBuilder.Build(this, _session.Terrain, services.Settings.Conditions).Windsock;
+        _windsock = MapBuilder.Build(this, _session.Map, services.Settings.Conditions).Windsock;
         _visual = new AircraftVisual();
         AddChild(_visual);
         _visual.Build(AircraftMeshBuilder.Build(definition, _session.Aircraft.Aero.Segments));
@@ -72,8 +73,8 @@ public partial class FlightScene : Node3D
         AddChild(new FieldAmbience());
 
         _terrainHeight = _session.Terrain.Height;
-        var pilot = ClubField.PilotPosition;
-        var eye = new Vec3(pilot.X, pilot.Y, _terrainHeight(pilot.X, pilot.Y) + ClubField.EyeHeight);
+        var pilot = _session.Map.Layout.PilotPosition;
+        var eye = new Vec3(pilot.X, pilot.Y, _terrainHeight(pilot.X, pilot.Y) + _session.Map.Layout.EyeHeight);
         var ground = new LineOfSightRig(eye, services.Settings.FovDeg, services.Settings.AutoZoom);
         // Scripted runs (smoke tests, screenshots) always start in the pilot-box ground view, never the user's
         // saved view, so the shown frame doesn't depend on whoever last played; --view then switches it.
@@ -173,7 +174,7 @@ public partial class FlightScene : Node3D
         }
         _windsock.Apply(Windsock.Pose(_session.Simulation.Environment.Wind.At(WindsockNode.PoleHeight)));
         var osd = OsdData.From(_session.Aircraft, _session.DisplayState, _session.HeightAgl, _session.FlightTime,
-            LastInput.Controls.Throttle, ClubField.PilotPosition);
+            LastInput.Controls.Throttle, _session.Map.Layout.PilotPosition, LastInput.Controls.Flap);
         _hud.UpdateHud(_session, LastInput, osd, HudShown, _cameras.Current);
         _crash.UpdateCrash(_session.Aircraft.Crash);
         _diagnostics.UpdateDiagnostics(this);

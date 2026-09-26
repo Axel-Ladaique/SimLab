@@ -13,6 +13,9 @@ public sealed class Aircraft
 {
     public const double Gravity = 9.80665;
 
+    /// <summary>Throttle at or below which the wheel brakes are on.</summary>
+    public const double BrakeThrottle = 0.02;
+
     readonly Servo[] _servos;
     readonly double[] _deflections;
     readonly double[] _steer;
@@ -41,6 +44,9 @@ public sealed class Aircraft
     /// <summary>Wheel steering angles (rad, positive = wheel points right), in <see cref="AircraftDefinition.Wheels"/> order.</summary>
     public IReadOnlyList<double> SteerAngles => _steer;
 
+    /// <summary>Retractable gear travel: 0 = down and locked, 1 = up. Always 0 for fixed gear.</summary>
+    public double GearPosition { get; private set; }
+
     /// <summary>Wind (world frame, m/s, steady + turbulence) used in the last step.</summary>
     public Vec3 LastWind { get; private set; }
 
@@ -55,6 +61,8 @@ public sealed class Aircraft
         foreach (var s in _servos) s.Reset();
         Array.Clear(_deflections);
         Array.Clear(_steer);
+        GearPosition = 0;
+        Ground.WheelsExtended = true;
     }
 
     /// <summary>Replaces the rigid-body state only (for perturbation tests and editor tools).</summary>
@@ -82,6 +90,17 @@ public sealed class Aircraft
         }
         var wheels = Definition.Wheels;
         for (int i = 0; i < _steer.Length; i++) _steer[i] = SteerAngle(wheels[i], input);
+        // Wheel brakes (where fitted) are mixed to the throttle stick: on at idle, off as soon as it opens.
+        Ground.BrakeCommand = input.Throttle <= BrakeThrottle ? 1 : 0;
+
+        if (Definition.GearRetract is { } retract)
+        {
+            double target = input.GearUp ? 1 : 0;
+            double travel = dt / retract.Seconds;
+            GearPosition = Math.Clamp(target, GearPosition - travel, GearPosition + travel);
+            // The wheels only take load once the gear is fully down and locked.
+            Ground.WheelsExtended = GearPosition == 0;
+        }
     }
 
     public void Step(double dt, in ControlInputs input, FlightEnvironment env)
@@ -104,8 +123,9 @@ public sealed class Aircraft
             var air = start.Orientation.InverseRotate(start.Velocity - wind);
             double axial = Vec3.Dot(air + Vec3.Cross(start.AngularVelocity, spec.Position), spec.ThrustAxis);
             telemetry = Power.Step(dt, input.Throttle, axial, density);
-            wash = PropWash.Create(spec.Position, spec.ThrustAxis, spec.Propeller.DiameterM / 2, telemetry.Thrust, telemetry.PropTorque,
-                axial, density, spec.SpinDirection);
+            // A duct's stators straighten the swirl they take the torque back from.
+            wash = PropWash.Create(spec.Position, spec.ThrustAxis, spec.WashRadius, telemetry.Thrust,
+                telemetry.PropTorque * (1 - spec.DuctStatorRecovery), axial, density, spec.SpinDirection);
         }
         double propOmega = Power?.Omega ?? 0;
         double weight = Definition.Mass.Mass * Gravity;
@@ -117,6 +137,8 @@ public sealed class Aircraft
             var up = s.Orientation.InverseRotate(Vec3.UnitZ);
             var load = Aero.Evaluate(new AeroContext(air, s.AngularVelocity, density, height, up, _deflections, wash));
             if (Power is not null) load += PowerPlantLoads.Compute(Power.Spec, telemetry, propOmega, air, s.AngularVelocity, wash.InducedVelocity);
+            if (Definition.GearRetract is { } gear && GearPosition < 1)
+                load += SurfaceAeroModel.BodyDrag(gear.DragPosition, gear.CdA * (1 - GearPosition), air, s.AngularVelocity, density);
             load += Ground.Evaluate(s, env.Terrain, _steer);
             return new Wrench(s.Orientation.Rotate(load.Force) + new Vec3(0, 0, -weight), load.Moment);
         };

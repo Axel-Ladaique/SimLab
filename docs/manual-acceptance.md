@@ -64,6 +64,14 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
 - [ ] In FPV the motor is steady, no Doppler; in chase the pitch no longer drops steadily; from the ground view
   it still shifts as it flies by.
 
+## Maps
+
+- [ ] Flying close past a tree trunk (1–2 m) or over a treetop does not crash; flying into the crown does.
+- [ ] Flying into the hangar, a car or a power-line pole shows « Contre un obstacle »; into the wires, « Dans les câbles ».
+- [ ] The club shows textured grass, a striped runway, farmland, groves, poplars along the road and the power line.
+- [ ] F3 shows ≥ 60 fps in the pilot view and in the chase view over the groves.
+- [ ] The « Terrain » chip on the home screen rebuilds the background view (only the club for now).
+
 ## HUD
 
 - [ ] Existing installs keep their saved choice: if the OSD is off at first, press H once (new installs start with it on).
@@ -97,3 +105,18 @@ Run by the pilot with the real radio. Tick each line; note anything that feels w
   change the synthesized voices; Impacts changes bounce/crash loudness; Master/Aircraft/Ambience change the buses).
 - [ ] Leaving the screen (Back or the menu) stops the preview immediately.
 - [ ] All 8 values persist after restarting the app.
+
+## Retractable gear (F-16)
+
+- [ ] F-16, keyboard: G raises the gear (OSD "TRAIN EN MOUVEMENT" for about 5 s, then "TRAIN RENTRÉ"), G again lowers it; the legs fold forward and vanish when stowed.
+- [ ] Radio screen: "Interrupteur « train »", flip the chosen switch to gear up; in flight the switch position sets the gear.
+- [ ] Start or reset (R) with the gear switch left up: the gear stays down until the switch is put down, then obeys it.
+- [ ] Gear up on the runway: the jet sinks onto its belly without a crash message; gear down in flight costs speed.
+- [ ] Trainer, sport, 3D, wing: G does nothing and the OSD shows no gear line.
+
+## Fuel engines (P-51 gas, F-18 turbine)
+
+- [ ] P-51: idles at start (exhaust bark audible), stays put with the throttle closed (brakes), rolls as soon as the throttle opens; needs right rudder on the takeoff run; OSD shows CARBURANT % and ml.
+- [ ] F-18: the turbine whines at idle; full throttle takes about 4–5 s to reach full thrust (roar grows); fuel drops about 750 ml/min at full power.
+- [ ] Both: G raises and lowers the gear; the sheet in the menu shows "Moteur thermique 5.0 kW · 23×9 in · 700 ml" / "Turbine 220 N · 4.5 L".
+- [ ] P-51 flaps: F steps VOLETS RENTRÉS → MI-COURSE → ATTERRISSAGE → RENTRÉS on the OSD; the flaps move slowly (about 1 s) and the nose rises slightly; a radio flap switch (radio screen) sets them by position; approach slower with landing flaps.

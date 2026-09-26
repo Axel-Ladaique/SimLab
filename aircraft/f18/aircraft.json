@@ -1,0 +1,58 @@
+{
+  "name": "F/A-18E Super Hornet 1:6.25",
+  "description": "Big turbine jet in the class of the Skymaster F-18E Super Hornet 1:6.25: 2.18 m span, 2.97 m long, 24.5 kg with fuel, one 220 N kerosene turbine. The turbine takes seconds to spool up: plan the power early.",
+  "mass": 24.5,
+  "cg": [1.51, 0, 0],
+  "inertia": { "roll": 1.84, "yaw": 11.0, "pitch": 9.8, "rollYaw": -0.19 },
+  "surfaces": [
+    { "name": "wing", "role": "wing", "root": [1.352, 0, 0.02], "span": 1.09, "rootChord": 0.809, "tipChord": 0.283,
+      "sweepDeg": 20, "dihedralDeg": -3, "incidenceDeg": 0.5, "twistDeg": -1, "airfoil": "naca0012", "segments": 14, "mirror": true },
+    { "name": "stab", "role": "horizontalTail", "root": [2.5535, 0.18, 0.0], "span": 0.38, "rootChord": 0.414, "tipChord": 0.166,
+      "sweepDeg": 38, "dihedralDeg": -2, "incidenceDeg": -1.0, "airfoil": "naca0012", "segments": 5, "mirror": true },
+    { "name": "fins", "role": "verticalTail", "root": [2.2975, 0.12, 0.10], "span": 0.45, "rootChord": 0.39, "tipChord": 0.157,
+      "sweepDeg": 28, "dihedralDeg": 70, "airfoil": "naca0012", "segments": 5, "mirror": true }
+  ],
+  "controls": [
+    { "name": "aileronRight", "surface": "wing", "side": "right", "chordFraction": 0.25, "spanStart": 0.55, "spanEnd": 0.92,
+      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": -1 } },
+    { "name": "aileronLeft", "surface": "wing", "side": "left", "chordFraction": 0.25, "spanStart": 0.55, "spanEnd": 0.92,
+      "maxPositiveDeg": 20, "maxNegativeDeg": 20, "servoSecondsPer60Deg": 0.1, "mix": { "aileron": 1 } },
+    { "name": "elevator", "surface": "stab", "side": "both", "chordFraction": 1.0,
+      "maxPositiveDeg": 12, "maxNegativeDeg": 15, "servoSecondsPer60Deg": 0.1, "mix": { "elevator": -1 } },
+    { "name": "rudderRight", "surface": "fins", "side": "right", "chordFraction": 0.3, "spanStart": 0.05, "spanEnd": 0.6,
+      "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.1, "mix": { "rudder": 1 } },
+    { "name": "rudderLeft", "surface": "fins", "side": "left", "chordFraction": 0.3, "spanStart": 0.05, "spanEnd": 0.6,
+      "maxPositiveDeg": 25, "maxNegativeDeg": 25, "servoSecondsPer60Deg": 0.1, "mix": { "rudder": -1 } }
+  ],
+  "bodies": [ { "name": "fuselage", "position": [1.4, 0, 0], "cdA": [0.012, 0.35, 0.5] } ],
+  "power": "power.json",
+  "gear": [
+    { "name": "nosewheel", "position": [0.69, 0, -0.30], "stiffness": 4000, "damping": 200,
+      "rollingFriction": 0.04, "lateralFriction": 0.7, "maxSteerDeg": 30, "steerMix": { "rudder": 1 } },
+    { "name": "mainLeft", "position": [1.62, -0.25, -0.30], "brakeFriction": 0.5, "stiffness": 6500, "damping": 300 },
+    { "name": "mainRight", "position": [1.62, 0.25, -0.30], "brakeFriction": 0.5, "stiffness": 6500, "damping": 300 }
+  ],
+  "gearRetract": { "seconds": 7.0, "cdA": [0.012, 0.006, 0.005] },
+  "hull": [
+    { "name": "nose", "position": [0, 0, 0], "tag": "nose" },
+    { "name": "wingtipLeft", "position": [1.749, -1.0885, -0.037], "tag": "wingtip" },
+    { "name": "wingtipRight", "position": [1.749, 1.0885, -0.037], "tag": "wingtip" },
+    { "name": "tail", "position": [2.93, 0, 0], "tag": "tail" },
+    { "name": "finTopLeft", "position": [2.55, -0.274, 0.523], "tag": "tail" },
+    { "name": "finTopRight", "position": [2.55, 0.274, 0.523], "tag": "tail" },
+    { "name": "stabTipLeft", "position": [2.87, -0.56, -0.013], "tag": "tail" },
+    { "name": "stabTipRight", "position": [2.87, 0.56, -0.013], "tag": "tail" },
+    { "name": "canopy", "position": [0.62, 0, 0.16], "tag": "canopy" },
+    { "name": "belly", "position": [1.4, 0, -0.15], "tag": "belly" }
+  ],
+  "fpvCamera": { "position": [0.55, 0, 0.14], "uptiltDeg": 5, "fovDeg": 100 },
+  "crash": { "maxGearSinkRate": 3.0, "maxHullImpactSpeed": 1.5, "maxBellyImpactSpeed": 2.5 },
+  "provenance": {
+    "*": "estimated",
+    "mass": "Skymaster F-18E 1:6.25: dry 21-22 kg, plus about 3.5 kg of kerosene (4.5 L); fixed at take-off weight",
+    "surfaces": "Boeing F/A-18E (span 13.62 m, wing 46.45 m2, aspect ratio 4, 20 deg quarter-chord sweep, 3 deg anhedral; canted twin fins) scaled 1:6.25",
+    "controls": "estimated big-jet high rates (no published throws)",
+    "inertia": "F/A-18 radii of gyration (Ixx 31183, Iyy 205113, Izz 230712, Ixz -4028 kg m2 at 15119 kg) scaled to the model",
+    "gear": "estimated sprung scale gear; Skymaster jets use sequenced electric/pneumatic retracts"
+  }
+}

@@ -1,6 +1,7 @@
 using SimLab.Flight.Aero;
 using SimLab.Flight.Airframe;
 using SimLab.Flight.Geometry;
+using SimLab.Flight.Propulsion;
 using SimLab.Flight.Tests.Behavior;
 
 namespace SimLab.Flight.Tests.Airframe;
@@ -152,6 +153,120 @@ public sealed class AircraftLoaderTests : IDisposable
     [Fact]
     public void Battery_without_capacity_is_rejected()
         => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"capacityAh\": 2.2", "\"capacityAh\": 0"));
+
+    [Fact]
+    public void Duct_stator_recovery_defaults_to_zero_and_loads_when_given()
+    {
+        Assert.Equal(0, AircraftLoader.Load(Write(Aircraft())).Power!.DuctStatorRecovery);
+        var ducted = Edit(Power, "\"pFactor\": 0.1,", "\"pFactor\": 0.1, \"ductStatorRecovery\": 0.9,");
+        Assert.Equal(0.9, AircraftLoader.Load(Write(Aircraft(), power: ducted)).Power!.DuctStatorRecovery);
+    }
+
+    [Theory]
+    [InlineData("-0.1")]
+    [InlineData("1.1")]
+    public void Duct_stator_recovery_outside_zero_to_one_is_rejected(string value)
+        => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"pFactor\": 0.1,", $"\"pFactor\": 0.1, \"ductStatorRecovery\": {value},"));
+
+    [Fact]
+    public void Gear_retract_is_optional_and_loads_its_transit_time_and_drag_at_the_wheels()
+    {
+        Assert.Null(AircraftLoader.Load(Write(Aircraft())).GearRetract);
+        var json = Edit(Aircraft(), "\"power\": \"power.json\",", "\"gearRetract\": { \"seconds\": 2.5, \"cdA\": [0.004, 0.001, 0.002] }, \"power\": \"power.json\",");
+        var retract = AircraftLoader.Load(Write(Edit(json, "\"cg\": [0, 0, 0]", "\"cg\": [0.05, 0, 0]"))).GearRetract!;
+        Assert.Equal(2.5, retract.Seconds);
+        Assert.Equal(new Vec3(0.004, 0.001, 0.002), retract.CdA);
+        Assert.Equal(new Vec3(-0.05, 0, -0.1), retract.DragPosition); // the wheels' centroid, from the CG
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void Gear_retract_needs_a_positive_transit_time(string seconds)
+        => AssertRejected(Edit(Aircraft(), "\"power\": \"power.json\",", $"\"gearRetract\": {{ \"seconds\": {seconds} }}, \"power\": \"power.json\","));
+
+    [Fact]
+    public void Gear_retract_needs_wheels()
+        => AssertRejected(Edit(Edit(Aircraft(), "\"power\": \"power.json\",", "\"gearRetract\": { \"seconds\": 2 }, \"power\": \"power.json\","),
+            "\"gear\": [ { \"name\": \"main\", \"position\": [0, 0, -0.1], \"stiffness\": 800, \"damping\": 15, \"steerMix\": { \"rudder\": 1 }, \"maxSteerDeg\": 20 } ],", ""));
+
+    const string GasPower = """
+        {
+          "position": [-0.3, 0, 0], "thrustAxis": [-1, 0, 0],
+          "piston": { "maxPowerW": 5500, "peakPowerRpm": 8200, "idleRpm": 1800, "maxRpm": 9000, "rotorInertia": 0.012,
+                      "tankMl": 700, "fuelFlowMaxMlMin": 110, "fuelFlowIdleMlMin": 10 },
+          "propeller": { "genericDiameterIn": 23, "genericPitchIn": 9 },
+        }
+        """;
+
+    const string TurbinePower = """
+        {
+          "position": [0.5, 0, 0], "thrustAxis": [-1, 0, 0],
+          "turbine": { "maxThrustN": 220, "idleThrustN": 9, "maxRpm": 117000, "idleRpm": 33000, "spoolUpSeconds": 4,
+                       "spoolDownSeconds": 2.5, "massFlowKgS": 0.45, "nozzleDiameterM": 0.09, "rotorInertia": 6e-5,
+                       "tankMl": 4000, "fuelFlowMaxMlMin": 750, "fuelFlowIdleMlMin": 120 },
+        }
+        """;
+
+    [Fact]
+    public void Loads_a_piston_engine_on_its_propeller()
+    {
+        var power = AircraftLoader.Load(Write(Aircraft(), power: GasPower)).Power!;
+        Assert.Equal(PowerSource.Piston, power.Source);
+        Assert.Equal(5500, power.Piston!.MaxPowerW);
+        Assert.NotNull(power.Propeller);
+        Assert.Null(power.Motor);
+        Assert.Null(power.Battery);
+    }
+
+    [Fact]
+    public void Loads_a_turbine_without_a_propeller()
+    {
+        var power = AircraftLoader.Load(Write(Aircraft(), power: TurbinePower)).Power!;
+        Assert.Equal(PowerSource.Turbine, power.Source);
+        Assert.Equal(220, power.Turbine!.MaxThrustN);
+        Assert.Null(power.Propeller);
+        Assert.Equal(0.045, power.WashRadius, 9);
+    }
+
+    [Fact]
+    public void Electric_power_reports_its_source()
+        => Assert.Equal(PowerSource.Electric, AircraftLoader.Load(Write(Aircraft())).Power!.Source);
+
+    [Fact]
+    public void Two_power_sources_are_rejected()
+        => AssertRejected(Aircraft(), "power.json", Edit(Power, "\"pFactor\": 0.1,",
+            "\"pFactor\": 0.1, \"piston\": { \"maxPowerW\": 5500, \"peakPowerRpm\": 8200, \"idleRpm\": 1800, \"maxRpm\": 9000, \"rotorInertia\": 0.012, \"tankMl\": 700, \"fuelFlowMaxMlMin\": 110 },"));
+
+    [Fact]
+    public void A_piston_without_a_propeller_is_rejected()
+        => AssertRejected(Aircraft(), "power.json", Edit(GasPower, "\"propeller\": { \"genericDiameterIn\": 23, \"genericPitchIn\": 9 },", ""));
+
+    [Fact]
+    public void A_turbine_with_a_propeller_is_rejected()
+        => AssertRejected(Aircraft(), "power.json", Edit(TurbinePower, "\"thrustAxis\": [-1, 0, 0],", "\"thrustAxis\": [-1, 0, 0], \"propeller\": { \"genericDiameterIn\": 10, \"genericPitchIn\": 5 },"));
+
+    [Theory]
+    [InlineData("\"idleRpm\": 1800", "\"idleRpm\": 8500")]
+    [InlineData("\"tankMl\": 700", "\"tankMl\": 0")]
+    [InlineData("\"maxPowerW\": 5500", "\"maxPowerW\": 0")]
+    public void Inconsistent_piston_data_is_rejected(string find, string replace)
+        => AssertRejected(Aircraft(), "power.json", Edit(GasPower, find, replace));
+
+    [Theory]
+    [InlineData("\"idleThrustN\": 9", "\"idleThrustN\": 300")]
+    [InlineData("\"spoolUpSeconds\": 4", "\"spoolUpSeconds\": 0")]
+    [InlineData("\"idleRpm\": 33000", "\"idleRpm\": 120000")]
+    public void Inconsistent_turbine_data_is_rejected(string find, string replace)
+        => AssertRejected(Aircraft(), "power.json", Edit(TurbinePower, find, replace));
+
+    [Fact]
+    public void Wheel_brakes_default_to_none_and_load_when_given()
+    {
+        Assert.Equal(0, AircraftLoader.Load(Write(Aircraft())).Wheels[0].BrakeFriction);
+        var braked = Edit(Aircraft(), "\"stiffness\": 800,", "\"brakeFriction\": 0.6, \"stiffness\": 800,");
+        Assert.Equal(0.6, AircraftLoader.Load(Write(braked)).Wheels[0].BrakeFriction);
+    }
 
     [Fact]
     public void Cg_datum_shifts_every_body_position()

@@ -18,7 +18,14 @@ internal sealed class AircraftDto
     public List<HullDto> Hull { get; set; } = new();
     public CrashDto Crash { get; set; } = new();
     public FpvCameraDto? FpvCamera { get; set; }
+    public GearRetractDto? GearRetract { get; set; }
     public Dictionary<string, string> Provenance { get; set; } = new();
+}
+
+internal sealed class GearRetractDto
+{
+    public double Seconds { get; set; } = 3;
+    public Vec3 CdA { get; set; }
 }
 
 internal sealed class InertiaDto
@@ -79,6 +86,7 @@ internal sealed class WheelDto
     public double LateralFriction { get; set; } = 0.8;
     public double MaxSteerDeg { get; set; }
     public Dictionary<string, double> SteerMix { get; set; } = new();
+    public double BrakeFriction { get; set; }
 }
 
 internal sealed class HullDto
@@ -117,11 +125,42 @@ internal sealed class PowerDto
     public Vec3 ThrustAxis { get; set; } = BodyAxes.Forward;
     public int SpinDirection { get; set; } = 1;
     public double PFactor { get; set; } = 0.1;
+    public double DuctStatorRecovery { get; set; }
     public MotorDto? Motor { get; set; }
     public BatteryDto? Battery { get; set; }
     public EscDto? Esc { get; set; }
     public PropellerDto? Propeller { get; set; }
+    public PistonDto? Piston { get; set; }
+    public TurbineDto? Turbine { get; set; }
     public string? ThrustStand { get; set; }
+}
+
+internal sealed class PistonDto
+{
+    public double MaxPowerW { get; set; }
+    public double PeakPowerRpm { get; set; }
+    public double IdleRpm { get; set; }
+    public double MaxRpm { get; set; }
+    public double RotorInertia { get; set; }
+    public double TankMl { get; set; }
+    public double FuelFlowMaxMlMin { get; set; }
+    public double FuelFlowIdleMlMin { get; set; }
+}
+
+internal sealed class TurbineDto
+{
+    public double MaxThrustN { get; set; }
+    public double IdleThrustN { get; set; }
+    public double MaxRpm { get; set; }
+    public double IdleRpm { get; set; }
+    public double SpoolUpSeconds { get; set; }
+    public double SpoolDownSeconds { get; set; }
+    public double MassFlowKgS { get; set; }
+    public double NozzleDiameterM { get; set; }
+    public double RotorInertia { get; set; }
+    public double TankMl { get; set; }
+    public double FuelFlowMaxMlMin { get; set; }
+    public double FuelFlowIdleMlMin { get; set; }
 }
 
 internal sealed class MotorDto

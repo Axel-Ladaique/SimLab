@@ -5,7 +5,10 @@ namespace SimLab.Flight.Propulsion;
 
 public static class PowerPlantLoads
 {
-    /// <summary>Thrust (with P-factor offset), motor reaction torque and rotor gyroscopic moment, body axes.</summary>
+    /// <summary>
+    /// Thrust (with P-factor offset), motor reaction torque (less what a duct's stators take back from the flow) and rotor
+    /// gyroscopic moment, body axes.
+    /// </summary>
     /// <param name="inducedVelocity">
     /// Momentum-theory induced velocity at the disk (m/s). The P-factor offset grows with the sine of the disk inflow
     /// angle, measured against the total axial flow through the disk (freestream + induced): in a hover the induced
@@ -23,12 +26,13 @@ public static class PowerPlantLoads
         double through = Math.Abs(axial) + Math.Max(inducedVelocity, 0);
         double diskFlow = Math.Sqrt(crossflow.LengthSquared + through * through);
         var offset = diskFlow > 1e-6
-            ? Vec3.Cross(axis, crossflow) * (-spec.SpinDirection * spec.PFactor * spec.Propeller.DiameterM / diskFlow)
+            ? Vec3.Cross(axis, crossflow) * (-spec.SpinDirection * spec.PFactor * (spec.Propeller?.DiameterM ?? 0) / diskFlow)
             : Vec3.Zero;
 
         var moment = Vec3.Cross(spec.Position + offset, thrust);
-        moment += axis * (-spec.SpinDirection * telemetry.ReactionTorque);
-        var rotorMomentum = axis * (spec.SpinDirection * spec.Motor.RotorInertia * propOmega);
+        double airframeTorque = telemetry.ReactionTorque - spec.DuctStatorRecovery * telemetry.PropTorque;
+        moment += axis * (-spec.SpinDirection * airframeTorque);
+        var rotorMomentum = axis * (spec.SpinDirection * spec.RotorInertia * propOmega);
         moment -= Vec3.Cross(angularVelocityBody, rotorMomentum);
         return new BodyLoad(thrust, moment);
     }

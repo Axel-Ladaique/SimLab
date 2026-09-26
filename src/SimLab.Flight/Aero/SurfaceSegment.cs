@@ -48,6 +48,9 @@ public sealed class SurfaceSegment
     public double FlapMomentEffectiveness { get; set; }
     public double ControlChordFraction { get; set; }
 
+    /// <summary>True when the strip's control is a flap (driven by the flap channel): it raises the maximum lift.</summary>
+    public bool HighLift { get; set; }
+
     /// <summary>
     /// Fraction of the strip's span covered by its control (0..1): the flap's lift, moment and drag increments are scaled
     /// by it, so results converge with the strip count instead of switching a whole strip at the control's end.

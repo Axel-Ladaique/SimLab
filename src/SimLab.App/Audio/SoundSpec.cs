@@ -34,7 +34,7 @@ public static class SoundSpecLoader
         if (TryGet(sound, "sampleRpm", out var r))
             sampleRpm = r.ValueKind == JsonValueKind.Number ? r.GetDouble() : throw Invalid(path, "sound.sampleRpm must be a number.");
 
-        if (blades is < 1 or > 6) throw Invalid(path, "sound.blades must be between 1 and 6.");
+        if (blades is < 1 or > 16) throw Invalid(path, "sound.blades must be between 1 and 16.");
         if (polePairs is < 1 or > 20) throw Invalid(path, "sound.polePairs must be between 1 and 20.");
         if ((sample is null) != (sampleRpm is null)) throw Invalid(path, "sound.sample and sound.sampleRpm must be given together.");
         if (sampleRpm is <= 0) throw Invalid(path, "sound.sampleRpm must be positive.");

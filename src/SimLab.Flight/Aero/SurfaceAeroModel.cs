@@ -12,6 +12,11 @@ namespace SimLab.Flight.Aero;
 public sealed class SurfaceAeroModel : IAeroModel
 {
     const double FlapEfficiency = 0.85;
+    // High-lift flaps (driven by the flap channel): this share of the flap's equivalent alpha shift is applied as a lift
+    // increment on top of the section polar, so the maximum lift rises and the stall angle drops only by the rest, as for
+    // plain flaps (DATCOM section 6.1.1.3). Other controls stay a pure alpha shift.
+    const double HighLiftIncrementShare = 0.6;
+    const double SectionLiftSlope = 5.7;
 
     /// <summary>Points per strip at which the prop wash is sampled (overlap weighting).</summary>
     const int WashSamples = 8;
@@ -92,8 +97,10 @@ public sealed class SurfaceAeroModel : IAeroModel
             _blown[i] = blown ? Blow(i, onset, seg.FlowChordAxis, seg.FlowNormalAxis, out meanSquare) : onset;
             _meanSquare[i] = meanSquare;
             double height = ctx.HeightAboveGround + Vec3.Dot(seg.Position, ctx.UpBody);
-            double flap = Flap(seg, ctx, out _);
-            _states[i] = new StripState(onset, seg.FlapEffectiveness * flap, InducedFlow.GroundEffectFactor(height, WingSpan));
+            double shift = seg.FlapEffectiveness * Flap(seg, ctx, out _);
+            double increment = seg.HighLift ? HighLiftIncrementShare * shift : 0;
+            _states[i] = new StripState(onset, shift - increment, InducedFlow.GroundEffectFactor(height, WingSpan),
+                SectionLiftSlope * increment);
         }
 
         _line.Solve(_states, ctx.Density);
@@ -132,7 +139,7 @@ public sealed class SurfaceAeroModel : IAeroModel
             double q = 0.5 * ctx.Density * Math.Max(vBlown * vBlown, _meanSquare[i]);
             double flap = Flap(seg, ctx, out double delta);
             double sinDelta = Math.Sin(delta);
-            double cl = coeff.Cl;
+            double cl = coeff.Cl + _states[i].ClIncrement;
             double cd = coeff.Cd + seg.ControlCoverage * seg.ControlChordFraction * sinDelta * sinDelta;
 
             var liftDir = (c * -un + n * uc) / v;
@@ -154,15 +161,22 @@ public sealed class SurfaceAeroModel : IAeroModel
 
         foreach (var body in _bodies)
         {
-            var u = ctx.AirVelocityBody + Vec3.Cross(ctx.AngularVelocityBody, body.Position);
-            double k = -0.5 * ctx.Density * u.Length;
-            var f = new Vec3(u.X * body.CdA.X, u.Y * body.CdA.Y, u.Z * body.CdA.Z) * k;
-            force += f;
-            moment += Vec3.Cross(body.Position, f);
+            var drag = BodyDrag(body.Position, body.CdA, ctx.AirVelocityBody, ctx.AngularVelocityBody, ctx.Density);
+            force += drag.Force;
+            moment += drag.Moment;
         }
 
         _lastAirspeed = ctx.AirVelocityBody.Length;
         return new BodyLoad(force, moment);
+    }
+
+    /// <summary>Drag of a bluff body with per-axis drag areas (m², body order [frontal, side, top]) at a body-axes point.</summary>
+    public static BodyLoad BodyDrag(Vec3 position, Vec3 cdA, Vec3 airVelocityBody, Vec3 angularVelocityBody, double density)
+    {
+        var u = airVelocityBody + Vec3.Cross(angularVelocityBody, position);
+        double k = -0.5 * density * u.Length;
+        var f = new Vec3(u.X * cdA.X, u.Y * cdA.Y, u.Z * cdA.Z) * k;
+        return new BodyLoad(f, Vec3.Cross(position, f));
     }
 
     public void Advance(double dt) => _line.Advance(dt, _lastAirspeed);
@@ -263,6 +277,7 @@ public sealed class SurfaceAeroModel : IAeroModel
             seg.FlapEffectiveness = SurfaceGeometry.FlapEffectiveness(control.ChordFraction);
             seg.FlapMomentEffectiveness = SurfaceGeometry.FlapMomentCoefficient(control.ChordFraction);
             seg.ControlChordFraction = control.ChordFraction;
+            seg.HighLift = control.Mix.ContainsKey("flap");
         }
         if (covered == 0)
             throw new ArgumentException($"Control '{control.Name}' does not cover any segment of surface '{control.Surface}'.");

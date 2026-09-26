@@ -1,0 +1,11 @@
+{
+  "position": [2.90, 0, 0],
+  "thrustAxis": [-1, 0, 0],
+  "turbine": {
+    "maxThrustN": 220, "idleThrustN": 9, "maxRpm": 117000, "idleRpm": 33000,
+    "spoolUpSeconds": 4.5, "spoolDownSeconds": 3.0,
+    "massFlowKgS": 0.45, "nozzleDiameterM": 0.1, "rotorInertia": 6e-5,
+    "tankMl": 4500, "fuelFlowMaxMlMin": 750, "fuelFlowIdleMlMin": 120
+  },
+  "sound": { "blades": 1, "polePairs": 1 }
+}

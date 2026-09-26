@@ -48,6 +48,21 @@ public class EngineSynthTests
     }
 
     [Fact]
+    public void Blade_pass_harmonics_above_nyquist_are_left_out_instead_of_aliasing()
+    {
+        // A 12-blade ducted fan at 47 500 rpm: 9.5 kHz blade pass. Its 4th and 5th harmonics (38 and 47.5 kHz) would fold
+        // back to 6.1 and 3.4 kHz at 44.1 kHz.
+        var synth = new EngineSynth(Rate);
+        var buffer = new float[Rate];
+        synth.Render(buffer.AsSpan(0, 512), Prop(9500));
+        synth.Render(buffer, Prop(9500));
+        double fundamental = Power(buffer, 9500);
+        // What remains (about -38 dB) is the output soft clip's intermodulation; the folded 4th harmonic alone is -14 dB.
+        Assert.True(Power(buffer, 6100) < 1e-3 * fundamental);
+        Assert.True(Power(buffer, 3400) < 1e-3 * fundamental);
+    }
+
+    [Fact]
     public void Output_stays_bounded_and_continuous_across_buffers_when_parameters_jump()
     {
         var synth = new EngineSynth(Rate);
@@ -155,4 +170,27 @@ public class EngineSynthTests
     [InlineData(0.5, 0.5, 0.3125)]
     public void Impact_mix_scales_intensity_by_the_impacts_volume(double intensity, double impactsVolume, double expected) =>
         Assert.Equal(expected, ImpactMix.Linear(intensity, impactsVolume), 6);
+
+    [Fact]
+    public void Exhaust_voice_is_a_pulse_train_at_the_firing_frequency()
+    {
+        var synth = new EngineSynth(Rate);
+        var buffer = new float[Rate];
+        var bark = SynthParams.Silent with { ShaftHz = 120, ExhaustGain = 1 };
+        synth.Render(buffer.AsSpan(0, 512), bark);
+        synth.Render(buffer, bark);
+        double fundamental = Power(buffer, 120);
+        Assert.True(fundamental > 10 * Power(buffer, 90));
+        Assert.True(Power(buffer, 360) > 0.05 * fundamental, "rich in harmonics");
+    }
+
+    [Fact]
+    public void Roar_voice_is_broadband_noise()
+    {
+        var synth = new EngineSynth(Rate);
+        var buffer = new float[Rate / 2];
+        synth.Render(buffer, SynthParams.Silent with { RoarGain = 1 });
+        Assert.True(Rms(buffer) > 0.05);
+        Assert.True(Power(buffer, 300) > 0 && Power(buffer, 1500) > 0);
+    }
 }

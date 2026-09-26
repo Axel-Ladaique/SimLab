@@ -38,6 +38,8 @@ RADIO_BIND_RESET,Interrupteur « reset »,Reset switch
 RADIO_BIND_PAUSE,Interrupteur « pause »,Pause switch
 RADIO_BIND_WIND,Interrupteur « vent »,Wind switch
 RADIO_BIND_CAMERA,Interrupteur « vue »,View switch
+RADIO_BIND_FLAPS,Interrupteur « volets » (basculez sur atterrissage),Flap switch (flip to landing)
+RADIO_BIND_GEAR,Interrupteur « train » (basculez sur rentré),Gear switch (flip to gear up)
 RADIO_BIND_WAIT,Basculez l'interrupteur maintenant…,Flip the switch now…
 RADIO_BIND_DONE,Interrupteur assigné.,Switch assigned.
 RADIO_AXES,Voies brutes,Raw axes
@@ -79,12 +81,19 @@ SND_NO_AIRCRAFT,Aucun avion disponible pour l'écoute.,No aircraft available for
 SND_NO_POWER,"{0} : pas de groupe motopropulseur à écouter.","{0}: no power plant to preview."
 HUD_PAUSED,PAUSE,PAUSED
 OSD_THROTTLE,GAZ,THR
+OSD_FUEL,CARBURANT,FUEL
+OSD_FLAPS_UP,VOLETS RENTRÉS,FLAPS UP
+OSD_FLAPS_HALF,VOLETS MI-COURSE,FLAPS HALF
+OSD_FLAPS_LANDING,VOLETS ATTERRISSAGE,FLAPS LANDING
+OSD_GEAR_DOWN,TRAIN SORTI,GEAR DOWN
+OSD_GEAR_UP,TRAIN RENTRÉ,GEAR UP
+OSD_GEAR_MOVING,TRAIN EN MOUVEMENT,GEAR IN TRANSIT
 VIEW_GROUND,Sol,Ground
 VIEW_FPV,FPV,FPV
 VIEW_CHASE,3e pers.,Chase
 HUD_VIEW_BUTTON,Vue : {0},View: {0}
 HUD_BUTTON,HUD,HUD
-HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent, C vue, H HUD","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind, C view, H HUD"
+HUD_KEYBOARD,"Clavier — Z/S gaz, flèches ailerons/profondeur, Q/D dérive, R reset, P pause, V vent, C vue, G train, F volets, H HUD","Keyboard — W/S throttle, arrows aileron/elevator, A/D rudder, R reset, P pause, V wind, C view, G gear, F flaps, H HUD"
 HUD_LATENCY,Latence estimée,Estimated latency
 HUD_FPS,Images/s,FPS
 HUD_INPUT,Commande,Input
@@ -100,6 +109,8 @@ CRASH_TREESTRIKE,Dans les arbres,Into the trees
 CRASH_WINGTIPSTRIKE,Saumon d'aile au sol,Wingtip strike
 CRASH_NOSEOVER,Capotage,Nose-over
 CRASH_HULLIMPACT,Choc de la cellule,Airframe impact
+CRASH_STRUCTURESTRIKE,Contre un obstacle,Hit a structure
+CRASH_WIRESTRIKE,Dans les câbles,Into the wires
 RADIO_REVERSE_TITLE,Sens des voies,Channel direction
 RADIO_REVERSE,Inverser,Reverse
 RADIO_PREVIEW_TITLE,Contrôle des gouvernes,Control check
@@ -134,6 +145,8 @@ SHEET_WING_AREA,Surface alaire,Wing area
 SHEET_WING_LOADING,Charge alaire,Wing loading
 SHEET_POWER,Motorisation,Power
 SHEET_GLIDER,Planeur (sans moteur),Glider (no motor)
+SHEET_TURBINE,Turbine,Turbine
+SHEET_PISTON,Moteur thermique,Piston engine
 SHEET_TAKEOFF,Décollage,Take-off
 SHEET_CHANNELS,Voies,Channels
 TAKEOFF_TRICYCLE,Roues (train tricycle),Wheels (tricycle gear)
@@ -143,4 +156,5 @@ CHANNEL_AILERONS,ailerons,ailerons
 CHANNEL_ELEVONS,élevons,elevons
 CHANNEL_ELEVATOR,profondeur,elevator
 CHANNEL_RUDDER,dérive,rudder
+CHANNEL_FLAPS,volets,flaps
 CHANNEL_THROTTLE,gaz,throttle

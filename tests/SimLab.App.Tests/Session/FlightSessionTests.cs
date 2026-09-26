@@ -1,4 +1,5 @@
-using SimLab.App.Field;
+using SimLab.App.Maps;
+using SimLab.App.Maps.Club;
 using SimLab.App.Session;
 using SimLab.App.Settings;
 using SimLab.Flight.Controls;
@@ -11,14 +12,14 @@ namespace SimLab.App.Tests.Session;
 public class FlightSessionTests
 {
     static FlightSession Session(string id, FlightConditions? conditions = null) =>
-        new(TestData.Aircraft(id), conditions ?? new FlightConditions(WindSpeed: 4, WindFromDeg: 80));
+        new(TestData.Aircraft(id), conditions ?? new FlightConditions(WindSpeed: 4, WindFromDeg: 80), FieldCatalog.Load("club"));
 
     [Fact]
     public void Catalog_lists_the_shipped_aircraft()
     {
         var list = AircraftCatalog.List(Path.Combine(TestData.RepoRoot, "aircraft"), out var errors);
         Assert.Empty(errors);
-        Assert.Equal(new[] { "3d", "sport", "trainer", "wing" }, list.Select(a => a.Id));
+        Assert.Equal(new[] { "3d", "f18", "jet", "p51", "sport", "trainer", "wing" }, list.Select(a => a.Id));
         Assert.All(list, a => Assert.False(string.IsNullOrWhiteSpace(a.Name)));
     }
 
@@ -27,7 +28,7 @@ public class FlightSessionTests
     {
         using var session = Session("trainer");
         var s = session.Aircraft.State;
-        Assert.True(ClubField.OnRunway(s.Position.X, s.Position.Y));
+        Assert.True(ClubMap.Layout.OnRunway(s.Position.X, s.Position.Y));
         Assert.True(s.Position.X < 0);
         Assert.Equal(90, Angle.Deg(Attitude.FromOrientation(s.Orientation).Heading), 6);
         Assert.Equal(0, s.Velocity.Length);
@@ -117,10 +118,27 @@ public class FlightSessionTests
     }
 
     [Fact]
-    public void Session_uses_the_club_field_with_trees()
+    public void Session_uses_the_selected_map()
     {
         using var session = Session("sport");
-        Assert.True(session.Terrain.Trees.Count > 100);
+        Assert.Equal(ClubMap.Id, session.Map.Id);
         Assert.InRange(session.Span, 1.1, 1.3);
+    }
+
+    [Fact]
+    public void Gear_switch_left_up_does_not_raise_the_gear_until_it_has_been_seen_down()
+    {
+        var session = Session("jet");
+        var up = new ControlInputs(0, 0, 0, 0) { GearUp = true };
+        for (int i = 0; i < 60; i++) session.Tick(1 / 60.0, up);
+        Assert.Equal(0, session.Aircraft.GearPosition);
+
+        session.Tick(1 / 60.0, ControlInputs.Neutral);
+        for (int i = 0; i < 60; i++) session.Tick(1 / 60.0, up);
+        Assert.True(session.Aircraft.GearPosition > 0.1);
+
+        session.Reset();
+        for (int i = 0; i < 60; i++) session.Tick(1 / 60.0, up);
+        Assert.Equal(0, session.Aircraft.GearPosition);
     }
 }

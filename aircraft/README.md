@@ -75,6 +75,24 @@ and a wheel is below the CG datum line so it normally has negative z. A steerabl
 (nosewheel, tailwheel) gets a non-zero `maxSteerDeg` and a `steerMix` (see Controls below);
 a free or fixed wheel uses `"steerMix": {}`.
 
+### Wheel brakes (optional)
+
+`"brakeFriction": 0.5` on a wheel fits it with a brake: its rolling friction coefficient when fully braked. Brakes are
+mixed to the throttle stick, like a common jet radio setup: on with the throttle closed (≤ 2 %), off as soon as it
+opens. Aircraft with a fuel engine need them, because the engine keeps idling and pushing on the ground.
+
+## Retractable gear (optional)
+
+```json
+"gearRetract": { "seconds": 5.0, "cdA": [0.004, 0.003, 0.002] }
+```
+
+Every wheel in `gear` retracts together, over `seconds` each way. The wheels carry load only when the gear is fully down
+and locked; up or travelling, the hull points (belly, nose…) meet the ground instead. `cdA` is the extended gear's drag
+area (m², body order [frontal, side, top] like a body's), applied at the wheels' centroid and scaled by how far the gear
+is down. The pilot raises it with the G key or a radio gear switch (read by position: bind it on the radio screen by
+flipping it to gear up); after a start or reset, a switch left up is ignored until it has been seen down.
+
 ## Hull points
 
 ```json
@@ -94,6 +112,35 @@ datum and axes as everything else — a left wingtip has negative y, a belly poi
 `position` from the datum in body axes like every other position, `uptiltDeg` (0–60) tilts it up from the body
 forward axis, `fovDeg` (60–150) is its **horizontal** field of view, as FPV camera specs give it. Without the block,
 the camera sits on the hull point tagged `nose` (else the most forward hull point) with 10° uptilt and 110°.
+
+## Display shape: `visual.json` (optional)
+
+Without it an aircraft is drawn from its aero surfaces plus a box fuselage spanning the hull points. A `visual.json`
+next to `aircraft.json` adds display-only geometry; it never changes the physics. Positions use the same datum and body
+axes as `aircraft.json`, colours are `[r, g, b]` in 0–1.
+
+```json
+{
+  "surfaceColor": [0.60, 0.63, 0.66],      // wing and tail panels (default cream)
+  "controlColor": [0.53, 0.56, 0.59],      // control surfaces (default orange)
+  "propellerDisc": false,                  // hide the spinning prop disc (ducted fans)
+  "shapes": [                              // lofted bodies; any shape replaces the box fuselage
+    { "name": "fuselage", "color": [0.55, 0.58, 0.61], "sides": 24, "roundness": 2.6, "mirror": false,
+      "stations": [ { "x": 0.0, "width": 0 }, { "x": 0.3, "y": 0, "z": 0.01, "width": 0.10, "height": 0.11 } ] }
+  ],
+  "plates": [                              // flat convex polygons: strakes, ventral fins, rails
+    { "name": "strakes", "color": [0.6, 0.63, 0.66], "mirror": true, "points": [ [0.28, 0.05, -0.01], [0.45, 0.085, -0.01], [0.70, 0.05, -0.01] ] }
+  ]
+}
+```
+
+- A shape is a list of cross-sections (at least 2), each a superellipse `width` (along y) by `height` (along z, defaults
+  to `width`) centred on (`y`, `z`) at body `x`. `roundness` 2 is an ellipse, higher values square the section off.
+  A zero-size station closes the shape to a point (a nose, a tail cone). Shapes are smooth-shaded.
+- `mirror: true` also draws the shape or plate reflected to −y (wingtip missiles, strakes).
+- `sides` is 3–64 (default 16).
+
+See `jet/visual.json` for a complete example (the F-16).
 
 ## Inertia
 
@@ -124,6 +171,48 @@ About the **CG**, in body axes:
   - a **down** thrust offset adds a small **−z** component.
   - the trainer combines both: `[-0.9988, 0.0349, -0.0349]` (about 2° right, 2° down thrust).
 
+### Fuel engines: `piston` or `turbine`
+
+`power.json` holds exactly one power source: `motor` + `battery` (electric, above), `piston` or `turbine`. Both fuel
+engines start already running at idle (no start sequence); throttle 0 is idle, not off; an empty tank stops them. The
+OSD then shows the fuel left instead of the battery.
+
+```json
+"piston": { "maxPowerW": 5000, "peakPowerRpm": 8300, "idleRpm": 1800, "maxRpm": 9000, "rotorInertia": 0.008,
+            "tankMl": 700, "fuelFlowMaxMlMin": 75, "fuelFlowIdleMlMin": 8 }
+```
+
+A glow or gas engine turning the `propeller` (required). Full-throttle power follows `maxPowerW · (x + x² − x³)`,
+`x = rpm / peakPowerRpm`, with the ignition cut above `maxRpm`; the idle throttle opening is worked out so the engine
+idles at `idleRpm` on its propeller. `rotorInertia` is crank plus propeller. Torque roll, prop wash and P-factor act as
+for an electric motor. Fuel flow grows linearly with power from idle to max. See `p51/power.json`.
+
+```json
+"turbine": { "maxThrustN": 220, "idleThrustN": 9, "maxRpm": 117000, "idleRpm": 33000,
+             "spoolUpSeconds": 4.5, "spoolDownSeconds": 3.0, "massFlowKgS": 0.45, "nozzleDiameterM": 0.1,
+             "rotorInertia": 6e-5, "tankMl": 4500, "fuelFlowMaxMlMin": 750, "fuelFlowIdleMlMin": 120 }
+```
+
+A kerosene micro-turbine, no `propeller`; `position` is the nozzle exit. The throttle sets the share of the idle-to-max
+thrust range; the spool follows it no faster than a full idle→max sweep in `spoolUpSeconds` (down: `spoolDownSeconds`).
+Thrust drops with airspeed by the ram drag `massFlowKgS · V`. No torque roll; the spool's gyroscopic moment remains.
+See `f18/power.json` and docs/superpowers/specs/2026-09-26-fuel-engines-design.md.
+
+### Ducted fans (EDF)
+
+A ducted fan is entered as a propeller of the fan's diameter with explicit `j` / `ct` / `cp` tables (the generic
+propeller estimate is far too weak for a 12-blade fan), plus:
+
+```json
+"pFactor": 0,
+"ductStatorRecovery": 0.9
+```
+
+`ductStatorRecovery` (0–1, default 0) is the share of the rotor's aerodynamic torque that the stator vanes behind the
+fan take back by straightening the swirl: the airframe keeps only the rest (and the torque that spins the rotor up), and
+the exhaust leaves with that much less swirl. Put `position` at the nozzle exit so no surface sits in the exhaust.
+See `jet/power.json`.
+
 ### Optional `sound` block (power.json)
 
 ```json
@@ -132,7 +221,7 @@ About the **CG**, in body axes:
 
 | Field | Default | Meaning |
 |-------|---------|---------|
-| `blades` | 2 | Propeller blade count (1–6); sets the blade-pass frequency rpm × blades / 60 |
+| `blades` | 2 | Propeller or fan blade count (1–16); sets the blade-pass frequency rpm × blades / 60 (a turbine's spool whine) |
 | `polePairs` | 7 | Motor magnetic pole pairs (1–20); sets the motor whine frequency rpm × polePairs / 60 |
 | `sample`, `sampleRpm` | none | Recorded motor loop (relative to the aircraft folder) and the rpm it was recorded at; when given, the loop replaces the synthesized motor and propeller, pitched by rpm / sampleRpm. Give both or neither. |
 
@@ -152,6 +241,13 @@ single-panel surface, like the fin, always uses `both`).
 `mix` maps pilot stick channels (`aileron`, `elevator`, `rudder`, `flap`; positive aileron =
 roll right, positive elevator = pitch up, positive rudder = yaw right) to a deflection command:
 `deflection = clamp(Σ weight · channel, −1, 1)` × the appropriate max throw.
+
+The `flap` channel carries the flap setting: 0 (up), 0.35 (half) or 1 (landing), from the F key (which steps through
+them) or a radio flap switch (bound on the radio screen; a three-position switch gives up / half / landing, a two-position
+one up / landing). A control mixed from `flap` is a high-lift flap: besides the usual alpha shift, 60% of its effect is a
+lift increment, so it raises the maximum lift instead of only stalling the section earlier. A flap normally has
+`maxNegativeDeg: 0` and a slow servo; an elevator can take a small negative `flap` weight for the pitch compensation
+(see `p51/aircraft.json`: flaps 13° / 40°, elevator `"flap": -0.2`).
 
 Because the fin has `dihedralDeg: 90`, its normal points **left (−y)**, not up. So "trailing
 edge down relative to the normal" for the rudder means the trailing edge moves toward −normal,
