@@ -14,9 +14,18 @@ public static class MountainRelief
     const double ProfileStep = 0.5;
     const double EastStart = 260, EastRun = 1700, EastRise = 600, EastRoughness = 60;
     const double SummitX = 1600, SummitY = 1600, SummitHeight = 950, SummitSigma = 350;
-    const double LakeX = -1150, LakeY = 500, LakeSemiX = 225, LakeSemiY = 125, LakeBlend = 30;
+    const double LakeX = -1150, LakeY = 500, LakeSemiX = 225, LakeSemiY = 125;
+
+    /// <summary>Covers the shore band (r ≤ 1.15) even along the long axis, 0.15 × 225 = 33.75 m out.</summary>
+    const double LakeBlend = 35;
     const double StreamDepth = 2;
-    const double RoadBlend = 8;
+
+    /// <summary>Cut and fill banks rise at most this steeply (45°) from the road bed's edge…</summary>
+    const double BankSlope = 1.0;
+
+    /// <summary>…for this far, then steepen so they always meet the natural ground within <see cref="BankReach"/>.</summary>
+    const double BankRun = 40, BankReach = 70;
+
     const double StripBlend = 20, PilotRadius = 25, PilotBlend = 15;
 
     /// <summary>A grid cell's diagonal: flattening that much beyond an area keeps every triangle touching it flat.</summary>
@@ -69,7 +78,7 @@ public static class MountainRelief
         int count = (int)Math.Round(2 * half / step) + 1;
         var heights = new float[count * count];
         // The bed is held a grid step beyond the road's 1 m shoulders so every triangle under the wheels lies on it.
-        double roadCore = road.Width / 2 + 1 + step, roadReach = roadCore + RoadBlend;
+        double roadCore = road.Width / 2 + 1 + step;
         Parallel.For(0, count, j =>
         {
             double y = -half + j * step;
@@ -79,8 +88,8 @@ public static class MountainRelief
                 double h = Height(x, y);
                 h = CarveStream(x, y, h);
                 h = DigLake(x, y, h);
-                if (road.Nearest(x, y, roadReach) is { } near)
-                    h = near.Profile + (h - near.Profile) * SmootherStep((near.Distance - roadCore) / RoadBlend);
+                if (road.Nearest(x, y, roadCore + BankReach) is { } near)
+                    h = near.Distance <= roadCore ? near.Profile : CutAndFill(h, road.Within(x, y, roadCore + BankReach), roadCore);
                 h = Level(x, y, h);
                 heights[j * count + i] = (float)h;
             }
@@ -128,6 +137,25 @@ public static class MountainRelief
         if (k < 1e-6) return m;
         double t = Math.Max(k - Math.Abs(ramp - summit), 0) / k;
         return m + t * t * k / 4;
+    }
+
+    /// <summary>
+    /// The ground beside a road bed: every nearby stretch of road allows the ground to differ from its bed height by
+    /// a bank of <see cref="BankSlope"/> from the bed's edge (steepening past <see cref="BankRun"/>, so the banks always
+    /// meet the natural ground). The natural height is clamped into what all of them allow, so where two legs of the
+    /// switchback are close the ground between them stays continuous.
+    /// </summary>
+    static double CutAndFill(double natural, IEnumerable<(double Distance, double Profile)> road, double core)
+    {
+        double low = double.NegativeInfinity, high = double.PositiveInfinity;
+        foreach (var (distance, profile) in road)
+        {
+            double outside = Math.Max(distance - core, 0), steeper = Math.Max(outside - BankRun, 0);
+            double rise = BankSlope * outside + 0.05 * steeper * steeper;
+            low = Math.Max(low, profile - rise);
+            high = Math.Min(high, profile + rise);
+        }
+        return low > high ? (low + high) / 2 : Math.Clamp(natural, low, high);
     }
 
     static double CarveStream(double x, double y, double h)
@@ -198,11 +226,5 @@ public static class MountainRelief
     {
         x = Math.Clamp(x, 0, 1);
         return x * x * (3 - 2 * x);
-    }
-
-    static double SmootherStep(double x)
-    {
-        x = Math.Clamp(x, 0, 1);
-        return x * x * x * (x * (x * 6 - 15) + 10);
     }
 }

@@ -85,6 +85,28 @@ public sealed class MountainRoad
         return best;
     }
 
+    /// <summary>For each centre-line segment passing within <paramref name="reach"/>, the distance to its nearest
+    /// point and the profile height there (a segment may come up more than once).</summary>
+    internal IEnumerable<(double Distance, double Profile)> Within(double x, double y, double reach)
+    {
+        int i0 = Math.Max(Col(x - reach), 0), i1 = Math.Min(Col(x + reach), _cols - 1);
+        int j0 = Math.Max(Row(y - reach), 0), j1 = Math.Min(Row(y + reach), _rows - 1);
+        for (int j = j0; j <= j1; j++)
+        for (int i = i0; i <= i1; i++)
+        {
+            var cell = _cells[j * _cols + i];
+            if (cell is null) continue;
+            foreach (int k in cell)
+            {
+                var (a, b) = (_path[k], _path[k + 1]);
+                double ex = b.X - a.X, ey = b.Y - a.Y;
+                double t = Math.Clamp(((x - a.X) * ex + (y - a.Y) * ey) / (ex * ex + ey * ey), 0, 1);
+                double dx = a.X + t * ex - x, dy = a.Y + t * ey - y, d = Math.Sqrt(dx * dx + dy * dy);
+                if (d <= reach) yield return (d, _profile[k] + t * (_profile[k + 1] - _profile[k]));
+            }
+        }
+    }
+
     (double Distance, double Profile)? NearestAmong(double x, double y, IEnumerable<int> segments, double reach)
     {
         double bestD2 = reach * reach, bestProfile = 0;

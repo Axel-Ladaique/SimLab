@@ -77,10 +77,11 @@ public class MountainMapTests
     {
         Assert.Equal(MountainMap.LakeLevel, Mountain.Terrain.WaterSurface(-1150, 500));
         Assert.True(H(-1150, 500) <= MountainMap.LakeLevel - 5, $"lakebed {H(-1150, 500)}");
+        foreach (double r in new[] { 1.1, 1.15 })
         for (int k = 0; k < 32; k++)
         {
             double t = 2 * Math.PI * k / 32;
-            double x = -1150 + 1.1 * 225 * Math.Cos(t), y = 500 + 1.1 * 125 * Math.Sin(t);
+            double x = -1150 + r * 225 * Math.Cos(t), y = 500 + r * 125 * Math.Sin(t);
             Assert.True(H(x, y) > MountainMap.LakeLevel, $"shore {H(x, y)} at ({x:F0}, {y:F0})");
         }
         Assert.Null(Mountain.Terrain.WaterSurface(0, 0));
@@ -109,6 +110,38 @@ public class MountainMapTests
         var last = road.Path[^1];
         Assert.True(H(first.X, first.Y) < -300, $"road starts at {H(first.X, first.Y)}");
         Assert.True(Math.Abs(H(last.X, last.Y)) < 3, $"road ends at {H(last.X, last.Y)}");
+    }
+
+    [Fact]
+    public void Road_banks_are_not_walls()
+    {
+        // Every grid cell within 16 m of the road on the face: where the natural ground is under 45°, the cut or
+        // fill banks stay under 50° (slope 1.2).
+        var road = new MountainRoad();
+        var g = Mountain.Grid;
+        int walls = 0;
+        double worst = 0, wx = 0, wy = 0;
+        for (double y = -1100; y < -450; y += g.Step)
+        for (double x = -1100; x < 0; x += g.Step)
+        {
+            double cx = x + g.Step / 2, cy = y + g.Step / 2;
+            if (road.DistanceTo(cx, cy) > 16) continue;
+            if (CellSlope(MountainRelief.Height, x, y, g.Step) >= 1) continue;
+            double slope = CellSlope(H, x, y, g.Step);
+            if (slope <= 1.2) continue;
+            walls++;
+            if (slope > worst) (worst, wx, wy) = (slope, x, y);
+        }
+        Assert.True(walls == 0, $"{walls} cells steeper than 1.2, worst {worst:F2} at ({wx}, {wy})");
+    }
+
+    /// <summary>The steeper of the two triangles of the grid cell whose lower-left corner is (x, y).</summary>
+    static double CellSlope(Func<double, double, double> h, double x, double y, double step)
+    {
+        double a = h(x, y), b = h(x + step, y), c = h(x, y + step), d = h(x + step, y + step);
+        double lower = Math.Sqrt((b - a) * (b - a) + (d - b) * (d - b)) / step;
+        double upper = Math.Sqrt((c - a) * (c - a) + (d - c) * (d - c)) / step;
+        return Math.Max(lower, upper);
     }
 
     [Fact]
